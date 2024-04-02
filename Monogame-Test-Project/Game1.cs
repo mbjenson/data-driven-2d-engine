@@ -9,6 +9,7 @@ using Collisions;
 using viewStuff;
 using tilemap;
 using System.IO.MemoryMappedFiles;
+using ECS;
 
 /*
  * 
@@ -126,9 +127,9 @@ namespace Monogame_Test_Project
 
         const int WIN_WIDTH = 1440;
         const int WIN_HEIGHT = 810;
-        
-        const int TARGET_WIDTH = 320;
-        const int TARGET_HEIGHT = 180;
+
+        const int TARGET_WIDTH = 320; // 480;
+        const int TARGET_HEIGHT = 180; // 270;
 
         public List<RectCollider> rects;
         public List<CircleCollider> circles;
@@ -151,6 +152,11 @@ namespace Monogame_Test_Project
         Effect spriteEffect;
 
         RenderTarget2D renderCanvas;
+
+        Entity playerEntity;
+
+        
+        
         
 
         private GraphicsDeviceManager graphics;
@@ -217,7 +223,11 @@ namespace Monogame_Test_Project
 
             tilemapRenderer = new TilemapRenderer(tilemap, graphics);
 
-
+            playerEntity = new Entity(0);
+            playerEntity.AddComponent(new TransformComponent(Vector2.Zero, new Vector2(1f), 0f, 0f));
+            playerEntity.AddComponent(new TextureComponent());
+            playerEntity.GetComponent<TextureComponent>().texture = Content.Load<Texture2D>("dirt");
+            playerEntity.AddComponent(new RectColliderComponent(new Vector2(16f, 16f)));
 
             base.Initialize();
         }
@@ -279,8 +289,6 @@ namespace Monogame_Test_Project
             {
                 player.setPosition(player.getPosition() + new Vector2(moveSpeed * dt, 0));
             }
-
-            
             
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
             player.position = Vector2.Round(player.position); // IMPORTANT For pixel perfect camera to not bug out
@@ -301,8 +309,6 @@ namespace Monogame_Test_Project
                     solver.solveCollision(player, circle);
                 }
             }
-
-            
 
             cam.Update(player.position, dt);
 
@@ -325,7 +331,6 @@ namespace Monogame_Test_Project
                 cam.Position = cam.Position + new Vector2(moveSpeed * dt, 0);
             }
             */
-            
 
             base.Update(gameTime);
         }
@@ -352,6 +357,8 @@ namespace Monogame_Test_Project
                 new Rectangle(0, 0, tilemapRenderer.mapCanvas.Width, tilemapRenderer.mapCanvas.Height),
                 tilemapRenderer.mapCanvas.Bounds,
                 Color.White);
+
+            
             
             foreach (var rect in rects)
             {

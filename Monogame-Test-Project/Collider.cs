@@ -17,7 +17,6 @@ namespace Collisions
     {
         public CollisionSolver() { }
 
-
         public void solveCollision(CircleCollider dynamicCircle, CircleCollider staticCircle)
         {
             float distance = Vector2.Distance(staticCircle.position, dynamicCircle.position);
