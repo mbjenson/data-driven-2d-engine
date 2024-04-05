@@ -2,15 +2,89 @@
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using Collisions;
+using System.ComponentModel;
 
+/*
+ * when creating an entity that has a some type of component that accesses a resource (texture, sound, etc),
+ *  the entity will be given a resource handle which only contains an ID for that resource. 
+ *  eg:
+ *  
+ *  Entity entity = new Entity(id);
+ *  entity.addComponent<Texture>("texture.dirt"); // this texture.dirt is just one way that you can specify which
+ *                                                  // resource the entity will be accessing without having to store
+ *                                                  // the resource in the entity. The different systems will then have
+ *                                                  // access to the centralized loaded resources and be able to use the 
+ *                                                  // the resource handle to use the actual resource when necessary
+ *                                                  // (whether that means indexing into an array or using a lookup function
+ *                                                  // in some data structure IDK yet).
+ *
+ *
+ *
+*/
 namespace ECS
 {
+    /*
+    class entity:
+        uint id
+        List<ref IComponent> components = new List<ref IComponent>
+     */
+    public class Entity
+    {
+        public uint id;
+        public List<IComponent> components;
+        public Entity(uint id) 
+        {
+            this.id = id;
+        }
+    }
+
+    /*
+    class IComponent:
+        public abstract void update
+    */
+    public interface IComponent
+    {
+        public abstract void Update();
+    }
+
+    /*
+    class CTransform:
+        public Vector2 Position;
+        public Vector2 Scale;
+        public float Rotation;
+        public float LayerDepth
+    */
+    public class CTransform : IComponent
+    {
+        public Vector2 position;
+        public Vector2 scale;
+        public float rotation;
+        public float layerDepth;
+
+        public CTransform() { }
+        public void Update() { }
+    }
+
+    public class CRigidBody : IComponent
+    {
+        public Vector2 velcocity;
+        public Vector2 acceleration;
+
+        public CRigidBody() { }
+        public void Update() { }
+    }
+
+    public class 
+
+}   
+
+    /*
 
 
     public class Entity
     {
         public uint id;
-        readonly List<Component> components = new List<Component>();
+        private List<Component> components = new List<Component>();
 
         public Entity() { }
         public Entity(uint id)
@@ -78,10 +152,21 @@ namespace ECS
         public Vector2 velocity = Vector2.Zero;
         public RigidBodyComponent() { }
 
-
     }
 
-    public class CircleColliderComponent : Component
+    
+    public class ColliderComponent : Component { }
+
+    public class RectColliderComponent : ColliderComponent
+    {
+        public Vector2 size = new Vector2(8f, 8f);
+        public RectColliderComponent(Vector2 size)
+        {
+            this.size = size;
+        }
+    }
+
+    public class CircleColliderComponent : ColliderComponent
     {
         public float radius;
         public CircleColliderComponent(float radius)
@@ -90,14 +175,10 @@ namespace ECS
         }
     }
 
-    public class RectColliderComponent : Component
-    {
-        public Vector2 size = new Vector2(8f, 8f);
-        public RectColliderComponent(Vector2 size)
-        {
-            this.size = size;
-        }
-    }
+    
+
+
+
 
 
 
@@ -121,3 +202,4 @@ namespace ECS
 
 
 }
+    */

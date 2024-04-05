@@ -358,7 +358,10 @@ namespace Monogame_Test_Project
                 tilemapRenderer.mapCanvas.Bounds,
                 Color.White);
 
-            
+            spriteBatch.Draw(
+                playerEntity.GetComponent<TextureComponent>().texture,
+                playerEntity.GetComponent<TransformComponent>().position,
+                Color.White);
             
             foreach (var rect in rects)
             {
