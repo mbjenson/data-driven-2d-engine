@@ -10,6 +10,8 @@ using viewStuff;
 using tilemap;
 using System.IO.MemoryMappedFiles;
 using ECS;
+using System.Reflection.Metadata.Ecma335;
+using System.Linq;
 
 /*
  * 
@@ -153,7 +155,9 @@ namespace Monogame_Test_Project
 
         RenderTarget2D renderCanvas;
 
-        Entity playerEntity;
+        //Entity playerEntity;
+        Context context;
+        
 
         
         
@@ -223,11 +227,41 @@ namespace Monogame_Test_Project
 
             tilemapRenderer = new TilemapRenderer(tilemap, graphics);
 
-            playerEntity = new Entity(0);
-            playerEntity.AddComponent(new TransformComponent(Vector2.Zero, new Vector2(1f), 0f, 0f));
-            playerEntity.AddComponent(new TextureComponent());
-            playerEntity.GetComponent<TextureComponent>().texture = Content.Load<Texture2D>("dirt");
-            playerEntity.AddComponent(new RectColliderComponent(new Vector2(16f, 16f)));
+            context = new Context(16);
+            int pEntity = context.CreateEntity();
+            context.AddComponent<CTransform>(pEntity);
+            context.AddComponent<CRigidBody>(pEntity);
+            context.PrintEntityComponents(pEntity);
+
+            int e2 = context.CreateEntity();
+            context.AddComponent<CTransform>(e2);
+
+            int e3 = context.CreateEntity();
+            context.AddComponent<CTransform>(e3);
+
+            int e4 = context.CreateEntity();
+            context.AddComponent<CTransform>(e4);
+
+            int e5 = context.CreateEntity();
+            context.AddComponent<CTransform>(e5);
+
+            var transforms = context.GetComponentsOfType<CTransform>().ToList();
+
+            foreach (CTransform transform in transforms)
+            {
+                Debug.WriteLine(transform.position);
+                Debug.WriteLine(transform.scale);
+                Debug.WriteLine(transform.rotation);
+                Debug.WriteLine(transform.layerDepth);
+            }
+
+            
+
+            //playerEntity = new Entity(0);
+            //playerEntity.AddComponent(new TransformComponent(Vector2.Zero, new Vector2(1f), 0f, 0f));
+            //playerEntity.AddComponent(new TextureComponent());
+            //playerEntity.GetComponent<TextureComponent>().texture = Content.Load<Texture2D>("dirt");
+            //playerEntity.AddComponent(new RectColliderComponent(new Vector2(16f, 16f)));
 
             base.Initialize();
         }
@@ -358,10 +392,10 @@ namespace Monogame_Test_Project
                 tilemapRenderer.mapCanvas.Bounds,
                 Color.White);
 
-            spriteBatch.Draw(
-                playerEntity.GetComponent<TextureComponent>().texture,
-                playerEntity.GetComponent<TransformComponent>().position,
-                Color.White);
+            //spriteBatch.Draw(
+            //    //playerEntity.GetComponent<TextureComponent>().texture,
+            //    //playerEntity.GetComponent<TransformComponent>().position,
+            //    Color.White);
             
             foreach (var rect in rects)
             {

@@ -31,7 +31,7 @@ namespace ECS
     public class Entity
     {
         public uint id;
-        public List<IComponent> components;
+        //public List<IComponent> components;
         public Entity(uint id) 
         {
             this.id = id;
@@ -42,9 +42,13 @@ namespace ECS
     class IComponent:
         public abstract void update
     */
-    public interface IComponent
+    public class IComponent
     {
-        public abstract void Update();
+        public int entityId;
+        
+        
+        //public IComponent(int entityId) { this.entityId = entityId; }
+        //public virtual void Update() { }
     }
 
     /*
@@ -62,7 +66,7 @@ namespace ECS
         public float layerDepth;
 
         public CTransform() { }
-        public void Update() { }
+        //public override void Update() { }
     }
 
     public class CRigidBody : IComponent
@@ -71,10 +75,10 @@ namespace ECS
         public Vector2 acceleration;
 
         public CRigidBody() { }
-        public void Update() { }
+        //public override void Update() { }
     }
 
-    public class 
+    
 
 }   
 
