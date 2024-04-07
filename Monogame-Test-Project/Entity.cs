@@ -28,15 +28,16 @@ namespace ECS
         uint id
         List<ref IComponent> components = new List<ref IComponent>
      */
-    public class Entity
-    {
-        public uint id;
-        //public List<IComponent> components;
-        public Entity(uint id) 
-        {
-            this.id = id;
-        }
-    }
+
+    //public class Entity
+    //{
+    //    public uint id;
+    //    //public List<IComponent> components;
+    //    public Entity(uint id) 
+    //    {
+    //        this.id = id;
+    //    }
+    //}
 
     /*
     class IComponent:
@@ -44,12 +45,14 @@ namespace ECS
     */
     public class IComponent
     {
-        public int entityId;
-        
-        
+        public int entityId = -1;
+
+
         //public IComponent(int entityId) { this.entityId = entityId; }
         //public virtual void Update() { }
     }
+
+    
 
     /*
     class CTransform:
@@ -66,6 +69,14 @@ namespace ECS
         public float layerDepth;
 
         public CTransform() { }
+        public CTransform(Vector2 position, Vector2 scale, float rotation, float layerDepth)
+        {
+            this.position = position;
+            this.scale = scale;
+            this.rotation = rotation;
+            this.layerDepth = layerDepth;
+        }
+
         //public override void Update() { }
     }
 
@@ -77,6 +88,15 @@ namespace ECS
         public CRigidBody() { }
         //public override void Update() { }
     }
+
+
+    public class CTexture2D : IComponent
+    {
+        public int textureId;
+        
+        public CTexture2D() { }
+    }
+    
 
     
 

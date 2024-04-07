@@ -227,35 +227,45 @@ namespace Monogame_Test_Project
 
             tilemapRenderer = new TilemapRenderer(tilemap, graphics);
 
-            context = new Context(16);
+
+            context = new Context(25);
             int pEntity = context.CreateEntity();
-            context.AddComponent<CTransform>(pEntity);
+            context.AddComponent<CTransform>(pEntity, new CTransform(new Vector2(2f, 2f), new Vector2(1f, 1f), 90f, 0f));
             context.AddComponent<CRigidBody>(pEntity);
-            context.PrintEntityComponents(pEntity);
+            CTexture2D tex = context.AddComponent<CTexture2D>(pEntity);
+            CTransform trans = (CTransform)context.GetComponent<CTransform>(pEntity);
+            Debug.WriteLine(
+                trans.position.ToString() + trans.scale.ToString() + trans.rotation.ToString() + trans.layerDepth.ToString());
 
-            int e2 = context.CreateEntity();
-            context.AddComponent<CTransform>(e2);
+            //tex.textureId = 37; // after getting local variable to thing, changing its value still holds for the actual thing
 
-            int e3 = context.CreateEntity();
-            context.AddComponent<CTransform>(e3);
-
-            int e4 = context.CreateEntity();
-            context.AddComponent<CTransform>(e4);
-
-            int e5 = context.CreateEntity();
-            context.AddComponent<CTransform>(e5);
-
-            var transforms = context.GetComponentsOfType<CTransform>().ToList();
-
-            foreach (CTransform transform in transforms)
+            List<int> entities = new List<int>(24);
+            for (int i = 0; i < entities.Capacity; i++)
             {
-                Debug.WriteLine(transform.position);
-                Debug.WriteLine(transform.scale);
-                Debug.WriteLine(transform.rotation);
-                Debug.WriteLine(transform.layerDepth);
+                entities.Add(context.CreateEntity());
+                context.AddComponent<CTransform>(entities[i]);
             }
+            context.PrintAllEntities();
+
+            context.RemoveEntity(entities[0]);
+            context.RemoveEntity(entities[5]);
+            context.RemoveEntity(entities[6]);
 
             
+
+            var getComp = context.GetComponent<CTransform>(entities[19]);
+            if (getComp != null)
+            {
+                context.RemoveComponent(getComp);
+            }
+
+
+
+            context.PrintAllEntities();
+
+
+
+
 
             //playerEntity = new Entity(0);
             //playerEntity.AddComponent(new TransformComponent(Vector2.Zero, new Vector2(1f), 0f, 0f));

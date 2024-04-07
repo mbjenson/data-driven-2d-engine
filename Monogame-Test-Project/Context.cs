@@ -184,7 +184,7 @@ namespace ECS
     //              idea: when it comes time to render, the rendering system gets a list of all of the entities which have
     //              the transform components (or texture or something. whatever qualifies them to be rendered), and 
     //              draws them all to the dislpay on it's own as though nothing else in the world matters. (system 
-    //              isolation will bring about a new era of prosperity). 
+    //              isolation will bring about a new era of prosperity).
     //
     //              idea: maybe write a function that finds all of the entities which contain all of the required types
     //              (and maybe cache them for later ...)
@@ -201,7 +201,6 @@ namespace ECS
     //          entity6 :  Transform, RigidBody, Texture],
 
 
-    // currently trying to figure out why I cant pass in component.GetType() to the componentArray constructor
     public class Context
     {
         public HashSet<int> mEntities;
@@ -218,31 +217,49 @@ namespace ECS
         
         public Context(int maxEntities)
         {
-            mEntities = new HashSet<int>();
-            availableIds = new Queue<int>();
             this.maxEntities = maxEntities;
-            for (int i = 0; i < maxEntities; i++)
-            {
-                availableIds.Enqueue(i);
-            }
+            availableIds = new Queue<int>();
+            for (int i = 0; i < maxEntities; i++) { availableIds.Enqueue(i); }
+
+            mEntities = new HashSet<int>();
 
             dComponentsByEntity = new Dictionary<int, HashSet<IComponent>>();
             dComponentsByType = new Dictionary<Type, HashSet<IComponent>>();
         }
 
-
+        
         // DEBUG
+        public void PrintAllEntities()
+        {
+            foreach (var e in mEntities)
+            {
+                PrintEntityComponents(e);
+            }
+        }
+
         public void PrintEntityComponents(int id)
         {
             var components = dComponentsByEntity[id];
-            Debug.WriteLine(components.Count);
+            Debug.WriteLine("Entity id: " + id.ToString() + ", Component Count: " + components.Count + "\nComponent Type(s):");
             foreach (var component in components)
             {
                 Debug.WriteLine(component.GetType().ToString());
             }
         }
+        // END DEBUG
 
-        
+        // get all components belonging to entity id
+        public IEnumerable<IComponent> GetComponentsOfEntity(int id)
+        {
+            HashSet<IComponent> components = null;
+
+            if (dComponentsByEntity.TryGetValue(id, out components))
+                return components;
+
+            return null;
+        }
+
+        // get all components of type T
         public IEnumerable<IComponent> GetComponentsOfType<T>() where T : IComponent
         {
             HashSet<IComponent> components = null;
@@ -253,9 +270,14 @@ namespace ECS
             return null;
         }
 
-
+        // create a new entity 
         public int CreateEntity()
         {
+            if (availableIds.Count <= 0)
+            {
+                throw new ArgumentNullException("CreateEntity");
+            }
+
             int id = availableIds.Dequeue();
             if (mEntities.Contains(id))
             {
@@ -263,26 +285,61 @@ namespace ECS
             }
             mEntities.Add(id);
             return id;
-
-            //if (availableIds.Count <= 0)
-            //{
-            //    return -1;
-            //}
-
-            //int id = availableIds.Dequeue();
-            //mEntities.Add(id);
-            //return id;
         }
 
+        // The removal of components and entities are costly operations which require a kind of batching system
+        // in their current state. 
+        // This means that I will implement a batch which contains a list of the entities that are to be removed.
+        // Then, every so often, the batch will be processed by the context and all the entities and their corresponding 
+        // components will be removed from the context fully.
+        // In the mean time, the entities that are going to be removed should be marked as "dead" so they are not
+        // processed.
         public void RemoveEntity(int id)
         {
-            // have a batch that is filled and when it is full the entities are removed, but before that, just set the entity
-            // to not being alive
+            if (mEntities.Remove(id)) // check if entity exists in context
+            {
+                RemoveComponentsByEntity(id); // if so remove all components associated with it
+            }
+            availableIds.Enqueue(id);
+        }
 
-            // remove all components associated with id
-            // TODO //
-            mEntities.Remove(id); // remove id 
-            availableIds.Enqueue(id); // make id available again
+        public void RemoveComponent(IComponent component)
+        {
+            if (component == null)
+            {
+                return;
+            }
+            dComponentsByEntity[component.entityId].Remove(component);
+            dComponentsByType[component.GetType()].Remove(component);
+        }
+
+        // removes all components associated with this entity id
+        private void RemoveComponentsByEntity(int id)
+        {
+            // remove all components from the type list assocated with this entity
+            foreach (var comp in dComponentsByEntity[id])
+            {
+                dComponentsByType[comp.GetType()].Remove(comp);
+            }
+            // remove all components from this entities entry
+            dComponentsByEntity.Remove(id);
+        }
+
+        
+
+        // in the future this will not be used much at all becuase it is costly and inefficient
+        // instead the systems alone will interact with the components. (as far as I can see from here)
+        public IComponent GetComponent<T>(int id) where T : IComponent
+        {
+            var eComponents = dComponentsByEntity[id].ToList();
+            foreach (var component in eComponents)
+            {
+                if (typeof(T) == component.GetType())
+                {
+                    return component;
+                }
+            }
+            return null;
         }
 
         //public List<IComponent> GetComponents(int id)
@@ -298,25 +355,46 @@ namespace ECS
         //    {
         //        foreach (var item in list)
         //        {
-                    
+
         //            components.Add(item);
         //        }
         //    }
         //}
 
-        public T AddComponent<T>(int id) where T : IComponent, new()
+
+        private bool _ContainsComponent(IComponent component)
         {
-            // capture error if entity does not exist
-            if (!mEntities.Contains(id))
+            // maybe add asserts here
+            if (component == null)
             {
-                throw new ArgumentNullException("AddComponent");
+                return false;
             }
-
-            // create new component
-            var newComponent = new T();
-            // assign to entity
-            newComponent.entityId = id;
-
+            // not sure if the program will seg fault if I check the entityId when
+            // component is null so I am using two check statements
+            else if (component.entityId < 0) 
+            {
+                return false;
+            }
+            // the context should never hold a component in just one of the dictionaries so we are assuming
+            // perhaps dangerously so, that the component will be stored in both dictionaries
+            if (dComponentsByEntity.ContainsKey(component.entityId) && dComponentsByType.ContainsKey(component.GetType()))
+            {
+                return (dComponentsByEntity[component.entityId].Contains(component) &&
+                    dComponentsByType[component.GetType()].Contains(component));
+            }
+            return false;
+            
+        }
+        
+        private void _StashComponent(IComponent newComponent)
+        {
+            Debug.Assert(newComponent != null);
+            Debug.Assert(newComponent.entityId >= 0);
+            // check if component already exists in context
+            if (_ContainsComponent(newComponent))
+            {
+                return;
+            }
             // add to components by type dictionary
             var componentType = newComponent.GetType();
             HashSet<IComponent> typeComponents;
@@ -331,17 +409,80 @@ namespace ECS
 
             // add to components by entity dictionary
             HashSet<IComponent> entityComponents;
-            
-            if (!dComponentsByEntity.TryGetValue(id, out entityComponents))
+
+            if (!dComponentsByEntity.TryGetValue(newComponent.entityId, out entityComponents))
             {
                 entityComponents = new HashSet<IComponent>();
-                dComponentsByEntity.Add(id, entityComponents);
+                dComponentsByEntity.Add(newComponent.entityId, entityComponents);
             }
 
-            dComponentsByEntity[id].Add(newComponent);
+            dComponentsByEntity[newComponent.entityId].Add(newComponent);
+        }
+
+        // add a component to a given entity (id)
+        public T AddComponent<T>(int id, T component) where T : IComponent
+        {
+            if (!mEntities.Contains(id))
+            {
+                throw new ArgumentNullException("AddComponent");
+            }
+
+            // assign entity to new component
+            component.entityId = id;
+            // store component
+            _StashComponent(component);
+
+            return component;
+        }
+        
+
+        // add new, default component to given entity (id)
+        public T AddComponent<T>(int id) where T : IComponent, new()
+        {
+            // capture error if entity does not exist
+            if (!mEntities.Contains(id))
+            {
+                throw new ArgumentNullException("AddComponent");
+            }
+
+            // create new component
+            var newComponent = new T();
+            // assign to entity
+            newComponent.entityId = id;
+
+            _StashComponent(newComponent);
+
+            // GOOOOD
+            // add to components by type dictionary
+            //var componentType = newComponent.GetType();
+            //HashSet<IComponent> typeComponents;
+
+            //if (!dComponentsByType.TryGetValue(componentType, out typeComponents))
+            //{
+            //    typeComponents = new HashSet<IComponent>();
+            //    dComponentsByType.Add(componentType, typeComponents);
+            //}
+
+            //dComponentsByType[componentType].Add(newComponent);
+
+            //// add to components by entity dictionary
+            //HashSet<IComponent> entityComponents;
+            
+            //if (!dComponentsByEntity.TryGetValue(id, out entityComponents))
+            //{
+            //    entityComponents = new HashSet<IComponent>();
+            //    dComponentsByEntity.Add(id, entityComponents);
+            //}
+
+            //dComponentsByEntity[id].Add(newComponent);
             
 
 
+
+
+
+
+            // BADDDDDD
             //foreach (var list in mComponentArrays)
             //{
             //    if (list.GetType() == typeof(T))
@@ -360,6 +501,9 @@ namespace ECS
             // return new component
             return newComponent;
         }
+
+
+
         //public T AddComponent<T>(int id) where T : new()
         //{
         //    var newComponent = new T();
