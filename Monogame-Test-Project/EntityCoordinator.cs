@@ -59,7 +59,7 @@ namespace ECS
     //    {
     //        contents = new List<T>();
     //    }
-        
+
     //    public void RemoveComponent(T component)
     //    {
     //        contents.Remove(component);
@@ -161,7 +161,45 @@ namespace ECS
     //    //}
     //}
 
-    
+
+
+
+    // IDEAS FOR MOVING FORWARD FROM HERE 4/7/2024
+
+    // next step: (implementing a way that systems can interact with the context, querying the context for types of objects)
+    // given a system that wants all the entity components with 3 different components, do this:
+    // query the context for the list of components that should be the smallest of the 3,
+    // go through each component, query the context to check if the entity associated with the first component
+    //      contains the next 2 types of components.
+    // (idea: just put this information into an array for the future maybe so faster next time (would make removing an entity very costly))
+    // store this information in an array (or just do atomic operations on each one as you get it)
+    // 
+    // this is the best way that I can think of doing this without trying to implement some type of archetype system
+    // It is not the absolute fastest way to do it, however it's the best I can do right now and I want to move forward.
+    // this will allow me to start working on other parts of the game.
+
+
+
+    //
+    //              idea: when it comes time to render, the rendering system gets a list of all of the entities which have
+    //              the transform components (or texture or something. whatever qualifies them to be rendered), and 
+    //              draws them all to the dislpay on it's own as though nothing else in the world matters. (system 
+    //              isolation will bring about a new era of prosperity). 
+    //
+    //              idea: maybe write a function that finds all of the entities which contain all of the required types
+    //              (and maybe cache them for later ...)
+    //              and pack them into an array which can be used by a system. Each index of the array will
+    //              represent one entities components. This way, the system can quickly query the context
+    //              for all of the information that it needs, operate on that data as if nothing else in the world
+    //              matters.
+    // layout             
+    //          entity1 : [Transform, RigidBody, Texture,
+    //          entity2 :  Transform, RigidBody, Texture,
+    //          entity3 :  Transform, RigidBody, Texture,
+    //          entity4 :  Transform, RigidBody, Texture,
+    //          entity5 :  Transform, RigidBody, Texture,
+    //          entity6 :  Transform, RigidBody, Texture],
+
 
     // currently trying to figure out why I cant pass in component.GetType() to the componentArray constructor
     public class Context
@@ -192,6 +230,8 @@ namespace ECS
             dComponentsByType = new Dictionary<Type, HashSet<IComponent>>();
         }
 
+
+        // DEBUG
         public void PrintEntityComponents(int id)
         {
             var components = dComponentsByEntity[id];
@@ -202,13 +242,7 @@ namespace ECS
             }
         }
 
-        //public void PrintComponentTypes()
-        //{
-        //    for (int i = 0; i < mComponentArrays.Count; i++)
-        //    {
-        //        Debug.WriteLine(mComponentArrays[i].GetType() + "\n");
-        //    }
-        //}
+        
         public IEnumerable<IComponent> GetComponentsOfType<T>() where T : IComponent
         {
             HashSet<IComponent> components = null;
