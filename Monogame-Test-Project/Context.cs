@@ -204,14 +204,10 @@ namespace ECS
     public class Context
     {
         public HashSet<int> mEntities;
-        //public List<List<IComponent>> mComponentArrays;
-
         // dictionaries relating components in differnt ways
         private Dictionary<int, HashSet<IComponent>> dComponentsByEntity;
         private Dictionary<Type, HashSet<IComponent>> dComponentsByType;
         
-        //private List<int> mEntities;
-        //private List<ComponentArray<IComponent>> mComponentArrays;
         public Queue<int> availableIds;
         private int maxEntities;
         
@@ -226,7 +222,6 @@ namespace ECS
             dComponentsByEntity = new Dictionary<int, HashSet<IComponent>>();
             dComponentsByType = new Dictionary<Type, HashSet<IComponent>>();
         }
-
         
         // DEBUG
         public void PrintAllEntities()
@@ -237,6 +232,7 @@ namespace ECS
             }
         }
 
+        // DEBUG
         public void PrintEntityComponents(int id)
         {
             var components = dComponentsByEntity[id];
@@ -246,7 +242,6 @@ namespace ECS
                 Debug.WriteLine(component.GetType().ToString());
             }
         }
-        // END DEBUG
 
         // get all components belonging to entity id
         public IEnumerable<IComponent> GetComponentsOfEntity(int id)
@@ -298,7 +293,7 @@ namespace ECS
         {
             if (mEntities.Remove(id)) // check if entity exists in context
             {
-                RemoveComponentsByEntity(id); // if so remove all components associated with it
+                _RemoveComponentsByEntity(id); // if so remove all components associated with it
             }
             availableIds.Enqueue(id);
         }
@@ -312,20 +307,6 @@ namespace ECS
             dComponentsByEntity[component.entityId].Remove(component);
             dComponentsByType[component.GetType()].Remove(component);
         }
-
-        // removes all components associated with this entity id
-        private void RemoveComponentsByEntity(int id)
-        {
-            // remove all components from the type list assocated with this entity
-            foreach (var comp in dComponentsByEntity[id])
-            {
-                dComponentsByType[comp.GetType()].Remove(comp);
-            }
-            // remove all components from this entities entry
-            dComponentsByEntity.Remove(id);
-        }
-
-        
 
         // in the future this will not be used much at all becuase it is costly and inefficient
         // instead the systems alone will interact with the components. (as far as I can see from here)
@@ -342,84 +323,6 @@ namespace ECS
             return null;
         }
 
-        //public List<IComponent> GetComponents(int id)
-        //{
-        //    if (!mEntities.Contains(id))
-        //    {
-        //        throw new ArgumentNullException("GetComponent");
-        //    }
-
-        //    List<IComponent> components = new List<IComponent>();
-        //    // fetch all of the components that belong to 'id'
-        //    foreach (var list in mComponentArrays)
-        //    {
-        //        foreach (var item in list)
-        //        {
-
-        //            components.Add(item);
-        //        }
-        //    }
-        //}
-
-
-        private bool _ContainsComponent(IComponent component)
-        {
-            // maybe add asserts here
-            if (component == null)
-            {
-                return false;
-            }
-            // not sure if the program will seg fault if I check the entityId when
-            // component is null so I am using two check statements
-            else if (component.entityId < 0) 
-            {
-                return false;
-            }
-            // the context should never hold a component in just one of the dictionaries so we are assuming
-            // perhaps dangerously so, that the component will be stored in both dictionaries
-            if (dComponentsByEntity.ContainsKey(component.entityId) && dComponentsByType.ContainsKey(component.GetType()))
-            {
-                return (dComponentsByEntity[component.entityId].Contains(component) &&
-                    dComponentsByType[component.GetType()].Contains(component));
-            }
-            return false;
-            
-        }
-        
-        private void _StashComponent(IComponent newComponent)
-        {
-            Debug.Assert(newComponent != null);
-            Debug.Assert(newComponent.entityId >= 0);
-            // check if component already exists in context
-            if (_ContainsComponent(newComponent))
-            {
-                return;
-            }
-            // add to components by type dictionary
-            var componentType = newComponent.GetType();
-            HashSet<IComponent> typeComponents;
-
-            if (!dComponentsByType.TryGetValue(componentType, out typeComponents))
-            {
-                typeComponents = new HashSet<IComponent>();
-                dComponentsByType.Add(componentType, typeComponents);
-            }
-
-            dComponentsByType[componentType].Add(newComponent);
-
-            // add to components by entity dictionary
-            HashSet<IComponent> entityComponents;
-
-            if (!dComponentsByEntity.TryGetValue(newComponent.entityId, out entityComponents))
-            {
-                entityComponents = new HashSet<IComponent>();
-                dComponentsByEntity.Add(newComponent.entityId, entityComponents);
-            }
-
-            dComponentsByEntity[newComponent.entityId].Add(newComponent);
-        }
-
-        // add a component to a given entity (id)
         public T AddComponent<T>(int id, T component) where T : IComponent
         {
             if (!mEntities.Contains(id))
@@ -434,7 +337,7 @@ namespace ECS
 
             return component;
         }
-        
+
 
         // add new, default component to given entity (id)
         public T AddComponent<T>(int id) where T : IComponent, new()
@@ -467,7 +370,7 @@ namespace ECS
 
             //// add to components by entity dictionary
             //HashSet<IComponent> entityComponents;
-            
+
             //if (!dComponentsByEntity.TryGetValue(id, out entityComponents))
             //{
             //    entityComponents = new HashSet<IComponent>();
@@ -475,152 +378,88 @@ namespace ECS
             //}
 
             //dComponentsByEntity[id].Add(newComponent);
-            
 
 
-
-
-
-
-            // BADDDDDD
-            //foreach (var list in mComponentArrays)
-            //{
-            //    if (list.GetType() == typeof(T))
-            //    {
-            //        list.Add(newComponent);
-            //        return newComponent;
-            //    }
-            //}
-            //// if no list of that type yet
-            //mComponentArrays.Add(new List<IComponent> { newComponent });
-            
-            //List<T> genericList = new List<T>() { newComponent };
-            //List<T> newList = genericList as List<T>;
-            //mComponentArrays.Add(newList);
-
-            // return new component
             return newComponent;
         }
 
 
-
-        //public T AddComponent<T>(int id) where T : new()
+        //public void AddManager<ID, T>(string managerName, IResourceManager<ID, T> manager)
         //{
-        //    var newComponent = new T();
-        //    int entity;
-        //    mEntities.TryGetValue(id, out entity);
 
+        //}
+
+
+        private bool _ContainsComponent(IComponent component)
+        {
+            // maybe add asserts here
+            if (component == null)
+            {
+                return false;
+            }
+            // not sure if the program will seg fault if I check the entityId when
+            // component is null so I am using two check statements
+            else if (component.entityId < 0) 
+            {
+                return false;
+            }
+            // the context should never hold a component in just one of the dictionaries so we are assuming
+            // perhaps dangerously so, that the component will be stored in both dictionaries
+            if (dComponentsByEntity.ContainsKey(component.entityId) && dComponentsByType.ContainsKey(component.GetType()))
+            {
+                return (dComponentsByEntity[component.entityId].Contains(component) &&
+                    dComponentsByType[component.GetType()].Contains(component));
+            }
+            return false;
             
-        //}
+        }
 
-        //public void RemoveComponent<T>(int id) where T : IComponent
-        //{
+        // removes all components associated with this entity id
+        private void _RemoveComponentsByEntity(int id)
+        {
+            // remove all components from the type list assocated with this entity
+            foreach (var comp in dComponentsByEntity[id])
+            {
+                dComponentsByType[comp.GetType()].Remove(comp);
+            }
+            // remove all components from this entities entry
+            dComponentsByEntity.Remove(id);
+        }
 
-        //}
+        // stash component in the two dictionaries
+        private void _StashComponent(IComponent newComponent)
+        {
+            Debug.Assert(newComponent != null);
+            Debug.Assert(newComponent.entityId >= 0);
+            // check if component already exists in context
+            if (_ContainsComponent(newComponent))
+            {
+                return;
+            }
+            // add to components by type dictionary
+            var componentType = newComponent.GetType();
+            HashSet<IComponent> typeComponents;
 
+            if (!dComponentsByType.TryGetValue(componentType, out typeComponents))
+            {
+                typeComponents = new HashSet<IComponent>();
+                dComponentsByType.Add(componentType, typeComponents);
+            }
 
-        //public void GetComponents(int id)
-        //{
-            
-        //}
-        
+            dComponentsByType[componentType].Add(newComponent);
 
-        
+            // add to components by entity dictionary
+            HashSet<IComponent> entityComponents;
 
+            if (!dComponentsByEntity.TryGetValue(newComponent.entityId, out entityComponents))
+            {
+                entityComponents = new HashSet<IComponent>();
+                dComponentsByEntity.Add(newComponent.entityId, entityComponents);
+            }
 
-        
-        
-
+            dComponentsByEntity[newComponent.entityId].Add(newComponent);
+        }
     }
-
-    //public class EntityCoordinator
-    //{
-    //    // private List<uint> mEntities = new List<uint>();
-    //    private List<Entity> mEntities;
-    //    private List<ComponentArray<IComponent>> mComponentArrays;
-    //    // quere containing the available id's for the entities
-
-    //    public EntityCoordinator() 
-    //    {
-    //        mComponentArrays = new List<ComponentArray<IComponent>>();
-    //        mEntities = new List<Entity>();
-    //    }
-
-    //    public Entity CreateEntity<A, B, C, D, E, F, G>()
-    //    {
-
-    //    }
-        
-    //    public void AddEntity(Entity entity) 
-    //    {
-    //        foreach (var component in entity.components)
-    //        {
-    //            if (ContainsType<component.GetType()>())
-    //            {
-                    
-    //                var arr = new ComponentArray<
-    //            }
-    //        }
-            
-            
-    //    }
-
-    //    public void RemoveEntity(Entity entity) 
-    //    {
-    //        mEntities.Remove(entity); 
-    //    }
-
-    //    // check if a component array of type T exists yet
-    //    //private bool ContainsType<T>() where T : IComponent
-    //    //{
-    //    //    // Type type = component.GetType();
-    //    //    foreach (var array in mComponentArrays)
-    //    //    {
-    //    //        if (array.GetArrayType() == typeof(T))
-    //    //        {
-    //    //            return true;
-    //    //        }
-    //    //    }
-    //    //    return false;
-    //    //}
-
-
-    //    private bool ContainsType<T>()
-    //    {
-    //        foreach (var array in mComponentArrays)
-    //        {
-    //            if (array.GetArrayType() == typeof(T))
-    //            {
-    //                return true;
-    //            }
-    //        }
-    //        return false;
-    //    }
-    //    //private bool ContainsType(IComponent component)
-    //    //{
-    //    //    // Type type = component.GetType();
-    //    //    foreach (var array in mComponentArrays)
-    //    //    {
-    //    //        if (array.GetArrayType() == component.GetType())
-    //    //        {
-    //    //            return true;
-    //    //        }
-    //    //    }
-    //    //    return false;
-    //    //}
-
-
-
-
-
-
-
-
-
-
-
-
-    //}
 
 
 
