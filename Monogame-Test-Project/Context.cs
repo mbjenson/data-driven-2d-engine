@@ -3,9 +3,6 @@ using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Runtime.CompilerServices;
-using System.ComponentModel;
 using System.Linq;
 
 namespace ECS
@@ -243,34 +240,17 @@ namespace ECS
             }
         }
 
-        // get all components belonging to entity id
-        public IEnumerable<IComponent> GetComponentsOfEntity(int id)
-        {
-            HashSet<IComponent> components = null;
 
-            if (dComponentsByEntity.TryGetValue(id, out components))
-                return components;
 
-            return null;
-        }
-
-        // get all components of type T
-        public IEnumerable<IComponent> GetComponentsOfType<T>() where T : IComponent
-        {
-            HashSet<IComponent> components = null;
-
-            if (dComponentsByType.TryGetValue(typeof(T), out components))
-                return components;
-
-            return null;
-        }
-
-        // create a new entity 
+        /// <summary>
+        /// Create a new entity in context
+        /// </summary>
+        /// <returns>id of created entity if there is space in context or -1 if there is not space</returns>
         public int CreateEntity()
         {
             if (availableIds.Count <= 0)
             {
-                throw new ArgumentNullException("CreateEntity");
+                return -1;
             }
 
             int id = availableIds.Dequeue();
@@ -282,56 +262,40 @@ namespace ECS
             return id;
         }
 
-        // The removal of components and entities are costly operations which require a kind of batching system
-        // in their current state. 
-        // This means that I will implement a batch which contains a list of the entities that are to be removed.
-        // Then, every so often, the batch will be processed by the context and all the entities and their corresponding 
-        // components will be removed from the context fully.
-        // In the mean time, the entities that are going to be removed should be marked as "dead" so they are not
-        // processed.
-        public void RemoveEntity(int id)
+
+
+        /// <summary>
+        /// Removes entity from the context
+        /// </summary>
+        /// <param name="entityId">Id of entity to be removed</param>
+        public void RemoveEntity(int entityId)
         {
-            if (mEntities.Remove(id)) // check if entity exists in context
+            if (mEntities.Remove(entityId)) // check if entity exists in context
             {
-                _RemoveComponentsByEntity(id); // if so remove all components associated with it
+                _RemoveComponentsByEntity(entityId); // if so remove all components associated with it
             }
-            availableIds.Enqueue(id);
+            availableIds.Enqueue(entityId);
         }
 
-        public void RemoveComponent(IComponent component)
-        {
-            if (component == null)
-            {
-                return;
-            }
-            dComponentsByEntity[component.entityId].Remove(component);
-            dComponentsByType[component.GetType()].Remove(component);
-        }
 
-        // in the future this will not be used much at all becuase it is costly and inefficient
-        // instead the systems alone will interact with the components. (as far as I can see from here)
-        public IComponent GetComponent<T>(int id) where T : IComponent
-        {
-            var eComponents = dComponentsByEntity[id].ToList();
-            foreach (var component in eComponents)
-            {
-                if (typeof(T) == component.GetType())
-                {
-                    return component;
-                }
-            }
-            return null;
-        }
 
-        public T AddComponent<T>(int id, T component) where T : IComponent
+        /// <summary>
+        /// Add an existing component to an entity in the context
+        /// </summary>
+        /// <typeparam name="T">Type of component to be added</typeparam>
+        /// <param name="entityId">id of entity to add component to</param>
+        /// <param name="component">Actual object to add</param>
+        /// <returns>the component</returns>
+        /// <exception cref="ArgumentNullException">if entity not present in context</exception>
+        public T AddComponent<T>(int entityId, T component) where T : IComponent
         {
-            if (!mEntities.Contains(id))
+            if (!mEntities.Contains(entityId))
             {
                 throw new ArgumentNullException("AddComponent");
             }
 
             // assign entity to new component
-            component.entityId = id;
+            component.entityId = entityId;
             // store component
             _StashComponent(component);
 
@@ -339,11 +303,17 @@ namespace ECS
         }
 
 
-        // add new, default component to given entity (id)
-        public T AddComponent<T>(int id) where T : IComponent, new()
+        /// <summary>
+        /// Add component with default constructor to entity
+        /// </summary>
+        /// <typeparam name="T">Type of comopnent to add</typeparam>
+        /// <param name="entityId">entity to add component to</param>
+        /// <returns>component if added successfully</returns>
+        /// <exception cref="ArgumentNullException">if entity not present in context</exception>
+        public T AddComponent<T>(int entityId) where T : IComponent, new()
         {
             // capture error if entity does not exist
-            if (!mEntities.Contains(id))
+            if (!mEntities.Contains(entityId))
             {
                 throw new ArgumentNullException("AddComponent");
             }
@@ -351,7 +321,7 @@ namespace ECS
             // create new component
             var newComponent = new T();
             // assign to entity
-            newComponent.entityId = id;
+            newComponent.entityId = entityId;
 
             _StashComponent(newComponent);
 
@@ -384,12 +354,107 @@ namespace ECS
         }
 
 
-        //public void AddManager<ID, T>(string managerName, IResourceManager<ID, T> manager)
-        //{
 
-        //}
+        // The removal of components and entities are costly operations which require a kind of batching system
+        // in their current state. 
+        // This means that I will implement a batch which contains a list of the entities that are to be removed.
+        // Then, every so often, the batch will be processed by the context and all the entities and their corresponding 
+        // components will be removed from the context fully.
+        // In the mean time, the entities that are going to be removed should be marked as "dead" so they are not
+        // processed.
+
+        /// <summary>
+        /// Removes component of type T from the 
+        /// </summary>
+        /// <typeparam name="T">IComponent type to be removed</typeparam>
+        /// <param name="entityId">Entity to remove component from</param>
+        public void RemoveComponent<T>(int entityId) where T : IComponent
+        {
+            foreach (var component in dComponentsByEntity[entityId])
+            {
+                if (component.GetType() == typeof(T))
+                {
+                    dComponentsByEntity[entityId].Remove(component);
+                    dComponentsByType[component.GetType()].Remove(component); // does this work?
+                }
+            }
+        }
 
 
+
+        // NEEDS TESTING
+        /// <summary>
+        /// Remove component from context using object reference
+        /// </summary>
+        /// <param name="component">component to be removed</param>
+        public void RemoveComponent(IComponent component)
+        {
+            if (component == null)
+            {
+                return;
+            }
+            dComponentsByEntity[component.entityId].Remove(component);
+            dComponentsByType[component.GetType()].Remove(component);
+        }
+
+
+
+        // SLOW DON"T USE IN FUTURE
+        /// <summary>
+        /// Attempts to retreive component of type T if present
+        /// </summary>
+        /// <typeparam name="T">component type to get</typeparam>
+        /// <param name="entityId">id of entity to get component from</param>
+        /// <returns>Component if found, null if not found</returns>
+        public IComponent GetComponent<T>(int entityId) where T : IComponent
+        {
+            var eComponents = dComponentsByEntity[entityId].ToList();
+            foreach (var component in eComponents)
+            {
+                if (typeof(T) == component.GetType())
+                {
+                    return component;
+                }
+            }
+            return null;
+        }
+
+
+
+        /// <summary>
+        /// gets all components of entity
+        /// </summary>
+        /// <param name="id">entity id</param>
+        /// <returns>IEnumerable if entity is present in context, null if not</returns>
+        public IEnumerable<IComponent> GetComponentsOfEntity(int id)
+        {
+            HashSet<IComponent> components = null;
+
+            if (dComponentsByEntity.TryGetValue(id, out components))
+                return components;
+
+            return null;
+        }
+
+
+
+        /// <summary>
+        /// gets an IEnumerable object contains all components of type T
+        /// </summary>
+        /// <typeparam name="T">component type</typeparam>
+        /// <returns>IEnumerable object containing all components of type T</returns>
+        public IEnumerable<IComponent> GetComponentsOfType<T>() where T : IComponent
+        {
+            HashSet<IComponent> components = null;
+
+            if (dComponentsByType.TryGetValue(typeof(T), out components))
+                return components;
+
+            return null;
+        }
+
+        
+        // checks if context contains component
         private bool _ContainsComponent(IComponent component)
         {
             // maybe add asserts here
@@ -414,17 +479,21 @@ namespace ECS
             
         }
 
+
+
+        // could cause issues
         // removes all components associated with this entity id
         private void _RemoveComponentsByEntity(int id)
         {
             // remove all components from the type list assocated with this entity
             foreach (var comp in dComponentsByEntity[id])
-            {
+            { // hmm may not work i dont know though
                 dComponentsByType[comp.GetType()].Remove(comp);
             }
             // remove all components from this entities entry
             dComponentsByEntity.Remove(id);
         }
+
 
         // stash component in the two dictionaries
         private void _StashComponent(IComponent newComponent)

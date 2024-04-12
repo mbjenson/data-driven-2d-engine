@@ -24,22 +24,6 @@ using System.ComponentModel;
 namespace ECS
 {
     /*
-    class entity:
-        uint id
-        List<ref IComponent> components = new List<ref IComponent>
-     */
-
-    //public class Entity
-    //{
-    //    public uint id;
-    //    //public List<IComponent> components;
-    //    public Entity(uint id) 
-    //    {
-    //        this.id = id;
-    //    }
-    //}
-
-    /*
     class IComponent:
         public abstract void update
     */
@@ -53,14 +37,6 @@ namespace ECS
     }
 
     
-
-    /*
-    class CTransform:
-        public Vector2 Position;
-        public Vector2 Scale;
-        public float Rotation;
-        public float LayerDepth
-    */
     public class CTransform : IComponent
     {
         public Vector2 position;
@@ -93,7 +69,6 @@ namespace ECS
     public class CTexture2D : IComponent
     {
         public int textureId;
-        
         public CTexture2D() { }
     }
     

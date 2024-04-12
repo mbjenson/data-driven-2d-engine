@@ -12,6 +12,7 @@ using System.IO.MemoryMappedFiles;
 using ECS;
 using System.Reflection.Metadata.Ecma335;
 using System.Linq;
+using Microsoft.VisualBasic;
 
 /*
  * 
@@ -230,38 +231,83 @@ namespace Monogame_Test_Project
 
             context = new Context(25);
             int pEntity = context.CreateEntity();
-            context.AddComponent<CTransform>(pEntity, new CTransform(new Vector2(2f, 2f), new Vector2(1f, 1f), 90f, 0f));
-            context.AddComponent<CRigidBody>(pEntity);
-            CTexture2D tex = context.AddComponent<CTexture2D>(pEntity);
-            CTransform trans = (CTransform)context.GetComponent<CTransform>(pEntity);
-            Debug.WriteLine(
-                trans.position.ToString() + trans.scale.ToString() + trans.rotation.ToString() + trans.layerDepth.ToString());
+            context.AddComponent<CTransform>(pEntity);
+            context.AddComponent<CRigidBody>(pEntity, new CRigidBody());
 
-            //tex.textureId = 37; // after getting local variable to thing, changing its value still holds for the actual thing
+            int[] entities = new int[25];
 
-            List<int> entities = new List<int>(24);
-            for (int i = 0; i < entities.Capacity; i++)
+            for (int i = 0; i < 24; i++)
             {
-                entities.Add(context.CreateEntity());
+                entities[i] = context.CreateEntity();
                 context.AddComponent<CTransform>(entities[i]);
+                context.AddComponent<CTexture2D>(entities[i]);
             }
+            context.PrintEntityComponents(pEntity);
             context.PrintAllEntities();
 
-            context.RemoveEntity(entities[0]);
-            context.RemoveEntity(entities[5]);
-            context.RemoveEntity(entities[6]);
+            
+            var transforms = context.GetComponentsOfType<CTransform>().ToList();
+            var entityComps = context.GetComponentsOfEntity(pEntity);
+            Debug.WriteLine("comopnents of type transform:\n");
+            foreach (var transform in transforms)
+            {
+                Debug.WriteLine(transform);
+            }
+
+            Debug.WriteLine("components of pEntity:\n");
+            foreach (var comp in entityComps)
+            {
+                Debug.WriteLine(comp);
+            }
 
             
 
-            var getComp = context.GetComponent<CTransform>(entities[19]);
-            if (getComp != null)
-            {
-                context.RemoveComponent(getComp);
-            }
+            Debug.WriteLine(transforms);
+            Debug.WriteLine(entityComps);
 
+            //context.RemoveComponent<CTransform>(pEntity);
+            context.RemoveComponent(context.GetComponent<CTransform>(pEntity));
+            
 
-
+            context.PrintEntityComponents(pEntity);
             context.PrintAllEntities();
+
+
+
+
+
+            //context.AddComponent<CTransform>(pEntity, new CTransform(new Vector2(2f, 2f), new Vector2(1f, 1f), 90f, 0f));
+            //context.AddComponent<CRigidBody>(pEntity);
+            //CTexture2D tex = context.AddComponent<CTexture2D>(pEntity);
+            //CTransform trans = (CTransform)context.GetComponent<CTransform>(pEntity);
+            //Debug.WriteLine(
+            //    trans.position.ToString() + trans.scale.ToString() + trans.rotation.ToString() + trans.layerDepth.ToString());
+
+            ////tex.textureId = 37; // after getting local variable to thing, changing its value still holds for the actual thing
+
+            //List<int> entities = new List<int>(24);
+            //for (int i = 0; i < entities.Capacity; i++)
+            //{
+            //    entities.Add(context.CreateEntity());
+            //    context.AddComponent<CTransform>(entities[i]);
+            //}
+            //context.PrintAllEntities();
+
+            //context.RemoveEntity(entities[0]);
+            //context.RemoveEntity(entities[5]);
+            //context.RemoveEntity(entities[6]);
+
+
+
+            //var getComp = context.GetComponent<CTransform>(entities[19]);
+            //if (getComp != null)
+            //{
+            //    context.RemoveComponent(getComp);
+            //}
+
+
+
+            //context.PrintAllEntities();
 
 
 
