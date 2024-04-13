@@ -89,7 +89,7 @@ TODO
     current: test the transform system (test system)
     
     - game context
-        - implement texture container to store textures so entities can simply store a texture id and not an actual texture
+        - CURRENT: (on matthew-dev) implement texture container to store textures so entities can simply store a texture id and not an actual texture
 
 [] implement lights
 
