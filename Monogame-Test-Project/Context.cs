@@ -200,13 +200,13 @@ namespace ECS
 
     public class Context
     {
-        public HashSet<int> mEntities;
+        protected HashSet<int> mEntities;
         // dictionaries relating components in differnt ways
-        private Dictionary<int, HashSet<IComponent>> dComponentsByEntity;
-        private Dictionary<Type, HashSet<IComponent>> dComponentsByType;
+        protected Dictionary<int, HashSet<IComponent>> dComponentsByEntity;
+        protected Dictionary<Type, HashSet<IComponent>> dComponentsByType;
         
-        public Queue<int> availableIds;
-        private int maxEntities;
+        protected Queue<int> availableIds;
+        protected int maxEntities;
         
         public Context(int maxEntities)
         {
@@ -233,7 +233,8 @@ namespace ECS
         public void PrintEntityComponents(int id)
         {
             var components = dComponentsByEntity[id];
-            Debug.WriteLine("Entity id: " + id.ToString() + ", Component Count: " + components.Count + "\nComponent Type(s):");
+            Debug.WriteLine("Entity id: " + id.ToString() + ", Component Count: " + 
+                components.Count + "\nComponent Type(s):");
             foreach (var component in components)
             {
                 Debug.WriteLine(component.GetType().ToString());

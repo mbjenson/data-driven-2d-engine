@@ -85,6 +85,12 @@ Entity Component System:
 TODO
 =======================================
 
+[] Entity Component System
+    current: test the transform system (test system)
+    
+    - game context
+        - implement texture container to store textures so entities can simply store a texture id and not an actual texture
+
 [] implement lights
 
     - implement a directional light (like the sun)
@@ -116,6 +122,16 @@ TODO
 
 */
 
+
+/*
+Texture Manager
+
+first load in textures to texture manager (which will live in game context I believe)
+then give access to the other parts of the context so they can reference the textures
+
+
+
+*/
 
 
 
@@ -158,10 +174,9 @@ namespace Monogame_Test_Project
 
         //Entity playerEntity;
         Context context;
-        
 
-        
-        
+
+        SpriteSheetManager spriteMan;
         
 
         private GraphicsDeviceManager graphics;
@@ -228,96 +243,17 @@ namespace Monogame_Test_Project
 
             tilemapRenderer = new TilemapRenderer(tilemap, graphics);
 
-
             context = new Context(25);
             int pEntity = context.CreateEntity();
             context.AddComponent<CTransform>(pEntity);
             context.AddComponent<CRigidBody>(pEntity, new CRigidBody());
 
-            int[] entities = new int[25];
-
-            for (int i = 0; i < 24; i++)
-            {
-                entities[i] = context.CreateEntity();
-                context.AddComponent<CTransform>(entities[i]);
-                context.AddComponent<CTexture2D>(entities[i]);
-            }
-            context.PrintEntityComponents(pEntity);
-            context.PrintAllEntities();
-
-            
-            var transforms = context.GetComponentsOfType<CTransform>().ToList();
-            var entityComps = context.GetComponentsOfEntity(pEntity);
-            Debug.WriteLine("comopnents of type transform:\n");
-            foreach (var transform in transforms)
-            {
-                Debug.WriteLine(transform);
-            }
-
-            Debug.WriteLine("components of pEntity:\n");
-            foreach (var comp in entityComps)
-            {
-                Debug.WriteLine(comp);
-            }
-
+            spriteMan = new SpriteSheetManager();
             
 
-            Debug.WriteLine(transforms);
-            Debug.WriteLine(entityComps);
+            //dTextures = new Dictionary<string, Texture2D>();
+            //dTextures.Add("dirt", Content.Load<Texture2D>);
 
-            //context.RemoveComponent<CTransform>(pEntity);
-            context.RemoveComponent(context.GetComponent<CTransform>(pEntity));
-            
-
-            context.PrintEntityComponents(pEntity);
-            context.PrintAllEntities();
-
-
-
-
-
-            //context.AddComponent<CTransform>(pEntity, new CTransform(new Vector2(2f, 2f), new Vector2(1f, 1f), 90f, 0f));
-            //context.AddComponent<CRigidBody>(pEntity);
-            //CTexture2D tex = context.AddComponent<CTexture2D>(pEntity);
-            //CTransform trans = (CTransform)context.GetComponent<CTransform>(pEntity);
-            //Debug.WriteLine(
-            //    trans.position.ToString() + trans.scale.ToString() + trans.rotation.ToString() + trans.layerDepth.ToString());
-
-            ////tex.textureId = 37; // after getting local variable to thing, changing its value still holds for the actual thing
-
-            //List<int> entities = new List<int>(24);
-            //for (int i = 0; i < entities.Capacity; i++)
-            //{
-            //    entities.Add(context.CreateEntity());
-            //    context.AddComponent<CTransform>(entities[i]);
-            //}
-            //context.PrintAllEntities();
-
-            //context.RemoveEntity(entities[0]);
-            //context.RemoveEntity(entities[5]);
-            //context.RemoveEntity(entities[6]);
-
-
-
-            //var getComp = context.GetComponent<CTransform>(entities[19]);
-            //if (getComp != null)
-            //{
-            //    context.RemoveComponent(getComp);
-            //}
-
-
-
-            //context.PrintAllEntities();
-
-
-
-
-
-            //playerEntity = new Entity(0);
-            //playerEntity.AddComponent(new TransformComponent(Vector2.Zero, new Vector2(1f), 0f, 0f));
-            //playerEntity.AddComponent(new TextureComponent());
-            //playerEntity.GetComponent<TextureComponent>().texture = Content.Load<Texture2D>("dirt");
-            //playerEntity.AddComponent(new RectColliderComponent(new Vector2(16f, 16f)));
 
             base.Initialize();
         }
@@ -333,6 +269,9 @@ namespace Monogame_Test_Project
             circleTexture = Content.Load<Texture2D>("test-ball");
 
             tilemap.textureSheet = Content.Load<Texture2D>("tilesheet");
+
+            spriteMan.AddSpriteSheet("tilesheet", Content.Load<Texture2D>("tilesheet"));
+            spriteMan.AddSprite("tilesheet", "dirt", new Rectangle(0, 5 * 16, 16, 16));
         }
 
         protected override void Update(GameTime gameTime)
@@ -484,15 +423,26 @@ namespace Monogame_Test_Project
             spriteEffect.CurrentTechnique.Passes[0].Apply(); // effect for player texture
 
             spriteBatch.Draw(
-                 rectTexture,
-                 player.getPosition(),
-                 null,
-                 Color.White,
-                 0f, // theta
-                 new Vector2(8f, 8f),
-                 1f,
-                 SpriteEffects.None,
-                 0f);
+                spriteMan.dSpriteSheets["tilesheet"],
+                player.getPosition(),
+                spriteMan.dSpriteRects["tilesheet"]["dirt"],
+                Color.White,
+                0f,
+                new Vector2(8f, 8f),
+                1f,
+                SpriteEffects.None,
+                0f);
+
+            //spriteBatch.Draw(
+            //     rectTexture,
+            //     player.getPosition(),
+            //     null,
+            //     Color.White,
+            //     0f, // theta
+            //     new Vector2(8f, 8f),
+            //     1f,
+            //     SpriteEffects.None,
+            //     0f);
             
             spriteBatch.End();
 

@@ -12,7 +12,6 @@ using System.Collections.Generic;
  */
 namespace tilemap
 {
-
     public class TilemapRenderer
     {
         public Tilemap tilemap;
