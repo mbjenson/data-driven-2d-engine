@@ -140,6 +140,9 @@ then give access to the other parts of the context so they can reference the tex
 
 namespace Monogame_Test_Project
 {
+    
+
+
     public class Game1 : Game
     {
         Camera2D cam;
@@ -158,10 +161,6 @@ namespace Monogame_Test_Project
 
         float theta = 0f;
 
-        CollisionSolver solver;
-
-        Texture2D rectTexture;
-        Texture2D circleTexture;
 
         Tilemap tilemap;
         TilemapRenderer tilemapRenderer;
@@ -173,10 +172,13 @@ namespace Monogame_Test_Project
         RenderTarget2D renderCanvas;
 
         //Entity playerEntity;
-        Context context;
+        GameContext context;
 
+        int pEntity;
 
-        SpriteSheetManager spriteMan;
+        
+
+        RenderingSystem renderer;
         
 
         private GraphicsDeviceManager graphics;
@@ -219,9 +221,6 @@ namespace Monogame_Test_Project
                 new (40f, 100f, 16f, 16f),
                 new (200f, 50f, 16f, 16f)};
 
-            solver = new CollisionSolver();
-
-
             tilemap = new Tilemap(16, 16, 16, 16);
             tilemap.tileTypes = new List<int>{
                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -243,17 +242,18 @@ namespace Monogame_Test_Project
 
             tilemapRenderer = new TilemapRenderer(tilemap, graphics);
 
-            context = new Context(25);
-            int pEntity = context.CreateEntity();
-            context.AddComponent<CTransform>(pEntity);
-            context.AddComponent<CRigidBody>(pEntity, new CRigidBody());
+            context = new GameContext(25);
 
-            spriteMan = new SpriteSheetManager();
-            
+            pEntity = context.CreateEntity();
+            context.AddComponent<CTransform>(pEntity, new CTransform(new Vector2(0f, 0f), new Vector2(1f, 1f), 0f, 0f));
+            //context.AddComponent<CRigidBody>(pEntity, new CRigidBody());
+            context.AddComponent<CTexture2D>(pEntity, new CTexture2D("dirt", "tilesheet", new Vector2(8f, 8f)));
+
+
+            renderer = new RenderingSystem(context, graphics.GraphicsDevice);
 
             //dTextures = new Dictionary<string, Texture2D>();
             //dTextures.Add("dirt", Content.Load<Texture2D>);
-
 
             base.Initialize();
         }
@@ -265,13 +265,13 @@ namespace Monogame_Test_Project
 
             spriteEffect = Content.Load<Effect>("spriteShader");
 
-            rectTexture = Content.Load<Texture2D>("dirt");
-            circleTexture = Content.Load<Texture2D>("test-ball");
+            //rectTexture = Content.Load<Texture2D>("dirt");
+            //circleTexture = Content.Load<Texture2D>("test-ball");
 
             tilemap.textureSheet = Content.Load<Texture2D>("tilesheet");
 
-            spriteMan.AddSpriteSheet("tilesheet", Content.Load<Texture2D>("tilesheet"));
-            spriteMan.AddSprite("tilesheet", "dirt", new Rectangle(0, 5 * 16, 16, 16));
+            context.spriteMan.AddSpriteSheet("tilesheet", Content.Load<Texture2D>("tilesheet"));
+            context.spriteMan.AddSprite("tilesheet", "dirt", new Rectangle(0, 5 * 16, 16, 16));
         }
 
         protected override void Update(GameTime gameTime)
@@ -301,43 +301,69 @@ namespace Monogame_Test_Project
 
             theta = (float)Math.Atan2(yDif, xDif);
 
+            //var keyState = Keyboard.GetState();
+            //if (keyState.IsKeyDown(Keys.W))
+            //{
+            //    player.setPosition(player.getPosition() + 
+            //        new Vector2(0, -moveSpeed * dt));
+            //}
+            //if (keyState.IsKeyDown(Keys.S))
+            //{
+            //    player.setPosition(player.getPosition() + 
+            //        new Vector2(0, moveSpeed * dt));
+            //}
+            //if (keyState.IsKeyDown(Keys.A))
+            //{
+            //    player.setPosition(player.getPosition() + 
+            //        new Vector2(-moveSpeed * dt, 0));
+            //}
+            //if (keyState.IsKeyDown(Keys.D))
+            //{
+            //    player.setPosition(player.getPosition() + 
+            //        new Vector2(moveSpeed * dt, 0));
+            //}
+
+
+            Vector2 playerPos = ((CTransform)context.GetComponent<CTransform>(pEntity)).position;
+
             var keyState = Keyboard.GetState();
             if (keyState.IsKeyDown(Keys.W))
             {
-                player.setPosition(player.getPosition() + new Vector2(0, -moveSpeed * dt));
+                playerPos += new Vector2(0, -moveSpeed * dt);
             }
             if (keyState.IsKeyDown(Keys.S))
             {
-                player.setPosition(player.getPosition() + new Vector2(0, moveSpeed * dt));
+                playerPos += new Vector2(0, moveSpeed * dt);
             }
             if (keyState.IsKeyDown(Keys.A))
             {
-                player.setPosition(player.getPosition() + new Vector2(-moveSpeed * dt, 0));
+                playerPos += new Vector2(-moveSpeed * dt, 0);
             }
             if (keyState.IsKeyDown(Keys.D))
             {
-                player.setPosition(player.getPosition() + new Vector2(moveSpeed * dt, 0));
+                playerPos += new Vector2(moveSpeed * dt, 0);
             }
-            
+
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
             player.position = Vector2.Round(player.position); // IMPORTANT For pixel perfect camera to not bug out
 
             // check for collision with the rectangle colliders
-            foreach (var rect in rects)
-            {
-                if (solver.checkCollision(player, rect))
-                {
-                    solver.solveCollision(player, rect);
-                }
-            }
+            //foreach (var rect in rects)
+            //{
+            //    if (solver.checkCollision(player, rect))
+            //    {
+            //        solver.solveCollision(player, rect);
+            //    }
+            //}
 
-            foreach (var circle in circles)
-            {
-                if (solver.checkCollision(player, circle))
-                {
-                    solver.solveCollision(player, circle);
-                }
-            }
+            //foreach (var circle in circles)
+            //{
+            //    if (solver.checkCollision(player, circle))
+            //    {
+            //        solver.solveCollision(player, circle);
+            //    }
+            //}
+            context.Update();
 
             cam.Update(player.position, dt);
 
@@ -368,95 +394,16 @@ namespace Monogame_Test_Project
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // render tilemap to render texture
+            //tilemapRenderer.render(graphics.GraphicsDevice);
 
-            tilemapRenderer.render(graphics.GraphicsDevice);
+            spriteEffect.CurrentTechnique.Passes[0].Apply();
 
-            // TODO: Add your drawing code here
-            graphics.GraphicsDevice.SetRenderTarget(renderCanvas);
-            graphics.GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
-            graphics.GraphicsDevice.Clear(Color.CornflowerBlue); // clear canvas
-            // draw to render target
-            spriteBatch.Begin(
-                SpriteSortMode.Immediate, BlendState.AlphaBlend,
-                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
-
-            spriteBatch.Draw(
-                tilemapRenderer.mapCanvas, 
-                new Rectangle(0, 0, tilemapRenderer.mapCanvas.Width, tilemapRenderer.mapCanvas.Height),
-                tilemapRenderer.mapCanvas.Bounds,
-                Color.White);
-
-            //spriteBatch.Draw(
-            //    //playerEntity.GetComponent<TextureComponent>().texture,
-            //    //playerEntity.GetComponent<TransformComponent>().position,
-            //    Color.White);
-            
-            foreach (var rect in rects)
-            {
-                spriteBatch.Draw(
-                    rectTexture,
-                    new Rectangle((int)rect.position.X, (int)rect.position.Y, 16, 16),
-                    null,
-                    Color.White,
-                    0f,
-                    new Vector2(8f, 8f),
-                    SpriteEffects.None,
-                    0f);
-            }
-
-            foreach (var circle in circles)
-            {
-                spriteBatch.Draw(
-                    circleTexture,
-                    new Rectangle(
-                        (int)(circle.position.X - circle.radius), 
-                        (int)(circle.position.Y - circle.radius), 
-                        (int)circle.radius * 2, (int)circle.radius * 2), 
-                    null, 
-                    Color.White, 
-                    0f, 
-                    new Vector2(8, 8), 
-                    SpriteEffects.None, 0f);
-            }
-
-            spriteEffect.CurrentTechnique.Passes[0].Apply(); // effect for player texture
-
-            spriteBatch.Draw(
-                spriteMan.dSpriteSheets["tilesheet"],
-                player.getPosition(),
-                spriteMan.dSpriteRects["tilesheet"]["dirt"],
-                Color.White,
-                0f,
-                new Vector2(8f, 8f),
-                1f,
-                SpriteEffects.None,
-                0f);
-
-            //spriteBatch.Draw(
-            //     rectTexture,
-            //     player.getPosition(),
-            //     null,
-            //     Color.White,
-            //     0f, // theta
-            //     new Vector2(8f, 8f),
-            //     1f,
-            //     SpriteEffects.None,
-            //     0f);
-            
-            spriteBatch.End();
-
-            graphics.GraphicsDevice.SetRenderTarget(null);
-            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
-            //    SamplerState.PointClamp, DepthStencilState.Default,
-            //    RasterizerState.CullNone);
+            renderer.Render(gameTime, renderCanvas, GraphicsDevice, cam);
 
             spriteBatch.Begin(
-                SpriteSortMode.Immediate, 
+                SpriteSortMode.Immediate,
                 BlendState.AlphaBlend,
-                SamplerState.PointClamp, 
+                SamplerState.PointClamp,
                 DepthStencilState.Default,
                 RasterizerState.CullNone);
 
@@ -470,5 +417,89 @@ namespace Monogame_Test_Project
 
             base.Draw(gameTime);
         }
+
+
+        //protected override void Draw(GameTime gameTime)
+        //{
+        //    GraphicsDevice.Clear(Color.CornflowerBlue);
+
+        //    // render tilemap to world canvas
+
+        //    tilemapRenderer.render(graphics.GraphicsDevice);
+
+            
+        //    graphics.GraphicsDevice.SetRenderTarget(renderCanvas);
+        //    graphics.GraphicsDevice.DepthStencilState = new DepthStencilState() 
+        //        { DepthBufferEnable = true };
+        //    graphics.GraphicsDevice.Clear(Color.CornflowerBlue); // clear canvas
+        //    // draw to render target
+        //    spriteBatch.Begin(
+        //        SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        //        SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
+
+        //    spriteBatch.Draw(
+        //        tilemapRenderer.mapCanvas, 
+        //        new Rectangle(
+        //            0, 0, 
+        //            tilemapRenderer.mapCanvas.Width,
+        //            tilemapRenderer.mapCanvas.Height),
+        //        tilemapRenderer.mapCanvas.Bounds,
+        //        Color.White);
+
+        //    spriteEffect.CurrentTechnique.Passes[0].Apply(); // effect for player texture (nothing right now)
+
+        //    spriteBatch.Draw(
+        //        spriteMan.dSpriteSheets["tilesheet"],
+        //        player.getPosition(),
+        //        spriteMan.dSpriteRects["tilesheet"]["dirt"],
+        //        Color.White,
+        //        0f,
+        //        new Vector2(8f, 8f),
+        //        1f,
+        //        SpriteEffects.None,
+        //        0f);
+
+        //    //spriteBatch.Draw(
+        //    //     rectTexture,
+        //    //     player.getPosition(),
+        //    //     null,
+        //    //     Color.White,
+        //    //     0f, // theta
+        //    //     new Vector2(8f, 8f),
+        //    //     1f,
+        //    //     SpriteEffects.None,
+        //    //     0f);
+            
+        //    spriteBatch.End();
+            
+        //    graphics.GraphicsDevice.SetRenderTarget(null);
+        //    graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+
+        //    //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        //    //    SamplerState.PointClamp, DepthStencilState.Default,
+        //    //    RasterizerState.CullNone);
+
+
+
+
+        //    // Draw map canvas ====================
+
+        //    spriteBatch.Begin(
+        //        SpriteSortMode.Immediate, 
+        //        BlendState.AlphaBlend,
+        //        SamplerState.PointClamp, 
+        //        DepthStencilState.Default,
+        //        RasterizerState.CullNone);
+
+        //    // draw to actual window
+        //    spriteBatch.Draw(
+        //        renderCanvas,
+        //        new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+        //        Color.White);
+
+        //    spriteBatch.End();
+
+        //    base.Draw(gameTime);
+        //}
     }
 }

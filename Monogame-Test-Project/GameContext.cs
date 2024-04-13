@@ -1,8 +1,9 @@
 ﻿using ECS;
+using InputManagement;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 
-namespace GameContext
+namespace ECS
 {
     /*
     GameContext
@@ -13,14 +14,19 @@ namespace GameContext
     */
     public class GameContext : Context
     {
-        Dictionary<string, Dictionary<string, Texture2D>> textureManager;
+        public SpriteSheetManager spriteMan;
+        public InputHandler inputHandler;
 
         public GameContext(int maxEntities) : base(maxEntities)
         {
-            
+            spriteMan = new SpriteSheetManager();
+            inputHandler = new InputHandler();
         }
 
-        
+        public void Update()
+        {
+            inputHandler.GetInput();
+        }
 
     }
 }

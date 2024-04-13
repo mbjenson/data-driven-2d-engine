@@ -1,44 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography.X509Certificates;
 
 namespace ECS
 {
-
-    // Currently this is equivilent to a dictionary, might add more functionality in the future which would make
-    // it worth using but as for right now, it is not worth using.
-    //public class IResourceManager<ID, T>
-    //{
-    //    protected Dictionary<ID, T> items;
-
-    //    public IResourceManager()
-    //    {
-    //        this.items = new Dictionary<ID, T>();
-    //    }
-
-    //    public void Add(ID identifier, T item)
-    //    {
-    //        if (identifier != null && item != null && items.ContainsKey(identifier))
-    //        {
-    //            items.Add(identifier, item);
-    //        }
-    //    }
-
-    //    public T Get(ID identifier)
-    //    {
-    //        return items[identifier];
-    //    }
-
-    //    public void Remove(ID identifier)
-    //    {
-    //        items.Remove(identifier);
-    //    }
-    //}
-
 
     /*
     the general idea is to have a texture that has a bunch of rects paired with it that 
@@ -80,12 +45,13 @@ namespace ECS
             }
         }
 
+
         public void AddSpriteSheet(string spriteSheetName, Texture2D spriteSheet)
         {
             if (!dSpriteSheets.ContainsKey(spriteSheetName))
             {
                 dSpriteSheets.Add(spriteSheetName, spriteSheet);
-                dSpriteRects.Add(spriteSheetName, new Dictionary<string, Rectangle> ());
+                dSpriteRects.Add(spriteSheetName, new Dictionary<string, Rectangle>());
             }
         }
 
@@ -98,5 +64,51 @@ namespace ECS
                 dSpriteRects.Remove(spriteSheetName);
             }
         }
+
+
+        public Texture2D getSpriteSheet(string spriteSheetName)
+        {
+            return dSpriteSheets[spriteSheetName];
+        }
+
+
+        public Rectangle getSpriteRect(string spriteSheetName, string spriteName)
+        {
+            return dSpriteRects[spriteSheetName][spriteName];
+        }
+
+
     }
+
+
+
+    // Currently this is equivilent to a dictionary, might add more functionality in the future which would make
+    // it worth using but as for right now, it is not worth using.
+    //public class IResourceManager<ID, T>
+    //{
+    //    protected Dictionary<ID, T> items;
+
+    //    public IResourceManager()
+    //    {
+    //        this.items = new Dictionary<ID, T>();
+    //    }
+
+    //    public void Add(ID identifier, T item)
+    //    {
+    //        if (identifier != null && item != null && items.ContainsKey(identifier))
+    //        {
+    //            items.Add(identifier, item);
+    //        }
+    //    }
+
+    //    public T Get(ID identifier)
+    //    {
+    //        return items[identifier];
+    //    }
+
+    //    public void Remove(ID identifier)
+    //    {
+    //        items.Remove(identifier);
+    //    }
+    //}
 }

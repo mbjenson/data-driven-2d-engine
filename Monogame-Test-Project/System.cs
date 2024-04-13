@@ -2,18 +2,19 @@
 
 
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using viewStuff;
+
 
 namespace ECS
 {
 
-    public abstract class System
+    public abstract class UpdateSystem
     {
-        protected Context context;
+        protected GameContext context;
         public abstract void Update(GameTime gameTime);
     }
 
@@ -21,16 +22,17 @@ namespace ECS
     
 
 
-    public class TransformSystem : System
+    public class TransformSystem : UpdateSystem
     {
-        public TransformSystem(Context context) 
+        public TransformSystem(GameContext context) 
         {
             this.context = context;
         }
 
         public override void Update(GameTime gameTime)
         {
-            List<CTransform> transforms = context.GetComponentsOfType<CTransform>().Cast<CTransform>().ToList();
+            List<CTransform> transforms = 
+                context.GetComponentsOfType<CTransform>().Cast<CTransform>().ToList();
 
             foreach (var transform in transforms)
             {
@@ -43,6 +45,72 @@ namespace ECS
 
 
     
+
+    // not an UpdateSystem
+    public class RenderingSystem
+    {
+        GameContext context;
+
+        SpriteBatch spriteBatch;
+
+        public RenderingSystem(GameContext context, GraphicsDevice device)
+        {
+            this.context = context;
+            spriteBatch = new SpriteBatch(device);
+        }
+
+        // does all of the rendering. Right now only works with textures
+        public void Render(
+            GameTime gameTime, RenderTarget2D target, 
+            GraphicsDevice device, Camera2D cam)
+        {
+            List<CTexture2D> textures = 
+                context.GetComponentsOfType<CTexture2D>().Cast<CTexture2D>().ToList();
+
+            // prep device
+            device.SetRenderTarget(target);
+            device.DepthStencilState = 
+                new DepthStencilState() { DepthBufferEnable = true };
+            device.Clear(Color.CornflowerBlue);
+
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
+
+            foreach (var thisTexture in textures)
+            {
+                CTransform thisTransform = 
+                    (CTransform)context.GetComponent<CTransform>(thisTexture.entityId);
+
+                if (thisTransform == null)
+                {
+                    continue;
+                }
+                //spriteBatch.Draw(context.spriteMan.dSpriteSheets[thisTexture.spriteSheetId],
+                //    thisTransform.position,
+                //    Color.White);
+
+                spriteBatch.Draw(
+                    context.spriteMan.dSpriteSheets[thisTexture.spriteSheetId],
+                    thisTransform.position,
+                    context.spriteMan.dSpriteRects
+                        [thisTexture.spriteSheetId][thisTexture.spriteId],
+                    Color.White,
+                    thisTransform.rotation,
+                    thisTexture.textureOffset,
+                    thisTransform.scale,
+                    SpriteEffects.None,
+                    thisTransform.layerDepth
+                );
+
+
+            }
+
+            spriteBatch.End();
+
+            device.SetRenderTarget(null);
+            device.Clear(Color.CornflowerBlue);
+        }
+    }
     
 
 

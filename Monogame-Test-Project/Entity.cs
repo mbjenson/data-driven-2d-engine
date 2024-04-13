@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using Collisions;
 using System.ComponentModel;
+using Microsoft.VisualBasic;
+using System;
 
 /*
  * when creating an entity that has a some type of component that accesses a resource (texture, sound, etc),
@@ -68,12 +70,53 @@ namespace ECS
 
     public class CTexture2D : IComponent
     {
-        public int textureId;
+        public string spriteId = "";
+        public string spriteSheetId = "";
+        public Vector2 textureOffset = Vector2.Zero;
         public CTexture2D() { }
+        public CTexture2D(string spriteId, string spriteSheetId)
+        {
+            this.spriteId = spriteId;
+            this.spriteSheetId = spriteSheetId;
+        }
+
+        public CTexture2D(string spriteId, string spriteSheetId, Vector2 textureOffset) : this(spriteId, spriteSheetId)
+        {
+            this.spriteId = spriteId;
+            this.spriteSheetId = spriteSheetId;
+            this.textureOffset = textureOffset;
+        }
     }
+
+
+    public class CController : IComponent
+    {
+        
+    }
+
+    //public class CController : IComponent
+    //{
+    //    Action moveRight;
+    //    Action moveLeft;
+    //    Action moveUp;
+    //    Action moveDown;
+
+        
+    //    public CController() // get key input (primitive for now)
+    //    {
+            
+    //    }
+
+
+    //}
     
 
     
+    // animation component
+    public class CAnimation : IComponent
+    {
+        
+    }
 
 }   
 

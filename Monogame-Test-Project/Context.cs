@@ -438,9 +438,13 @@ namespace ECS
         }
 
 
+        // note* use 
+        // "context.GetComponentsOfType<CTexture2D>().Cast<CTexture2D>().ToList();"
+        // to get a list of components of specified type
+
 
         /// <summary>
-        /// gets an IEnumerable object contains all components of type T
+        /// gets a IEnumerable of object contains all components of type T
         /// </summary>
         /// <typeparam name="T">component type</typeparam>
         /// <returns>IEnumerable object containing all components of type T</returns>
