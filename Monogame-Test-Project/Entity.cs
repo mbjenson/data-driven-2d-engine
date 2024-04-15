@@ -5,6 +5,76 @@ using Collisions;
 using System.ComponentModel;
 using Microsoft.VisualBasic;
 using System;
+using System.Globalization;
+using Microsoft.Xna.Framework.Input;
+using System.Collections;
+
+
+
+
+
+
+namespace ECS
+{
+
+    enum ComponentTypes
+    {
+        CTransform,
+        Count,
+    }
+    
+    public class Entity
+    {
+        public int id;
+        public BitArray componentMask = new BitArray((int)ComponentTypes.Count, false);
+    }
+
+    public class IComponent { }
+
+    public class CTransform : IComponent
+    {
+        Vector2 position;
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
  * when creating an entity that has a some type of component that accesses a resource (texture, sound, etc),
@@ -25,98 +95,97 @@ using System;
 */
 namespace ECS
 {
-    /*
-    class IComponent:
-        public abstract void update
-    */
-    public class IComponent
-    {
-        public int entityId = -1;
+    ///*
+    //class IComponent:
+    //    public abstract void update
+    //*/
+    //public class IComponent
+    //{
+    //    public int entityId = -1;
 
-
-        //public IComponent(int entityId) { this.entityId = entityId; }
-        //public virtual void Update() { }
-    }
+    //    //public IComponent(int entityId) { this.entityId = entityId; }
+    //    //public virtual void Update() { }
+    //}
 
     
-    public class CTransform : IComponent
-    {
-        public Vector2 position;
-        public Vector2 scale;
-        public float rotation;
-        public float layerDepth;
+    //public class CTransform : IComponent
+    //{
+    //    public Vector2 position;
+    //    public Vector2 scale;
+    //    public float rotation;
+    //    public float layerDepth;
 
-        public CTransform() { }
-        public CTransform(Vector2 position, Vector2 scale, float rotation, float layerDepth)
-        {
-            this.position = position;
-            this.scale = scale;
-            this.rotation = rotation;
-            this.layerDepth = layerDepth;
-        }
+    //    public CTransform() { }
+    //    public CTransform(Vector2 position, Vector2 scale, float rotation, float layerDepth)
+    //    {
+    //        this.position = position;
+    //        this.scale = scale;
+    //        this.rotation = rotation;
+    //        this.layerDepth = layerDepth;
+    //    }
 
-        //public override void Update() { }
-    }
+    //    //public override void Update() { }
+    //}
 
-    public class CRigidBody : IComponent
-    {
-        public Vector2 velcocity;
-        public Vector2 acceleration;
+    //public class CRigidBody : IComponent
+    //{
+    //    public Vector2 velcocity;
+    //    public Vector2 acceleration;
 
-        public CRigidBody() { }
-        //public override void Update() { }
-    }
-
-
-    public class CTexture2D : IComponent
-    {
-        public string spriteId = "";
-        public string spriteSheetId = "";
-        public Vector2 textureOffset = Vector2.Zero;
-        public CTexture2D() { }
-        public CTexture2D(string spriteId, string spriteSheetId)
-        {
-            this.spriteId = spriteId;
-            this.spriteSheetId = spriteSheetId;
-        }
-
-        public CTexture2D(string spriteId, string spriteSheetId, Vector2 textureOffset) : this(spriteId, spriteSheetId)
-        {
-            this.spriteId = spriteId;
-            this.spriteSheetId = spriteSheetId;
-            this.textureOffset = textureOffset;
-        }
-    }
+    //    public CRigidBody() { }
+    //    //public override void Update() { }
+    //}
 
 
-    public class CController : IComponent
-    {
-        
-    }
+    //public class CTexture2D : IComponent
+    //{
+    //    public string spriteId = "";
+    //    public string spriteSheetId = "";
+    //    public Vector2 textureOffset = Vector2.Zero;
+    //    public CTexture2D() { }
+    //    public CTexture2D(string spriteId, string spriteSheetId)
+    //    {
+    //        this.spriteId = spriteId;
+    //        this.spriteSheetId = spriteSheetId;
+    //    }
+
+    //    public CTexture2D(string spriteId, string spriteSheetId, Vector2 textureOffset) : this(spriteId, spriteSheetId)
+    //    {
+    //        this.spriteId = spriteId;
+    //        this.spriteSheetId = spriteSheetId;
+    //        this.textureOffset = textureOffset;
+    //    }
+    //}
+
 
     //public class CController : IComponent
     //{
-    //    Action moveRight;
-    //    Action moveLeft;
-    //    Action moveUp;
-    //    Action moveDown;
-
-        
-    //    public CController() // get key input (primitive for now)
-    //    {
-            
-    //    }
-
-
+       
     //}
+
+    ////public class CController : IComponent
+    ////{
+    ////    Action moveRight;
+    ////    Action moveLeft;
+    ////    Action moveUp;
+    ////    Action moveDown;
+
+        
+    ////    public CController() // get key input (primitive for now)
+    ////    {
+            
+    ////    }
+
+
+    ////}
     
 
     
-    // animation component
-    public class CAnimation : IComponent
-    {
+    //// animation component
+    //public class CAnimation : IComponent
+    //{
         
-    }
+    //}
 
 }   
 

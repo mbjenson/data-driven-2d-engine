@@ -140,8 +140,6 @@ then give access to the other parts of the context so they can reference the tex
 
 namespace Monogame_Test_Project
 {
-    
-
 
     public class Game1 : Game
     {
@@ -175,8 +173,6 @@ namespace Monogame_Test_Project
         GameContext context;
 
         int pEntity;
-
-        
 
         RenderingSystem renderer;
         

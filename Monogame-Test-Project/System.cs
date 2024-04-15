@@ -3,9 +3,11 @@
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using viewStuff;
 
 
@@ -19,7 +21,29 @@ namespace ECS
     }
 
 
-    
+
+    public class InputSystem : UpdateSystem
+    {
+        //public KeyboardState keyState;
+        public InputSystem(GameContext context) { this.context = context; }
+
+        public override void Update(GameTime gameTime)
+        {
+            //KeyboardState keyState = Keyboard.GetState();
+
+            //List<CController> controllers =
+            //    context.GetComponentsOfType<CController>().Cast<CController>().ToList();
+
+            
+
+            //foreach (var controller in controllers)
+            //{
+            //    controller.buttonMap[]
+            //}
+            
+        }
+    }
+
 
 
     public class TransformSystem : UpdateSystem
@@ -44,9 +68,7 @@ namespace ECS
     }
 
 
-    
-
-    // not an UpdateSystem
+    // not an UpdateSystem (some other type)
     public class RenderingSystem
     {
         GameContext context;
@@ -85,9 +107,6 @@ namespace ECS
                 {
                     continue;
                 }
-                //spriteBatch.Draw(context.spriteMan.dSpriteSheets[thisTexture.spriteSheetId],
-                //    thisTransform.position,
-                //    Color.White);
 
                 spriteBatch.Draw(
                     context.spriteMan.dSpriteSheets[thisTexture.spriteSheetId],
@@ -101,8 +120,6 @@ namespace ECS
                     SpriteEffects.None,
                     thisTransform.layerDepth
                 );
-
-
             }
 
             spriteBatch.End();

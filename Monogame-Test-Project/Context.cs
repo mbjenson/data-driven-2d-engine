@@ -4,206 +4,162 @@ using System.Collections.Generic;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Collections;
+
 
 namespace ECS
 {
-    // for systems to operate on the components, lists of all possible component types will be constructed
-    // 
-    // when a system, for example the physics system, queries the main system for components, it will
-    // initially choose a list of a single kind of component which all entities to be manipulated by the system have in common,
-    // (preferrably the smallest of these lists), loop through each entity, querying each one for the remaining 
-    // components that allow the system to manipulate the entity. 
 
-    // each component contains within it a uint which refers to the entity it belongs to.
-    // this can then be used to look up the corresponding entity from the mEntities list in O(1) time using
-    // the id (uint) as the index into the mEntities
+    // 4/14/24 : I have officially given up trying to get a really efficient entity
+    //           component system. I am going to implement a bad one for now.
 
-    /*
-    
-    list = system.GetList<a component type>();
-    
-    foreach (var component in list) {
-        var comp1 = mEntities[component.getEntityId()].getComponent<desired component type1>();
-        var comp2 = mEntities[component.getEntityId()].getComponent<desired component type2>();
-        var comp3 = mEntities[component.getEntityId()].getComponent<desired component type3>();
-        // the function getComponent<desired component type> returns null if the entity does not have the desired component
-        if (comp1 && comp2 && comp3) { // if the entity has the 3 reminaing component types attatched to it
-            // either system update or add all of the components into a list of packed data and operate on that data
-            // as the system
+    public class EntityManager
+    {
+        /*
+        Entity Manager
+
+        What it will do:
+
+            The entity manager will manage the creation, storage, and retreval
+            of entities in the scene
+
+        How will the entities be represented:
+
+            The entities will be represented as integer IDs
+
+        how will the components be represented
+
+            the components will be stored as PODs (plain ol' data) or structs
+
+        how will the components be retreived
+
+            systems will query the entity manager for all the components it needs
+            by given a signiature (bitstring) which is compared to all of the items
+            to see which of them have the correct items
+            and the manager will return a list of references to the actual data perhaps
+
+        how will the components be stored
+
+            the components will be stored in arrays which contain the data
+
+
+
+
+        ****** BELOW HERE IS GOLD ******* GOLD!!! ******
+        
+        **************************** LORD THANK YOU ********************************
+        
+        contains list of entities which contain all the correct types of components
+        loop through this list of entity id's which you can then use to query the
+        manager and get the corresponding components from the manager
+
+        ****************************************************************************
+
+        requires a dictionary mapping from ComponentType to bitmask index
+
+        
+        enum ComponentEnum:
+            CTransform,
+            CRigidBody,
+            CController,
+            CTexture,
+
+        Cool trick: place the ComponentEnum.Count to be the place item therefore containing
+        the number of enums in the enum
+
+
+        entity:
+            int id
+            bitmask componentTypes = {} (length = num component types, init to all 0s)
+
+        
+        the components will be stored such that an entityId will index into
+        the array where an index represented an entity and each index is a list
+        of IComponents.
+
+
+
+        will store array of entities which will either store the components themselves or
+        store a bitset which tells which types of entites it has or not. benefit of using
+        a bitarray (bitset in c++) is that you can use the & bitwise operator on the
+        set to check if the entity contains the desired components
+
+        idea: entity is an int id (index into table of components)
+        when querying to get the components which contain the correct components
+
+
+        
+        */
+
+        // TODO: complete implementation described above and online
+
+        public List<Entity> mEntities;
+        public int Count = 0;
+
+        public Dictionary<int, List<IComponent>> mComponents;
+
+        public EntityManager(int numEntities)
+        {
+            Count = numEntities;
+            mEntities = new List<Entity>(numEntities);
         }
-    }
-        
 
-    */
+        /*
+        
+        IEnumerable<int> GetEntities(int signature)
+            List<int> entities = new List<int>();
+            foreach (var entity in mEntities) {
+                if (entity.componentMask & signature) {
+                    entities.Add(entity);
+                }
+            }
+            return entities;
+        */
+
+        // TODO figure out how to use a bit mask to check if an item has the matching
+        //              components
+        public IEnumerable<Entity> GetEntities(int signature)
+        {
+            List<Entity> entities = new List<Entity>();
+            foreach (var entity in entities)
+            {
+                if (entity.componentMask & signature))
+                {
+                    entities.Add(entity);
+                }
+            }
+            return entities;
+        }
+
+
+        // Add component
+
+        /*
+         * (dictionary<Type, ComponentEnum>)
+         * must have a way to map T to ComponentEnum
+        public void AddComopnent<T>(int entityId)
+            // update bitmask
+            mEntities[entityId].componentMask | TypeToEnumDictionary[T];
+            // add component
+            mComponents[entityId].Add(new T());
+        */
+
+    }
+
+
+
+
 
     /*
-    Class ComponentArray:
-        contains a list of lists of components
-        allows for new types of components to be added to the list
-        
-        adding a component goes as follows:
-            check if a list of this type exists
-            if so, add it to that list
-            if not, add a new list of that type to the list of lists
-            
-        removing an element requires more thought which I dont have right now
-    */
-
-    //public class ComponentArray<T> // where T : IComponent // , new()
-    //{
-    //    private List<T> contents;
-    //    public ComponentArray()
-    //    {
-    //        contents = new List<T>();
-    //    }
-
-    //    public void RemoveComponent(T component)
-    //    {
-    //        contents.Remove(component);
-    //    }
-
-    //    public void AddComponent(T component)
-    //    {
-    //        contents.Add(component);
-    //    }
-
-    //    public Type GetArrayType()
-    //    {
-    //        return typeof(T);
-    //    }
-    //}
-
-
-
-
-
-
-
-
-
-    //public class ComponentArray<T> where T : IComponent
-    //{
-    //    private List<T> contents;
-
-    //    public ComponentArray()
-    //    {
-    //        contents = new List<T>();
-    //    }
-
-    //    public void Add(T item) { contents.Add(item); }
-    //    public void Clear() { contents.Clear(); }
-    //    public void Remote(T item) { contents.Remove(item); }
-
-    //    public ref List<T> GetItems()
-    //    {
-    //        return ref contents;
-    //    }
-
-    //    public Type GetArrayType()
-    //    {
-    //        return typeof(T);
-    //    }
-    //}
-
-
-
-
-
-
-
-
-
-    //public class ComponentHandler<T>
-    //{
-    //    private List<List<T>> mArrays;
-
-    //    public ComponentHandler() { }
-
-
-    //    public T AddComponent<CompType>(int entityId)
-    //    {
-    //        if (!this.ContainsType<T>())
-    //        {
-
-    //            mArrays.Add(new List<T>());
-    //        }
-    //        mArrays.Find(x => x.GetType() == typeof(T)).Add(new T());
-    //    }
-
-    //    private bool ContainsType<T>()
-    //    {
-    //        for (int i = 0; i < mArrays.Count; i++)
-    //        {
-    //            var arrType = mArrays[i].GetType();
-    //            if (arrType == typeof(T))
-    //            {
-    //                return true;
-    //            }
-    //        }
-    //        return false;
-    //    }
-
-    //    //public void AddType<T>() where T : IComponent
-    //    //{
-    //    //    for (int i = 0; i < mArrays.Count; i++)
-    //    //    {
-    //    //        var arrType = mArrays[i].GetType();
-    //    //        if (arrType == typeof(T))
-    //    //        {
-    //    //            return;
-    //    //        }
-    //    //    }
-    //    //    var newArray = new ComponentArray<T>();
-    //    //    arrays.Add(newArray);
-    //    //}
-    //}
-
-
-
-
-    // IDEAS FOR MOVING FORWARD FROM HERE 4/7/2024
-
-    // next step: (implementing a way that systems can interact with the context, querying the context for types of objects)
-    // given a system that wants all the entity components with 3 different components, do this:
-    // query the context for the list of components that should be the smallest of the 3,
-    // go through each component, query the context to check if the entity associated with the first component
-    //      contains the next 2 types of components.
-    // (idea: just put this information into an array for the future maybe so faster next time (would make removing an entity very costly))
-    // store this information in an array (or just do atomic operations on each one as you get it)
-    // 
-    // this is the best way that I can think of doing this without trying to implement some type of archetype system
-    // It is not the absolute fastest way to do it, however it's the best I can do right now and I want to move forward.
-    // this will allow me to start working on other parts of the game.
-
-
-
-    //
-    //              idea: when it comes time to render, the rendering system gets a list of all of the entities which have
-    //              the transform components (or texture or something. whatever qualifies them to be rendered), and 
-    //              draws them all to the dislpay on it's own as though nothing else in the world matters. (system 
-    //              isolation will bring about a new era of prosperity).
-    //
-    //              idea: maybe write a function that finds all of the entities which contain all of the required types
-    //              (and maybe cache them for later ...)
-    //              and pack them into an array which can be used by a system. Each index of the array will
-    //              represent one entities components. This way, the system can quickly query the context
-    //              for all of the information that it needs, operate on that data as if nothing else in the world
-    //              matters.
-    // layout             
-    //          entity1 : [Transform, RigidBody, Texture,
-    //          entity2 :  Transform, RigidBody, Texture,
-    //          entity3 :  Transform, RigidBody, Texture,
-    //          entity4 :  Transform, RigidBody, Texture,
-    //          entity5 :  Transform, RigidBody, Texture,
-    //          entity6 :  Transform, RigidBody, Texture],
-
-
     public class Context
     {
         protected HashSet<int> mEntities;
         // dictionaries relating components in differnt ways
         protected Dictionary<int, HashSet<IComponent>> dComponentsByEntity;
         protected Dictionary<Type, HashSet<IComponent>> dComponentsByType;
+
+        protected List<UpdateSystem> updateSystems;
         
         protected Queue<int> availableIds;
         protected int maxEntities;
@@ -218,6 +174,8 @@ namespace ECS
 
             dComponentsByEntity = new Dictionary<int, HashSet<IComponent>>();
             dComponentsByType = new Dictionary<Type, HashSet<IComponent>>();
+
+            updateSystems = new List<UpdateSystem>();
         }
         
         // DEBUG
@@ -242,6 +200,23 @@ namespace ECS
         }
 
 
+
+        public UpdateSystem getUpdateSystem<T>() where T : UpdateSystem
+        {
+            return updateSystems.Find(x => x.GetType() == typeof(T));
+        }
+
+
+        public void AddUpdateSystem<T>(T system) where T : UpdateSystem
+        {
+            updateSystems.Add(system);
+        }
+
+
+        public void RemoveUpdateSystem<T>(T system) where T : UpdateSystem
+        {
+            updateSystems.Remove(system);
+        }
 
         /// <summary>
         /// Create a new entity in context
@@ -536,7 +511,7 @@ namespace ECS
     }
 
 
-
+    */
 
 
 

@@ -1,5 +1,6 @@
 ﻿using ECS;
 using InputManagement;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 
@@ -15,18 +16,20 @@ namespace ECS
     public class GameContext : Context
     {
         public SpriteSheetManager spriteMan;
-        public InputHandler inputHandler;
 
         public GameContext(int maxEntities) : base(maxEntities)
         {
             spriteMan = new SpriteSheetManager();
-            inputHandler = new InputHandler();
+            updateSystems.Add(new InputSystem(this));
         }
 
-        public void Update()
+        public void Update(GameTime gameTime)
         {
-            inputHandler.GetInput();
-        }
+            foreach (var updateSystem in updateSystems)
+            {
+                updateSystem.Update(gameTime);
+            }
 
+        }
     }
 }

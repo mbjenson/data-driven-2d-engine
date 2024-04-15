@@ -18,6 +18,9 @@ namespace InputManagement
      the basic idea here is to read all incoming input of any kind and
      put it in some kind of data structure which is updated every frame with
      the current inputs
+
+    read key bindings from a json file which will indicate what things are bound to which keys.
+    -- or -- don't read anything and just have hard set keybindings for controller and keyboard
      */
     public class InputHandler
     {
