@@ -13,6 +13,7 @@ using ECS;
 using System.Reflection.Metadata.Ecma335;
 using System.Linq;
 using Microsoft.VisualBasic;
+using bitmask;
 
 /*
  * 
@@ -133,10 +134,326 @@ then give access to the other parts of the context so they can reference the tex
 
 */
 
+namespace Monogame_Test_Project
+{
+
+    public class Game1 : Game
+    {
+        Camera2D cam;
+
+        const int WIN_WIDTH = 1440;
+        const int WIN_HEIGHT = 810;
+
+        const int TARGET_WIDTH = 320; // 480;
+        const int TARGET_HEIGHT = 180; // 270
+
+
+        Vector2 worldMousePos;
+
+
+        Vector2 player;
+
+        float totalGameTime = 0f;
+
+        float moveSpeed = 70f;
+        float theta = 0f;
+
+        Effect spriteEffect;
+
+        RenderTarget2D renderCanvas;
+
+        EntityManager eMan;
+        Entity pEnt;
+
+        Texture2D dirtTex;
+
+        private GraphicsDeviceManager graphics;
+        private SpriteBatch spriteBatch;
+
+        public Game1()
+        {
+            graphics = new GraphicsDeviceManager(this);
+            Content.RootDirectory = "Content";
+            IsMouseVisible = true;
+        }
+
+        protected override void Initialize()
+        {
+            // TODO: Add your initialization logic here
+
+            GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+
+            cam = new Camera2D(GraphicsDevice.Viewport);
+
+            graphics.PreferredBackBufferWidth = WIN_WIDTH;
+            graphics.PreferredBackBufferHeight = WIN_HEIGHT;
+
+            graphics.ApplyChanges();
+
+            renderCanvas = new RenderTarget2D(
+                GraphicsDevice,
+                TARGET_WIDTH, TARGET_HEIGHT,
+                false,
+                GraphicsDevice.PresentationParameters.BackBufferFormat,
+                DepthFormat.Depth24);
+
+            eMan = new EntityManager(24);
+
+
+            
+            for (int i = 0; i < 24; i++)
+            {
+                eMan.CreateEntity();
+            }
+
+            Debug.WriteLine("max entities" + eMan.maxEntities);
+
+            for (int i = 0; i < 24; i++)
+            {
+                
+                eMan.AddComponent<CTransform>(
+                    eMan.GetEntity(i), 
+                    new CTransform() { position = new Vector2(i * 2f, 0)});
+            }
+
+            
+
+            base.Initialize();
+        }
+
+
+        protected override void LoadContent()
+        {
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            spriteEffect = Content.Load<Effect>("spriteShader");
+
+            dirtTex = Content.Load<Texture2D>("dirt");
+        }
+
+
+        protected override void Update(GameTime gameTime)
+        {
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
+                || Keyboard.GetState().IsKeyDown(Keys.Escape))
+                Exit();
+            
+
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            totalGameTime += dt;
+            // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
+            Vector2 viewportMousePos = new Vector2(
+                ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
+                ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
+
+            // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
+            worldMousePos = cam.screenToWorld(viewportMousePos);
+
+            float xDif = worldMousePos.X - player.X;
+            float yDif = worldMousePos.Y - player.Y;
+
+            theta = (float)Math.Atan2(yDif, xDif);
+
+            var keyState = Keyboard.GetState();
+            if (keyState.IsKeyDown(Keys.W))
+            {
+                player = player + new Vector2(0, -moveSpeed * dt);
+            }
+            if (keyState.IsKeyDown(Keys.S))
+            {
+                player = player + new Vector2(0, moveSpeed * dt);
+            }
+            if (keyState.IsKeyDown(Keys.A))
+            {
+                player = player + new Vector2(-moveSpeed * dt, 0);
+            }
+            if (keyState.IsKeyDown(Keys.D))
+            {
+                player = player + new Vector2(moveSpeed * dt, 0);
+            }
+
+            // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
+            player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out
+
+            cam.Update(player, dt);
+
+            Bitmask sig = new Bitmask((int)ComponentType.Count);
+            sig[ComponentType.CTransform] = true;
+            List<int> posEnts = eMan.GetEntityIds(sig).ToList();
+
+            for (int i = 0; i <  posEnts.Count; i++)
+            {
+                CTransform thisTransform =
+                    (CTransform)eMan.GetComponent<CTransform>(posEnts[i]);
+
+                Vector2 newPos = thisTransform.position +
+                    new Vector2(
+                        (float)Math.Sin(totalGameTime * i), 
+                        (float)Math.Cos(totalGameTime * i));
+
+                eMan.SetComponent<CTransform>(
+                    posEnts[i], new CTransform(newPos));
+
+                
+            }
+            
+
+            base.Update(gameTime);
+        }
+
+
+        protected override void Draw(GameTime gameTime)
+        {
+
+            GraphicsDevice.SetRenderTarget(renderCanvas);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.DepthStencilState = 
+                new DepthStencilState() { DepthBufferEnable = true };
+
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
+
+            // Draw to the canvas
+            Bitmask sig = new Bitmask((int)ComponentType.Count);
+            sig[ComponentType.CTransform] = true;
+            List<int> posEnts = eMan.GetEntityIds(sig).ToList();
+
+            foreach (var id in posEnts)
+            {
+                CTransform trans = (CTransform)eMan.GetComponent<CTransform>(id);
+
+                spriteBatch.Draw(
+                    dirtTex,
+                    trans.position,
+                    Color.White
+                );
+
+
+            }
+
+
+            // render things
+
+            spriteEffect.CurrentTechnique.Passes[0].Apply();
+            // render sprites with effects
+
+            spriteBatch.End();
+
+            graphics.GraphicsDevice.SetRenderTarget(null);
+            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+
+            
+
+            
+            // draw canvas to screen
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate,
+                BlendState.AlphaBlend,
+                SamplerState.PointClamp,
+                DepthStencilState.Default,
+                RasterizerState.CullNone);
+
+            // draw to actual window
+            spriteBatch.Draw(
+                renderCanvas,
+                new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+                Color.White);
+
+            spriteBatch.End();
+
+            base.Draw(gameTime);
+        }
+
+
+        //protected override void Draw(GameTime gameTime)
+        //{
+        //    GraphicsDevice.Clear(Color.CornflowerBlue);
+
+        //    // render tilemap to world canvas
+
+        //    tilemapRenderer.render(graphics.GraphicsDevice);
+
+
+        //    graphics.GraphicsDevice.SetRenderTarget(renderCanvas);
+        //    graphics.GraphicsDevice.DepthStencilState = new DepthStencilState() 
+        //        { DepthBufferEnable = true };
+        //    graphics.GraphicsDevice.Clear(Color.CornflowerBlue); // clear canvas
+        //    // draw to render target
+        //    spriteBatch.Begin(
+        //        SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        //        SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
+
+        //    spriteBatch.Draw(
+        //        tilemapRenderer.mapCanvas, 
+        //        new Rectangle(
+        //            0, 0, 
+        //            tilemapRenderer.mapCanvas.Width,
+        //            tilemapRenderer.mapCanvas.Height),
+        //        tilemapRenderer.mapCanvas.Bounds,
+        //        Color.White);
+
+        //    spriteEffect.CurrentTechnique.Passes[0].Apply(); // effect for player texture (nothing right now)
+
+        //    spriteBatch.Draw(
+        //        spriteMan.dSpriteSheets["tilesheet"],
+        //        player.getPosition(),
+        //        spriteMan.dSpriteRects["tilesheet"]["dirt"],
+        //        Color.White,
+        //        0f,
+        //        new Vector2(8f, 8f),
+        //        1f,
+        //        SpriteEffects.None,
+        //        0f);
+
+        //    //spriteBatch.Draw(
+        //    //     rectTexture,
+        //    //     player.getPosition(),
+        //    //     null,
+        //    //     Color.White,
+        //    //     0f, // theta
+        //    //     new Vector2(8f, 8f),
+        //    //     1f,
+        //    //     SpriteEffects.None,
+        //    //     0f);
+
+        //    spriteBatch.End();
+
+        //    graphics.GraphicsDevice.SetRenderTarget(null);
+        //    graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+
+        //    //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        //    //    SamplerState.PointClamp, DepthStencilState.Default,
+        //    //    RasterizerState.CullNone);
 
 
 
 
+        //    // Draw map canvas ====================
+
+        //    spriteBatch.Begin(
+        //        SpriteSortMode.Immediate, 
+        //        BlendState.AlphaBlend,
+        //        SamplerState.PointClamp, 
+        //        DepthStencilState.Default,
+        //        RasterizerState.CullNone);
+
+        //    // draw to actual window
+        //    spriteBatch.Draw(
+        //        renderCanvas,
+        //        new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+        //        Color.White);
+
+        //    spriteBatch.End();
+
+        //    base.Draw(gameTime);
+        //}
+
+
+    }
+}
+
+/*
 
 namespace Monogame_Test_Project
 {
@@ -170,11 +487,11 @@ namespace Monogame_Test_Project
         RenderTarget2D renderCanvas;
 
         //Entity playerEntity;
-        GameContext context;
+        //GameContext context;
 
         int pEntity;
 
-        RenderingSystem renderer;
+        //RenderingSystem renderer;
         
 
         private GraphicsDeviceManager graphics;
@@ -238,15 +555,17 @@ namespace Monogame_Test_Project
 
             tilemapRenderer = new TilemapRenderer(tilemap, graphics);
 
-            context = new GameContext(25);
+            //context = new GameContext(25);
 
-            pEntity = context.CreateEntity();
-            context.AddComponent<CTransform>(pEntity, new CTransform(new Vector2(0f, 0f), new Vector2(1f, 1f), 0f, 0f));
-            //context.AddComponent<CRigidBody>(pEntity, new CRigidBody());
-            context.AddComponent<CTexture2D>(pEntity, new CTexture2D("dirt", "tilesheet", new Vector2(8f, 8f)));
+            //pEntity = context.CreateEntity();
+            //context.AddComponent<CTransform>(pEntity, new CTransform(new Vector2(0f, 0f), new Vector2(1f, 1f), 0f, 0f));
+            ////context.AddComponent<CRigidBody>(pEntity, new CRigidBody());
+            //context.AddComponent<CTexture2D>(pEntity, new CTexture2D("dirt", "tilesheet", new Vector2(8f, 8f)));
 
 
-            renderer = new RenderingSystem(context, graphics.GraphicsDevice);
+            //renderer = new RenderingSystem(context, graphics.GraphicsDevice);
+
+
 
             //dTextures = new Dictionary<string, Texture2D>();
             //dTextures.Add("dirt", Content.Load<Texture2D>);
@@ -266,9 +585,11 @@ namespace Monogame_Test_Project
 
             tilemap.textureSheet = Content.Load<Texture2D>("tilesheet");
 
-            context.spriteMan.AddSpriteSheet("tilesheet", Content.Load<Texture2D>("tilesheet"));
-            context.spriteMan.AddSprite("tilesheet", "dirt", new Rectangle(0, 5 * 16, 16, 16));
+            //context.spriteMan.AddSpriteSheet("tilesheet", Content.Load<Texture2D>("tilesheet"));
+            //context.spriteMan.AddSprite("tilesheet", "dirt", new Rectangle(0, 5 * 16, 16, 16));
         }
+
+        
 
         protected override void Update(GameTime gameTime)
         {
@@ -320,25 +641,25 @@ namespace Monogame_Test_Project
             //}
 
 
-            Vector2 playerPos = ((CTransform)context.GetComponent<CTransform>(pEntity)).position;
+            //Vector2 playerPos = ((CTransform)context.GetComponent<CTransform>(pEntity)).position;
 
-            var keyState = Keyboard.GetState();
-            if (keyState.IsKeyDown(Keys.W))
-            {
-                playerPos += new Vector2(0, -moveSpeed * dt);
-            }
-            if (keyState.IsKeyDown(Keys.S))
-            {
-                playerPos += new Vector2(0, moveSpeed * dt);
-            }
-            if (keyState.IsKeyDown(Keys.A))
-            {
-                playerPos += new Vector2(-moveSpeed * dt, 0);
-            }
-            if (keyState.IsKeyDown(Keys.D))
-            {
-                playerPos += new Vector2(moveSpeed * dt, 0);
-            }
+            //var keyState = Keyboard.GetState();
+            //if (keyState.IsKeyDown(Keys.W))
+            //{
+            //    playerPos += new Vector2(0, -moveSpeed * dt);
+            //}
+            //if (keyState.IsKeyDown(Keys.S))
+            //{
+            //    playerPos += new Vector2(0, moveSpeed * dt);
+            //}
+            //if (keyState.IsKeyDown(Keys.A))
+            //{
+            //    playerPos += new Vector2(-moveSpeed * dt, 0);
+            //}
+            //if (keyState.IsKeyDown(Keys.D))
+            //{
+            //    playerPos += new Vector2(moveSpeed * dt, 0);
+            //}
 
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
             player.position = Vector2.Round(player.position); // IMPORTANT For pixel perfect camera to not bug out
@@ -359,12 +680,10 @@ namespace Monogame_Test_Project
             //        solver.solveCollision(player, circle);
             //    }
             //}
-            context.Update();
+            //context.Update();
 
             cam.Update(player.position, dt);
-
-
-            /*
+            
             if (keyState.IsKeyDown(Keys.W))
             {
                 cam.Position = cam.Position + new Vector2(0, -moveSpeed * dt);
@@ -381,38 +700,40 @@ namespace Monogame_Test_Project
             {
                 cam.Position = cam.Position + new Vector2(moveSpeed * dt, 0);
             }
-            */
+            
 
             base.Update(gameTime);
         }
 
-        protected override void Draw(GameTime gameTime)
-        {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+        
+        
+        //protected override void Draw(GameTime gameTime)
+        //{
+        //    GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            //tilemapRenderer.render(graphics.GraphicsDevice);
+        //    //tilemapRenderer.render(graphics.GraphicsDevice);
 
-            spriteEffect.CurrentTechnique.Passes[0].Apply();
+        //    spriteEffect.CurrentTechnique.Passes[0].Apply();
 
-            renderer.Render(gameTime, renderCanvas, GraphicsDevice, cam);
+        //    //renderer.Render(gameTime, renderCanvas, GraphicsDevice, cam);
 
-            spriteBatch.Begin(
-                SpriteSortMode.Immediate,
-                BlendState.AlphaBlend,
-                SamplerState.PointClamp,
-                DepthStencilState.Default,
-                RasterizerState.CullNone);
+        //    spriteBatch.Begin(
+        //        SpriteSortMode.Immediate,
+        //        BlendState.AlphaBlend,
+        //        SamplerState.PointClamp,
+        //        DepthStencilState.Default,
+        //        RasterizerState.CullNone);
 
-            // draw to actual window
-            spriteBatch.Draw(
-                renderCanvas,
-                new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
-                Color.White);
+        //    // draw to actual window
+        //    spriteBatch.Draw(
+        //        renderCanvas,
+        //        new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+        //        Color.White);
 
-            spriteBatch.End();
+        //    spriteBatch.End();
 
-            base.Draw(gameTime);
-        }
+        //    base.Draw(gameTime);
+        //}
 
 
         //protected override void Draw(GameTime gameTime)
@@ -499,3 +820,4 @@ namespace Monogame_Test_Project
         //}
     }
 }
+*/

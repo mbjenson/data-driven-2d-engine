@@ -1,23 +1,13 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿
 using Microsoft.Xna.Framework;
-using System.Collections.Generic;
-using Collisions;
-using System.ComponentModel;
-using Microsoft.VisualBasic;
-using System;
-using System.Globalization;
-using Microsoft.Xna.Framework.Input;
-using System.Collections;
-
-
-
-
+using bitmask;
+using System.Threading;
 
 
 namespace ECS
 {
 
-    enum ComponentTypes
+    public enum ComponentType
     {
         CTransform,
         Count,
@@ -26,15 +16,45 @@ namespace ECS
     public class Entity
     {
         public int id;
-        public BitArray componentMask = new BitArray((int)ComponentTypes.Count, false);
+        public Bitmask cMask; // component mask
+
+        public Entity(int id) 
+        {
+            this.id = id;
+            this.cMask = new Bitmask((int)ComponentType.Count);
+        }
+        public Entity(int id, Bitmask cMask)
+        {
+            this.id = id;
+            this.cMask = cMask;
+        }
+
+        //public void AddComponentType(ComponentType type)
+        //{
+        //    this.cMask[(int)type] = true;
+        //}
+
+        //public void RemoveComponentType(ComponentType type)
+        //{
+        //    this.cMask[(int)type] = false;
+        //}
+
     }
 
     public class IComponent { }
 
     public class CTransform : IComponent
     {
-        Vector2 position;
+        public Vector2 position;
+
+        public CTransform() { }
+
+        public CTransform(Vector2 position)
+        {
+            this.position = position;
+        }
     }
+
 
 
 }

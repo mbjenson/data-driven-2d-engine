@@ -4,8 +4,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 
-namespace ECS
-{
+//namespace ECS
+//{
     /*
     GameContext
     
@@ -13,23 +13,23 @@ namespace ECS
 
      
     */
-    public class GameContext : Context
-    {
-        public SpriteSheetManager spriteMan;
+    //public class GameContext : Context
+    //{
+    //    public SpriteSheetManager spriteMan;
 
-        public GameContext(int maxEntities) : base(maxEntities)
-        {
-            spriteMan = new SpriteSheetManager();
-            updateSystems.Add(new InputSystem(this));
-        }
+    //    public GameContext(int maxEntities) : base(maxEntities)
+    //    {
+    //        spriteMan = new SpriteSheetManager();
+    //        updateSystems.Add(new InputSystem(this));
+    //    }
 
-        public void Update(GameTime gameTime)
-        {
-            foreach (var updateSystem in updateSystems)
-            {
-                updateSystem.Update(gameTime);
-            }
+    //    public void Update(GameTime gameTime)
+    //    {
+    //        foreach (var updateSystem in updateSystems)
+    //        {
+    //            updateSystem.Update(gameTime);
+    //        }
 
-        }
-    }
-}
+    //    }
+    //}
+//}

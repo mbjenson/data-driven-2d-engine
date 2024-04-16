@@ -14,120 +14,120 @@ using viewStuff;
 namespace ECS
 {
 
-    public abstract class UpdateSystem
-    {
-        protected GameContext context;
-        public abstract void Update(GameTime gameTime);
-    }
+    //public abstract class UpdateSystem
+    //{
+    //    protected GameContext context;
+    //    public abstract void Update(GameTime gameTime);
+    //}
 
 
 
-    public class InputSystem : UpdateSystem
-    {
-        //public KeyboardState keyState;
-        public InputSystem(GameContext context) { this.context = context; }
+    //public class InputSystem : UpdateSystem
+    //{
+    //    //public KeyboardState keyState;
+    //    public InputSystem(GameContext context) { this.context = context; }
 
-        public override void Update(GameTime gameTime)
-        {
-            //KeyboardState keyState = Keyboard.GetState();
+    //    public override void Update(GameTime gameTime)
+    //    {
+    //        //KeyboardState keyState = Keyboard.GetState();
 
-            //List<CController> controllers =
-            //    context.GetComponentsOfType<CController>().Cast<CController>().ToList();
+    //        //List<CController> controllers =
+    //        //    context.GetComponentsOfType<CController>().Cast<CController>().ToList();
 
             
 
-            //foreach (var controller in controllers)
-            //{
-            //    controller.buttonMap[]
-            //}
+    //        //foreach (var controller in controllers)
+    //        //{
+    //        //    controller.buttonMap[]
+    //        //}
             
-        }
-    }
+    //    }
+    //}
 
 
 
-    public class TransformSystem : UpdateSystem
-    {
-        public TransformSystem(GameContext context) 
-        {
-            this.context = context;
-        }
+    //public class TransformSystem : UpdateSystem
+    //{
+    //    public TransformSystem(GameContext context) 
+    //    {
+    //        this.context = context;
+    //    }
 
-        public override void Update(GameTime gameTime)
-        {
-            List<CTransform> transforms = 
-                context.GetComponentsOfType<CTransform>().Cast<CTransform>().ToList();
+    //    public override void Update(GameTime gameTime)
+    //    {
+    //        List<CTransform> transforms = 
+    //            context.GetComponentsOfType<CTransform>().Cast<CTransform>().ToList();
 
-            foreach (var transform in transforms)
-            {
-                float x = (float)Math.Sin(gameTime.ElapsedGameTime.TotalSeconds);
-                float y = (float)Math.Cos(gameTime.ElapsedGameTime.TotalSeconds);
-                transform.position += new Vector2(x, y);
-            }
-        }
-    }
+    //        foreach (var transform in transforms)
+    //        {
+    //            float x = (float)Math.Sin(gameTime.ElapsedGameTime.TotalSeconds);
+    //            float y = (float)Math.Cos(gameTime.ElapsedGameTime.TotalSeconds);
+    //            transform.position += new Vector2(x, y);
+    //        }
+    //    }
+    //}
 
 
-    // not an UpdateSystem (some other type)
-    public class RenderingSystem
-    {
-        GameContext context;
+    //// not an UpdateSystem (some other type)
+    //public class RenderingSystem
+    //{
+    //    GameContext context;
 
-        SpriteBatch spriteBatch;
+    //    SpriteBatch spriteBatch;
 
-        public RenderingSystem(GameContext context, GraphicsDevice device)
-        {
-            this.context = context;
-            spriteBatch = new SpriteBatch(device);
-        }
+    //    public RenderingSystem(GameContext context, GraphicsDevice device)
+    //    {
+    //        this.context = context;
+    //        spriteBatch = new SpriteBatch(device);
+    //    }
 
-        // does all of the rendering. Right now only works with textures
-        public void Render(
-            GameTime gameTime, RenderTarget2D target, 
-            GraphicsDevice device, Camera2D cam)
-        {
-            List<CTexture2D> textures = 
-                context.GetComponentsOfType<CTexture2D>().Cast<CTexture2D>().ToList();
+    //    // does all of the rendering. Right now only works with textures
+    //    public void Render(
+    //        GameTime gameTime, RenderTarget2D target, 
+    //        GraphicsDevice device, Camera2D cam)
+    //    {
+    //        List<CTexture2D> textures = 
+    //            context.GetComponentsOfType<CTexture2D>().Cast<CTexture2D>().ToList();
 
-            // prep device
-            device.SetRenderTarget(target);
-            device.DepthStencilState = 
-                new DepthStencilState() { DepthBufferEnable = true };
-            device.Clear(Color.CornflowerBlue);
+    //        // prep device
+    //        device.SetRenderTarget(target);
+    //        device.DepthStencilState = 
+    //            new DepthStencilState() { DepthBufferEnable = true };
+    //        device.Clear(Color.CornflowerBlue);
 
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
-                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
+    //        spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+    //            SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
 
-            foreach (var thisTexture in textures)
-            {
-                CTransform thisTransform = 
-                    (CTransform)context.GetComponent<CTransform>(thisTexture.entityId);
+    //        foreach (var thisTexture in textures)
+    //        {
+    //            CTransform thisTransform = 
+    //                (CTransform)context.GetComponent<CTransform>(thisTexture.entityId);
 
-                if (thisTransform == null)
-                {
-                    continue;
-                }
+    //            if (thisTransform == null)
+    //            {
+    //                continue;
+    //            }
 
-                spriteBatch.Draw(
-                    context.spriteMan.dSpriteSheets[thisTexture.spriteSheetId],
-                    thisTransform.position,
-                    context.spriteMan.dSpriteRects
-                        [thisTexture.spriteSheetId][thisTexture.spriteId],
-                    Color.White,
-                    thisTransform.rotation,
-                    thisTexture.textureOffset,
-                    thisTransform.scale,
-                    SpriteEffects.None,
-                    thisTransform.layerDepth
-                );
-            }
+    //            spriteBatch.Draw(
+    //                context.spriteMan.dSpriteSheets[thisTexture.spriteSheetId],
+    //                thisTransform.position,
+    //                context.spriteMan.dSpriteRects
+    //                    [thisTexture.spriteSheetId][thisTexture.spriteId],
+    //                Color.White,
+    //                thisTransform.rotation,
+    //                thisTexture.textureOffset,
+    //                thisTransform.scale,
+    //                SpriteEffects.None,
+    //                thisTransform.layerDepth
+    //            );
+    //        }
 
-            spriteBatch.End();
+    //        spriteBatch.End();
 
-            device.SetRenderTarget(null);
-            device.Clear(Color.CornflowerBlue);
-        }
-    }
+    //        device.SetRenderTarget(null);
+    //        device.Clear(Color.CornflowerBlue);
+    //    }
+    //}
     
 
 
