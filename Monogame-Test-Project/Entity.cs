@@ -10,6 +10,7 @@ namespace ECS
     public enum ComponentType
     {
         CTransform,
+        CCollider,
         Count,
     }
     
@@ -23,11 +24,13 @@ namespace ECS
             this.id = id;
             this.cMask = new Bitmask((int)ComponentType.Count);
         }
+
         public Entity(int id, Bitmask cMask)
         {
             this.id = id;
             this.cMask = cMask;
         }
+
 
         //public void AddComponentType(ComponentType type)
         //{
@@ -41,6 +44,8 @@ namespace ECS
 
     }
 
+
+    // base component class
     public class IComponent { }
 
     public class CTransform : IComponent
@@ -55,6 +60,46 @@ namespace ECS
         }
     }
 
+    public class CCollider : IComponent
+    {
+
+    }
+
+    public class CRectCollider : CCollider
+    {
+        public Vector2 size;
+        public float X
+        {
+            get { return size.X; }
+            set { size.X = value; }
+        }
+
+        public float Y
+        {
+            get { return size.Y; }
+            set { size.Y = value; }
+        }
+
+        public CRectCollider() { }
+        public CRectCollider(float width, float height)
+        {
+            this.size.X = width;
+            this.size.Y = height;
+        }
+
+        
+    }
+
+    public class CCircleCollider : CCollider
+    {
+        public float radius;
+
+        public CCircleCollider() { }
+        public CCircleCollider(float radius)
+        {
+            this.radius = radius;
+        }
+    }
 
 
 }

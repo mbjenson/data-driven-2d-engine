@@ -199,18 +199,15 @@ namespace Monogame_Test_Project
 
             eMan = new EntityManager(24);
 
-
+            int[] colEnts = new int[24];
             
             for (int i = 0; i < 24; i++)
             {
                 eMan.CreateEntity();
             }
 
-            Debug.WriteLine("max entities" + eMan.maxEntities);
-
             for (int i = 0; i < 24; i++)
             {
-                
                 eMan.AddComponent<CTransform>(
                     eMan.GetEntity(i), 
                     new CTransform() { position = new Vector2(i * 2f, 0)});

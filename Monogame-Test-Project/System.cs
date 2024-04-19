@@ -1,6 +1,7 @@
 ﻿
 
 
+using bitmask;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -13,6 +14,72 @@ using viewStuff;
 
 namespace ECS
 {
+
+
+    /*
+    a system will request a set of entities from the entity manager
+    and then perform operations on those entities 
+    */
+
+    public abstract class UpdateSystem
+    {
+        public abstract void Update(GameTime gameTime);
+    }
+
+
+    public class CollisionSystem : UpdateSystem
+    {
+        EntityManager eMan;
+        Bitmask signature;
+        public CollisionSystem(EntityManager eMan)
+        {
+            this.eMan = eMan;
+            signature = new Bitmask((int)ComponentType.Count);
+            signature[ComponentType.CCollider] = true;
+            signature[ComponentType.CTransform] = true;
+        }
+        
+        public override void Update(GameTime gameTime)
+        {
+            List<Entity> entities = eMan.GetEntities(signature).ToList();
+            foreach (Entity e in entities)
+            {
+                CTransform transform = (CTransform)eMan.GetComponent<CTransform>(e.id);
+                CCollider collider = (CCollider)eMan.GetComponent<CCollider>(e.id);
+                // TODO: figure out how to differentiate from each type
+                //       of collider here so that circle-rect, rect-rect, 
+                //       and circle-circle collisions can be resolved 
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     //public abstract class UpdateSystem
     //{

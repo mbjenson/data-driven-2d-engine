@@ -154,7 +154,7 @@ public class EntityManager
 
 
         // adjust entity component bit mask
-        entity.cMask[(int)mComponentToEnum[typeof(T)]] = false;
+        entity.cMask[(int)mComponentToEnum[typeof(T)]] = true;
 
         return newComp;
     }
@@ -253,10 +253,5 @@ public class EntityManager
         }
         return entityIds;
     }
-
-    
-
-    
-    
 
 }
