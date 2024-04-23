@@ -10,10 +10,12 @@ using viewStuff;
 using tilemap;
 using System.IO.MemoryMappedFiles;
 using ECS;
+using ECS.Systems;
 using System.Reflection.Metadata.Ecma335;
 using System.Linq;
 using Microsoft.VisualBasic;
 using bitmask;
+using System.Net.Sockets;
 
 /*
  * 
@@ -89,8 +91,17 @@ TODO
 [] Entity Component System
     current: test the transform system (test system)
     
-    - game context
-        - CURRENT: (on matthew-dev) implement texture container to store textures so entities can simply store a texture id and not an actual texture
+    - systems
+        - collision / physics system -> 
+                * make the physics system do both movement for physics objects and 
+                    handle collisions with a quadtree structure
+                * figure out how to manage different types of colliders that might be present in the
+                    game whether they be rect or circle shape. right now I have a system that
+                    uses a generic class CCollider which rect and circle colliders inherit from
+                    this is fine for now but I might change it in the future so
+                    systems can also check if there is a specific type (child class) of
+                    the collider class.
+                * design your physics system to handle static map colliders or something like that
 
 [] implement lights
 
@@ -163,6 +174,9 @@ namespace Monogame_Test_Project
         RenderTarget2D renderCanvas;
 
         EntityManager eMan;
+        PhysicsSystem pSys;
+        CollisionSystem cSys;
+        InputSystem iSys;
         Entity pEnt;
 
         Texture2D dirtTex;
@@ -197,23 +211,54 @@ namespace Monogame_Test_Project
                 GraphicsDevice.PresentationParameters.BackBufferFormat,
                 DepthFormat.Depth24);
 
-            eMan = new EntityManager(24);
-
-            int[] colEnts = new int[24];
             
-            for (int i = 0; i < 24; i++)
+
+
+            int numEnts = 1;
+            eMan = new EntityManager(numEnts);
+            numEnts--;
+
+            pEnt = eMan.CreateEntity();
+            eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
+            eMan.AddComponent<CTransform>(pEnt);
+            eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 10f});
+            eMan.AddComponent<CCollider>(pEnt, new CRectCollider(16f, 16f));
+
+
+            int[] colEnts = new int[numEnts];
+            
+            for (int i = 0; i < numEnts; i++)
             {
                 eMan.CreateEntity();
             }
 
-            for (int i = 0; i < 24; i++)
+            Random rand = new Random();
+            for (int i = 0; i < numEnts; i++)
             {
                 eMan.AddComponent<CTransform>(
                     eMan.GetEntity(i), 
-                    new CTransform() { position = new Vector2(i * 2f, 0)});
+                    new CTransform() {
+                        position = new Vector2(rand.Next(-0, 0), rand.Next(-0, 0))
+                    });
+                eMan.AddComponent<CRigidBody>(
+                    eMan.GetEntity(i),
+                    new CRigidBody()
+                    {
+                        acceleration = new Vector2(0, 0),
+                        velocity = new Vector2(),
+                        mass = 10f
+                    });
+                eMan.AddComponent<CCollider>(
+                    eMan.GetEntity(i),
+                    new CRectCollider()
+                    {
+                        size = new Vector2(16f, 16f)
+                    });
             }
 
-            
+            pSys = new PhysicsSystem(eMan);
+            cSys = new CollisionSystem(eMan);
+            iSys = new InputSystem(eMan);
 
             base.Initialize();
         }
@@ -234,7 +279,6 @@ namespace Monogame_Test_Project
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
                 || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
-            
 
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             totalGameTime += dt;
@@ -272,27 +316,37 @@ namespace Monogame_Test_Project
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
             player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out
 
-            cam.Update(player, dt);
+            iSys.Update(gameTime);
+            pSys.Update(gameTime);
+            cSys.Update(gameTime);
+           
 
-            Bitmask sig = new Bitmask((int)ComponentType.Count);
-            sig[ComponentType.CTransform] = true;
-            List<int> posEnts = eMan.GetEntityIds(sig).ToList();
+            CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
+            //Debug.WriteLine(pTrans.position);
+            
+            //cam.Update(pTrans.position, dt);
 
-            for (int i = 0; i <  posEnts.Count; i++)
-            {
-                CTransform thisTransform =
-                    (CTransform)eMan.GetComponent<CTransform>(posEnts[i]);
+            
 
-                Vector2 newPos = thisTransform.position +
-                    new Vector2(
-                        (float)Math.Sin(totalGameTime * i), 
-                        (float)Math.Cos(totalGameTime * i));
+            //Bitmask sig = new Bitmask((int)ComponentType.Count);
+            //sig[ComponentType.CTransform] = true;
+            //List<int> posEnts = eMan.GetEntityIds(sig).ToList();
 
-                eMan.SetComponent<CTransform>(
-                    posEnts[i], new CTransform(newPos));
+            //for (int i = 0; i <  posEnts.Count; i++)
+            //{
+            //    CTransform thisTransform =
+            //        (CTransform)eMan.GetComponent<CTransform>(posEnts[i]);
+
+            //    Vector2 newPos = thisTransform.position +
+            //        new Vector2(
+            //            (float)Math.Sin(totalGameTime * i), 
+            //            (float)Math.Cos(totalGameTime * i));
+
+            //    eMan.SetComponent<CTransform>(
+            //        posEnts[i], new CTransform(newPos));
 
                 
-            }
+            //}
             
 
             base.Update(gameTime);
@@ -314,19 +368,24 @@ namespace Monogame_Test_Project
             // Draw to the canvas
             Bitmask sig = new Bitmask((int)ComponentType.Count);
             sig[ComponentType.CTransform] = true;
+            sig[ComponentType.CCollider] = true;
             List<int> posEnts = eMan.GetEntityIds(sig).ToList();
 
             foreach (var id in posEnts)
             {
-                CTransform trans = (CTransform)eMan.GetComponent<CTransform>(id);
+                CTransform transform = (CTransform)eMan.GetComponent<CTransform>(id);
+                CRectCollider collider = (CRectCollider)eMan.GetComponent<CRectCollider>(id);
 
-                spriteBatch.Draw(
-                    dirtTex,
-                    trans.position,
-                    Color.White
-                );
-
-
+                if (collider != null)
+                {
+                    spriteBatch.Draw(
+                        dirtTex,
+                        new Rectangle(
+                            (int)transform.X, (int)transform.Y,
+                            (int)collider.Width, (int)collider.Height),
+                        null,
+                        Color.White);
+                }
             }
 
 

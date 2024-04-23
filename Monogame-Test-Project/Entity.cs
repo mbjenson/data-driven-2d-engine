@@ -2,17 +2,32 @@
 using Microsoft.Xna.Framework;
 using bitmask;
 using System.Threading;
+using System.Runtime.CompilerServices;
+using Microsoft.Xna.Framework.Input;
 
 
 namespace ECS
 {
+    // TODO: add physics info?
+    // TODO: add controller input info?
+    //      movement info containing a list of pairs which map
+    //      controller input to player actions in game.
+    //      the player actions is an enum containing things like:
+    //              MOVEUP, MOVELEFT, MOVERIGHT, MOVEDOWN, 
+    //      a player with a CController will have the necessary information to know how to handle it
+    //      the CController binds that entity to the controller's input
+    //      so that the input system can take the input given 
+    //      and apply it to the player according to the wishes specific in the controller(?)
 
     public enum ComponentType
     {
         CTransform,
         CCollider,
+        CRigidBody,
+        CController,
         Count,
     }
+
     
     public class Entity
     {
@@ -44,21 +59,62 @@ namespace ECS
 
     }
 
-
     // base component class
     public class IComponent { }
+
+    public class CController : IComponent
+    {
+        public PlayerIndex controllerIndex;
+        public GamePadState gamePadState;
+
+        public CController() { }
+        public CController(PlayerIndex controllerIndex)
+        {
+            this.controllerIndex = controllerIndex;
+        }
+    }
+
+
+   
 
     public class CTransform : IComponent
     {
         public Vector2 position;
 
-        public CTransform() { }
+        public float X
+        {
+            get { return position.X; }
+            set { position.X = value; }
+        }
+
+        public float Y
+        {
+            get { return position.Y; }
+            set { position.Y = value; }
+        }
+
+        public CTransform() 
+        {
+            this.position = new Vector2(0, 0);
+        }
 
         public CTransform(Vector2 position)
         {
             this.position = position;
         }
+
+        public void Move(Vector2 vec)
+        {
+            this.position += vec;
+        }
+        public void Move(float x, float y)
+        {
+            this.position.X += x;
+            this.position.Y += y;
+        }
     }
+
+    
 
     public class CCollider : IComponent
     {
@@ -68,13 +124,25 @@ namespace ECS
     public class CRectCollider : CCollider
     {
         public Vector2 size;
-        public float X
+        //public float X
+        //{
+        //    get { return size.X; }
+        //    set { size.X = value; }
+        //}
+
+        //public float Y
+        //{
+        //    get { return size.Y; }
+        //    set { size.Y = value; }
+        //}
+
+        public float Width
         {
             get { return size.X; }
             set { size.X = value; }
         }
 
-        public float Y
+        public float Height
         {
             get { return size.Y; }
             set { size.Y = value; }
@@ -101,7 +169,28 @@ namespace ECS
         }
     }
 
+    // idea: maybe create a rigid body component which incorporates the 
+    // collider? nvm bad idea, that I am working upon
+    public class CRigidBody : IComponent
+    {
+        public Vector2 velocity;
+        public Vector2 acceleration;
+        public float mass;
 
+        public CRigidBody() { }
+
+        public CRigidBody(Vector2 velocity, Vector2 acceleration, float mass)
+        {
+            this.velocity = velocity;
+            this.acceleration = acceleration;
+            this.mass = mass;
+        }
+
+        //public void Update()
+        //{
+        //    velocity += acceleration;
+        //}
+    }
 }
 
 

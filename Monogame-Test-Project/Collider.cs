@@ -15,6 +15,7 @@ namespace Collisions
 {
     class CollisionSolver
     {
+        
         public CollisionSolver() { }
 
         public void solveCollision(CircleCollider dynamicCircle, CircleCollider staticCircle)

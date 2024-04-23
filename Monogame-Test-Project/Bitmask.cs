@@ -4,6 +4,8 @@
 // bool array for performing bitwise operations 
 using ECS;
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace bitmask
 {
@@ -40,14 +42,20 @@ namespace bitmask
             this.mask = b.mask;
         }
 
+        // DEBUG
+        public void Print()
+        {
+            for (int i = 0; i < size; i++)
+            {
+                Debug.WriteLine(i + ": " + mask[i]);
+            }
+        }
+
 
         // bitwise and
         public Bitmask AND(Bitmask maskB)
         {
-            if (maskB == null)
-            {
-                throw new ArgumentNullException("Null argument given for 'AND' operation");
-            }
+            
             if (maskB.size != this.size)
             {
                 throw new ArgumentException("Cannot perform 'AND' with bitmasks of different sizes");
@@ -114,6 +122,18 @@ namespace bitmask
             return false;
         }
 
+        public bool isEqual(Bitmask bitmask)
+        {
+            Debug.Assert(bitmask.size == this.size);
+            for (int i = 0; i < bitmask.size; i++)
+            {
+                if (bitmask.mask[i] != this.mask[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
     }
 }
