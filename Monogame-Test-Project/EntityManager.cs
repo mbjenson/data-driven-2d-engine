@@ -263,7 +263,7 @@ namespace ECS
             List<int> entityIds = new List<int>();
             foreach (var entity in mEntities)
             {
-                if (entity.cMask.AND(signature))
+                if (entity.cMask.AND(signature).isEqual(signature))
                 {
                     entityIds.Add(entity.id);
                 }
