@@ -31,7 +31,15 @@ namespace ECS.Systems
     }
 
 
-
+    /*
+        Checks input that is happening from the different controllers
+        sets values (perhaps in the controller component soon) so
+        that the entity with the controller component can respond to the input
+     
+        currently:
+            gets all entities with input component and rigidbody and 
+            moves them around based on controller input
+     */
     public class InputSystem : UpdateSystem
     {
         private EntityManager eMan;
@@ -42,7 +50,8 @@ namespace ECS.Systems
             this.eMan = eMan;
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CController] = true;
-            signature[ComponentType.CRigidBody] = true;
+            signature[ComponentType.CTransform] = true;
+            // used to be cRigid
         }
 
         public override void Update(GameTime gameTime)
@@ -51,28 +60,34 @@ namespace ECS.Systems
             
             foreach (Entity e in entities)
             {
+                CTransform transA = (CTransform)eMan.GetComponent<CTransform>(e.id);
                 CController contA = (CController)eMan.GetComponent<CController>(e.id);
-                CRigidBody rigA = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
-                // update gamepad state
-
-                contA.gamePadState = GamePad.GetState(contA.controllerIndex);
+                //CRigidBody rigA = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
+                
+                // update controller with gamepad state
+                GamePadState gamePadState = GamePad.GetState(contA.controllerIndex);
                 // perform actions based on input
 
-                contA.gamePadState.ThumbSticks.Left.Normalize();
-               // Debug.WriteLine(contA.gamePadState.ThumbSticks.Left);
-
-                Vector2 stickVals = new Vector2(
-                            contA.gamePadState.ThumbSticks.Left.X,
-                            -contA.gamePadState.ThumbSticks.Left.Y);
-
-                rigA.velocity = stickVals * 100f;
-
+                gamePadState.ThumbSticks.Left.Normalize();
+                // Debug.WriteLine(contA.gamePadState.ThumbSticks.Left);
                 
+                Vector2 stickVals = new Vector2(
+                            gamePadState.ThumbSticks.Left.X,
+                            -gamePadState.ThumbSticks.Left.Y);
+
+                contA.movement = stickVals;
+                // FUNCTION END HERE
+                // temporarily I will change the player's actual position here
+                // but later implement movement system which handles
+                // actually putting the controller parts into movement / physics
+                transA.Move(contA.movement);
+                //rigA.velocity = contA.movement * 100f;
             }
         }
     }
 
 
+    // TODO: introduce verlet integration
     public class PhysicsSystem : UpdateSystem
     {
         private EntityManager eMan;
@@ -94,14 +109,15 @@ namespace ECS.Systems
             
         }
 
-
         public override void Update(GameTime gameTime)
         {
-            UpdateMovement(gameTime);
+            UpdatePhysics(gameTime);
         }
 
-        private void UpdateMovement(GameTime gameTime)
+        // https://code.tutsplus.com/how-to-create-a-custom-2d-physics-engine-the-basics-and-impulse-resolution--gamedev-6331t
+        private void UpdatePhysics(GameTime gameTime)
         {
+            float dt = gameTime.ElapsedGameTime.Seconds;
             // get all entities with rigidbody, collider, and transform
             List<Entity> entities = eMan.GetEntities(signature).ToList();
             foreach (Entity e in entities)
@@ -113,10 +129,38 @@ namespace ECS.Systems
                 CRigidBody rig = 
                     (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
 
-                rig.velocity += rig.acceleration;
 
-                trans.position += 
-                    rig.velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                trans.lastPosition = trans.position;
+                trans.position +=
+                    (trans.position - trans.lastPosition) + rig.acceleration * (dt * dt);
+
+                rig.acceleration = Vector2.Zero;
+
+                //rig.velocity = rig.velocity + rig.acceleration * dt;
+                //trans.position = trans.position + rig.velocity * dt;
+
+
+
+
+
+
+                //rig.velocity = trans.position - trans.lastPosition;
+
+                //trans.position = 
+                //    trans.position * 2 - trans.lastPosition + rig.acceleration * dt * dt;
+
+                //rig.acceleration = trans.position - trans.lastPosition;
+                //rig.velocity = trans.position - trans.lastPosition;
+
+                //trans.position += rig.velocity *
+                //    gameTime.ElapsedGameTime.Seconds + 0.5f *
+                //    rig.acceleration * gameTime.ElapsedGameTime.Seconds *
+                //    gameTime.ElapsedGameTime.Seconds;
+
+                //rig.velocity += rig.acceleration * gameTime.ElapsedGameTime.Seconds;
+                
+                //trans.position +=
+                //    rig.velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
             }
         }
     }
@@ -197,7 +241,7 @@ namespace ECS.Systems
                     if (collider1.GetType() == typeof(CRectCollider) &&
                         collider2.GetType() == typeof(CRectCollider))
                     {
-                        ResolveDynamicCollision(
+                        ResolveDynamicAABB(
                             transform1, collider1 as CRectCollider, rig1,
                             transform2, collider2 as CRectCollider, rig2);
                     }
@@ -208,6 +252,121 @@ namespace ECS.Systems
                 //       and circle-circle collisions can be resolved 
             }
         }
+
+        // two ideas:
+        //  use verlet integration where only the position will be altered here,
+        //      but this altering in position is used by the physics system to 
+        //      calculate the object's new velocity (by using previous and current
+        //      position)
+        //
+        //  the other is to do what I am doing right now and to let the system take
+        //      can of adjusting the velocity like it is.
+        //
+        //  I am leaning towards the first one for a more fun experience.
+        //
+        //  these two would be similar except that the second would
+        //  make it so that if an object stops, its velocity would reflect this
+        //  
+        //  
+        //  
+        //  for some reason the object is not moving as expected, I think it is
+        //  becuase it is not being pushed as far in a given instance as it would if
+        //  only velocity adjustments were used and not both velocity and transform
+        //  position
+
+        private void ResolveDynamicAABB(
+            CTransform transA, CRectCollider colA, CRigidBody rigA,
+            CTransform transB, CRectCollider colB, CRigidBody rigB)
+        {
+            float rightA = transA.X + colA.Width;
+            float bottomA = transA.Y + colA.Height;
+            float rightB = transB.X + colB.Width;
+            float bottomB = transB.Y + colB.Height;
+
+            float toRightDist = 0, toLeftDist = 0, toBottomDist = 0, toTopDist = 0;
+
+            float massRatioA = rigA.mass / (rigA.mass + rigB.mass);
+            float massRatioB = rigB.mass / (rigA.mass + rigB.mass);
+
+            // detetct overlap
+            if (transA.X >= transB.X && transA.X <= rightB)
+            {   
+                toRightDist = rightB - transA.X;
+            }
+            if (rightA <= rightB && rightA >= transB.X)
+            {
+                toLeftDist = transB.X - rightA;
+            }
+            if (transA.Y >= transB.Y && transA.Y <= bottomB)
+            {
+                toBottomDist = bottomB - transA.Y;
+            }
+            if (bottomA <= bottomB && bottomA >= transB.Y)
+            {
+                toTopDist = transB.Y - bottomA;
+            }
+            
+            if (Math.Abs(toRightDist) <= Math.Abs(toBottomDist))
+            {
+                transA.Move(toRightDist * massRatioB, 0);
+                transB.Move(-toRightDist * massRatioA, 0);
+                //rigA.velocity += new Vector2(toRightDist * massRatioB, 0);
+                //rigB.velocity += new Vector2(-toRightDist * massRatioA, 0);
+            }
+            else
+            {
+                transA.Move(0, toBottomDist * massRatioB);
+                transB.Move(0, -toBottomDist * massRatioA);
+                //rigA.velocity += new Vector2(0, toBottomDist * massRatioB);
+                //rigB.velocity += new Vector2(0, -toBottomDist * massRatioA);
+            }
+            
+            if (Math.Abs(toRightDist) <= Math.Abs(toTopDist))
+            {
+                transA.Move(toRightDist * massRatioB, 0);
+                transB.Move(-toRightDist * massRatioA, 0);
+                //rigA.velocity += new Vector2(toRightDist * massRatioB, 0);
+                //rigB.velocity += new Vector2(-toRightDist * massRatioA, 0);
+            }
+            else
+            {
+                transA.Move(0, toTopDist * massRatioB);
+                transB.Move(0, -toTopDist * massRatioA);
+                //rigA.velocity += new Vector2(0, toTopDist * massRatioB);
+                //rigB.velocity += new Vector2(0, -toTopDist * massRatioA);
+            }
+
+            if (Math.Abs(toLeftDist) <= Math.Abs(toBottomDist))
+            {
+                transA.Move(toLeftDist * massRatioB, 0);
+                transB.Move(-toLeftDist * massRatioA, 0);
+                //rigA.velocity += new Vector2(toLeftDist * massRatioB, 0);
+                //rigB.velocity += new Vector2(-toLeftDist * massRatioA, 0);
+            }
+            else
+            {
+                transA.Move(0, toBottomDist * massRatioB);
+                transB.Move(0, -toBottomDist * massRatioA);
+                //rigA.velocity += new Vector2(0, toBottomDist * massRatioB);
+                //rigB.velocity += new Vector2(0, -toBottomDist * massRatioA);
+            }
+
+            if (Math.Abs(toLeftDist) <= Math.Abs(toTopDist))
+            {
+                transA.Move(toLeftDist * massRatioB, 0);
+                transB.Move(-toLeftDist * massRatioA, 0);
+                //rigA.velocity += new Vector2(toLeftDist * massRatioB, 0);
+                //rigB.velocity += new Vector2(-toLeftDist * massRatioA, 0);
+            }
+            else
+            {
+                transA.Move(0, toTopDist * massRatioB);
+                transB.Move(0, -toTopDist * massRatioA);
+                //rigA.velocity += new Vector2(0, toTopDist * massRatioB);
+                //rigB.velocity += new Vector2(0, -toTopDist * massRatioA);
+            }
+        }
+
 
         private void ResolveDynamicCollision(
             CTransform transA, CRectCollider colA, CRigidBody rigA, 
@@ -228,6 +387,7 @@ namespace ECS.Systems
             
             float massRatioA = rigA.mass / (rigA.mass+ rigB.mass);
             float massRatioB = rigB.mass / (rigA.mass + rigB.mass);
+
 
             if (transA.X >= transB.X && transA.X <= rightB)
             //if (dynamicRect.position.X >= staticRect.position.X &&

@@ -150,6 +150,37 @@ namespace ECS
             mEntities.Remove(entity);
         }
 
+        // add component to entity by entity id
+        public T AddComponent<T>(int eId) where T : IComponent, new()
+        {
+
+            Debug.Assert(mEntities.Find(x => x.id == eId) != null);
+            Debug.Assert(mComponents.ContainsKey(eId));
+
+            T newComp = new T();
+            mComponents[eId].Add(newComp);
+
+            // adjust entity component bit mask
+            Entity e = mEntities.Find(x => x.id == eId);
+            e.cMask[(int)mComponentToEnum[typeof(T)]] = true;
+
+            return newComp;
+        }
+
+        // add existing component instance to entity via entity id
+        public T AddComponent<T>(int eId, T component) where T : IComponent, new()
+        {
+            Debug.Assert(mEntities.Find(x => x.id == eId) != null);
+            Debug.Assert(mComponents.ContainsKey(eId));
+
+            mComponents[eId].Add(component);
+
+            Entity e = mEntities.Find(x => x.id == eId);
+            e.cMask[(int)mComponentToEnum[typeof(T)]] = true;
+            return component;
+        }
+
+        // add component of type T to entity 
         public T AddComponent<T>(Entity entity) where T : IComponent, new()
         {
             Debug.Assert(mEntities.Contains(entity));
@@ -165,6 +196,7 @@ namespace ECS
             return newComp;
         }
 
+        // add existing component of type T to entity
         public T AddComponent<T>(Entity entity, T component) where T : IComponent
         {
             Debug.Assert(mEntities.Contains(entity));

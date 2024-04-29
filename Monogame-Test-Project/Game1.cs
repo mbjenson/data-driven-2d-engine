@@ -89,9 +89,11 @@ TODO
 =======================================
 
 [] Entity Component System
-    current: test the transform system (test system)
     
     - systems
+        - movement system ->
+                * gets all the controller components and updates the entities
+                    physics based on the input recieved
         - collision / physics system -> 
                 * make the physics system do both movement for physics objects and 
                     handle collisions with a quadtree structure
@@ -102,36 +104,6 @@ TODO
                     systems can also check if there is a specific type (child class) of
                     the collider class.
                 * design your physics system to handle static map colliders or something like that
-
-[] implement lights
-
-    - implement a directional light (like the sun)
-
-    - implement colored light
-
-    - implement some kind of normal mapping for the objects
-        so that light in 2d interacts with them how it would in 3D
-
-[] implement shadows
-    
-    - real time shadow casting with objects in the world
-
-    - entities have real time shadows that are cast which resemble their actual texture shape
-
-[] Get Animated Tiles and entities working.
-    
-    - implement a nice animation system which simply takes in the acesprite file
-        and automatically sets up the animation without manual input
-    
-    - allow for animated tiles in the tilemap which will require a standard tickrate for the
-        map in which the animated tiles only (or everything idk yet) will be redrawn to match
-        the current frame of animation
-
-[] (later): Use a physics based system to solve collisions between different kinds of physical
-    objects using things like acceleration, mass, etc. (long term don't use the CollisionSolver
-    class to solve collisions).
-
-
 */
 
 
@@ -179,6 +151,8 @@ namespace Monogame_Test_Project
         InputSystem iSys;
         Entity pEnt;
 
+        EntityManagerDebug eManDebug;
+
         Texture2D dirtTex;
 
         private GraphicsDeviceManager graphics;
@@ -214,51 +188,55 @@ namespace Monogame_Test_Project
             
 
 
-            int numEnts = 1;
+            int numEnts = 2;
             eMan = new EntityManager(numEnts);
             numEnts--;
 
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
-            eMan.AddComponent<CTransform>(pEnt);
+            eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 20f) });
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 10f});
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(16f, 16f));
 
-
-            int[] colEnts = new int[numEnts];
-            
             for (int i = 0; i < numEnts; i++)
             {
-                eMan.CreateEntity();
+                Entity e = eMan.CreateEntity();
+                eMan.AddComponent<CTransform>(e);
+                eMan.AddComponent<CCollider>(e, new CRectCollider() { size = new Vector2(16f, 16f)});
+                eMan.AddComponent<CRigidBody>(e, new CRigidBody() { mass = 100f });
             }
 
-            Random rand = new Random();
-            for (int i = 0; i < numEnts; i++)
-            {
-                eMan.AddComponent<CTransform>(
-                    eMan.GetEntity(i), 
-                    new CTransform() {
-                        position = new Vector2(rand.Next(-0, 0), rand.Next(-0, 0))
-                    });
-                eMan.AddComponent<CRigidBody>(
-                    eMan.GetEntity(i),
-                    new CRigidBody()
-                    {
-                        acceleration = new Vector2(0, 0),
-                        velocity = new Vector2(),
-                        mass = 10f
-                    });
-                eMan.AddComponent<CCollider>(
-                    eMan.GetEntity(i),
-                    new CRectCollider()
-                    {
-                        size = new Vector2(16f, 16f)
-                    });
-            }
+            //Random rand = new Random();
+            //for (int i = 0; i < numEnts; i++)
+            //{
+            //    eMan.AddComponent<CTransform>(
+            //        i);
+            //    //eMan.AddComponent<CTransform>(
+            //    //    eMan.GetEntity(i), 
+            //    //    new CTransform() {
+            //    //        position = new Vector2(rand.Next(-0, 0), rand.Next(-0, 0))
+            //    //    });
+            //    eMan.AddComponent<CRigidBody>(
+            //        eMan.GetEntity(i),
+            //        new CRigidBody()
+            //        {
+            //            acceleration = new Vector2(0, 0),
+            //            velocity = new Vector2(),
+            //            mass = 10f
+            //        });
+            //    eMan.AddComponent<CCollider>(
+            //        eMan.GetEntity(i),
+            //        new CRectCollider()
+            //        {
+            //            size = new Vector2(16f, 16f)
+            //        });
+            //}
 
             pSys = new PhysicsSystem(eMan);
             cSys = new CollisionSystem(eMan);
             iSys = new InputSystem(eMan);
+
+            eManDebug = new EntityManagerDebug(eMan);
 
             base.Initialize();
         }
@@ -282,18 +260,19 @@ namespace Monogame_Test_Project
 
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             totalGameTime += dt;
+            
             // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
-            Vector2 viewportMousePos = new Vector2(
-                ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
-                ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
+            //Vector2 viewportMousePos = new Vector2(
+            //    ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
+            //    ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
 
             // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
-            worldMousePos = cam.screenToWorld(viewportMousePos);
+            //worldMousePos = cam.screenToWorld(viewportMousePos);
 
-            float xDif = worldMousePos.X - player.X;
-            float yDif = worldMousePos.Y - player.Y;
+            //float xDif = worldMousePos.X - player.X;
+            //float yDif = worldMousePos.Y - player.Y;
 
-            theta = (float)Math.Atan2(yDif, xDif);
+            //theta = (float)Math.Atan2(yDif, xDif);
 
             var keyState = Keyboard.GetState();
             if (keyState.IsKeyDown(Keys.W))
@@ -314,40 +293,22 @@ namespace Monogame_Test_Project
             }
 
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
-            player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out
+            player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
 
             iSys.Update(gameTime);
             pSys.Update(gameTime);
             cSys.Update(gameTime);
-           
 
+            
+            
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
-            //Debug.WriteLine(pTrans.position);
-            
+            cam.Position = new Vector2(0, 0);
+            //Vector2 playerPos = Vector2.Round(pTrans.position);
             //cam.Update(pTrans.position, dt);
+            //cam.Update(playerPos + new Vector2(8f, 8f), dt);
 
-            
+            //cam.Position = pTrans.position;
 
-            //Bitmask sig = new Bitmask((int)ComponentType.Count);
-            //sig[ComponentType.CTransform] = true;
-            //List<int> posEnts = eMan.GetEntityIds(sig).ToList();
-
-            //for (int i = 0; i <  posEnts.Count; i++)
-            //{
-            //    CTransform thisTransform =
-            //        (CTransform)eMan.GetComponent<CTransform>(posEnts[i]);
-
-            //    Vector2 newPos = thisTransform.position +
-            //        new Vector2(
-            //            (float)Math.Sin(totalGameTime * i), 
-            //            (float)Math.Cos(totalGameTime * i));
-
-            //    eMan.SetComponent<CTransform>(
-            //        posEnts[i], new CTransform(newPos));
-
-                
-            //}
-            
 
             base.Update(gameTime);
         }
