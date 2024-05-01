@@ -81,7 +81,6 @@ namespace ECS
     public class CTransform : IComponent
     {
         public Vector2 position;
-        public Vector2 lastPosition;
 
         public float X
         {
@@ -111,7 +110,6 @@ namespace ECS
         }
         public void Move(float x, float y)
         {
-            this.lastPosition = this.position;
             this.position.X += x;
             this.position.Y += y;
         }

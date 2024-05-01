@@ -147,7 +147,7 @@ namespace Monogame_Test_Project
 
         EntityManager eMan;
         PhysicsSystem pSys;
-        CollisionSystem cSys;
+        //CollisionSystem cSys;
         InputSystem iSys;
         Entity pEnt;
 
@@ -233,7 +233,7 @@ namespace Monogame_Test_Project
             //}
 
             pSys = new PhysicsSystem(eMan);
-            cSys = new CollisionSystem(eMan);
+            //cSys = new CollisionSystem(eMan);
             iSys = new InputSystem(eMan);
 
             eManDebug = new EntityManagerDebug(eMan);
@@ -274,22 +274,28 @@ namespace Monogame_Test_Project
 
             //theta = (float)Math.Atan2(yDif, xDif);
 
-            var keyState = Keyboard.GetState();
-            if (keyState.IsKeyDown(Keys.W))
+            //var keyState = Keyboard.GetState();
+            //if (keyState.IsKeyDown(Keys.W))
+            //{
+            //    player = player + new Vector2(0, -moveSpeed * dt);
+            //}
+            //if (keyState.IsKeyDown(Keys.S))
+            //{
+            //    player = player + new Vector2(0, moveSpeed * dt);
+            //}
+            //if (keyState.IsKeyDown(Keys.A))
+            //{
+            //    player = player + new Vector2(-moveSpeed * dt, 0);
+            //}
+            //if (keyState.IsKeyDown(Keys.D))
+            //{
+            //    player = player + new Vector2(moveSpeed * dt, 0);
+            //}
+
+            if (GamePad.GetState(PlayerIndex.One).IsButtonDown(Buttons.A))
             {
-                player = player + new Vector2(0, -moveSpeed * dt);
-            }
-            if (keyState.IsKeyDown(Keys.S))
-            {
-                player = player + new Vector2(0, moveSpeed * dt);
-            }
-            if (keyState.IsKeyDown(Keys.A))
-            {
-                player = player + new Vector2(-moveSpeed * dt, 0);
-            }
-            if (keyState.IsKeyDown(Keys.D))
-            {
-                player = player + new Vector2(moveSpeed * dt, 0);
+                eMan.SetComponent<CTransform>(1, new CTransform(new Vector2(0, 0)));
+                eMan.SetComponent<CRigidBody>(1, new CRigidBody(new Vector2(0, 0), new Vector2(0, 0), 100f));
             }
 
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
@@ -297,11 +303,13 @@ namespace Monogame_Test_Project
 
             iSys.Update(gameTime);
             pSys.Update(gameTime);
-            cSys.Update(gameTime);
+            //cSys.Update(gameTime);
 
+
+            //CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
+           
+            //CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
             
-            
-            CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
             cam.Position = new Vector2(0, 0);
             //Vector2 playerPos = Vector2.Round(pTrans.position);
             //cam.Update(pTrans.position, dt);

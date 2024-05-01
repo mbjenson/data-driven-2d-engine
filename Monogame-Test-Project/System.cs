@@ -13,7 +13,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Reflection.Metadata;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Principal;
+using System.Threading;
 using System.Xml;
 using viewStuff;
 
@@ -51,6 +54,7 @@ namespace ECS.Systems
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CController] = true;
             signature[ComponentType.CTransform] = true;
+            signature[ComponentType.CRigidBody] = true; // temp till I get movement system working
             // used to be cRigid
         }
 
@@ -62,7 +66,7 @@ namespace ECS.Systems
             {
                 CTransform transA = (CTransform)eMan.GetComponent<CTransform>(e.id);
                 CController contA = (CController)eMan.GetComponent<CController>(e.id);
-                //CRigidBody rigA = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
+                CRigidBody rigA = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
                 
                 // update controller with gamepad state
                 GamePadState gamePadState = GamePad.GetState(contA.controllerIndex);
@@ -80,14 +84,25 @@ namespace ECS.Systems
                 // temporarily I will change the player's actual position here
                 // but later implement movement system which handles
                 // actually putting the controller parts into movement / physics
-                transA.Move(contA.movement);
+
+                rigA.velocity = contA.movement * 100f;
+                //transA.Move(contA.movement);
                 //rigA.velocity = contA.movement * 100f;
             }
         }
     }
 
 
-    // TODO: introduce verlet integration
+
+
+
+
+    
+
+    // have universal quadtree which contains things like force fields, 
+    // bounding boxes, etc. This quadtree can be queried for all intersecting
+    // objects and other things that can be affected depending on position in space
+
     public class PhysicsSystem : UpdateSystem
     {
         private EntityManager eMan;
@@ -113,35 +128,40 @@ namespace ECS.Systems
         {
             UpdatePhysics(gameTime);
         }
-
         // https://code.tutsplus.com/how-to-create-a-custom-2d-physics-engine-the-basics-and-impulse-resolution--gamedev-6331t
         private void UpdatePhysics(GameTime gameTime)
         {
-            float dt = gameTime.ElapsedGameTime.Seconds;
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            UpdateMovement(dt);
+            SolveCollisions(dt);
+
+
+
             // get all entities with rigidbody, collider, and transform
-            List<Entity> entities = eMan.GetEntities(signature).ToList();
-            foreach (Entity e in entities)
-            {
-                CTransform trans = 
-                    (CTransform)eMan.GetComponent<CTransform>(e.id);
-                CCollider col = 
-                    (CCollider)eMan.GetComponent<CCollider>(e.id);
-                CRigidBody rig = 
-                    (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
+            //List<Entity> entities = eMan.GetEntities(signature).ToList();
+            //foreach (Entity e in entities)
+            //{
 
 
-                trans.lastPosition = trans.position;
-                trans.position +=
-                    (trans.position - trans.lastPosition) + rig.acceleration * (dt * dt);
 
-                rig.acceleration = Vector2.Zero;
+                //CTransform trans = 
+                //    (CTransform)eMan.GetComponent<CTransform>(e.id);
+                //CCollider col = 
+                //    (CCollider)eMan.GetComponent<CCollider>(e.id);
+                //CRigidBody rig = 
+                //    (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
+
+
+                //trans.lastPosition = trans.position;
+                //trans.position +=
+                //    (trans.position - trans.lastPosition) + rig.acceleration * (dt * dt);
+
+                //rig.acceleration = Vector2.Zero;
+
+
 
                 //rig.velocity = rig.velocity + rig.acceleration * dt;
                 //trans.position = trans.position + rig.velocity * dt;
-
-
-
-
 
 
                 //rig.velocity = trans.position - trans.lastPosition;
@@ -161,9 +181,316 @@ namespace ECS.Systems
                 
                 //trans.position +=
                 //    rig.velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            //}
+        }
+
+
+        private void SolveCollisions(float dt)
+        {
+            // temporary to prevent double resolution (does not work)
+            Dictionary<int, int> intersections = new Dictionary<int, int>();
+            
+            List<Entity> entities = eMan.GetEntities(signature).ToList();
+            for (int i = 0; i < entities.Count; i++)
+            {
+                CTransform tA =
+                    (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
+                CCollider cA =
+                    (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
+                CRigidBody rA =
+                    (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
+
+                for (int j = 0; j < entities.Count; j++)
+                {
+                    if (j == i) { continue; }
+
+                    CTransform tB =
+                        (CTransform)eMan.GetComponent<CTransform>(entities[j].id);
+                    CCollider cB =
+                        (CCollider)eMan.GetComponent<CRectCollider>(entities[j].id);
+                    CRigidBody rB =
+                        (CRigidBody)eMan.GetComponent<CRigidBody>(entities[j].id);
+
+                    if (cA.GetType() == typeof(CRectCollider) &&
+                        cB.GetType() == typeof(CRectCollider))
+                    {
+                        if (AABBvsAABB(
+                            tA, cA as CRectCollider,
+                            tB, cB as CRectCollider))
+                        {
+                            if (intersections.ContainsKey(i) && intersections[i] == j)
+                            {
+                                continue;
+                            }
+                            else if (intersections.ContainsKey(j) && intersections[j] == i)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                intersections.Add(i, j);
+                            }
+
+
+                            //ResolveCollision(tA, cA as CRectCollider,
+                            //    rA, tB, cB as CRectCollider, rB);
+                            
+                        }
+                        //ResolveDynamicAABB(
+                        //    transform1, collider1 as CRectCollider, rig1,
+                        //    transform2, collider2 as CRectCollider, rig2);
+                    }
+                }
+
+                // TODO: figure out how to differentiate from each type
+                //       of collider here so that circle-rect, rect-rect, 
+                //       and circle-circle collisions can be resolved 
+            }
+
+            // DOES NOT WORK
+            // temporary, in future we will use the quadtree for getting intersections            
+            foreach (int i in intersections.Keys)
+            {
+
+                int j = intersections[i];
+                CTransform tA =
+                    (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
+                CCollider cA =
+                    (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
+                CRigidBody rA =
+                    (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
+
+                CTransform tB =
+                        (CTransform)eMan.GetComponent<CTransform>(entities[j].id);
+                CCollider cB =
+                    (CCollider)eMan.GetComponent<CRectCollider>(entities[j].id);
+                CRigidBody rB =
+                    (CRigidBody)eMan.GetComponent<CRigidBody>(entities[j].id);
+
+                ResolveCollision(tA, cA as CRectCollider, rA, tB, cB as CRectCollider, rB);
+            }
+
+        }
+
+        // basic updating movement from velocity function
+        private void UpdateMovement(float dt)
+        {
+            List<Entity> entities = eMan.GetEntities(signature).ToList();
+            for (int i = 0; i < entities.Count; i++)
+            {
+                CTransform tA =
+                    (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
+                CRigidBody rA =
+                    (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
+
+                tA.position += rA.velocity * dt;
             }
         }
+
+
+        private bool AABBvsAABB(
+            CTransform transA, CRectCollider colA,
+            CTransform transB, CRectCollider colB)
+        {
+            // ensure no seperating axis
+            if (transA.X + colA.Width < transB.X || transA.X > transB.X + colB.Width)
+            {
+                return false;
+            }
+
+            if (transA.Y + colA.Height < transB.Y || transA.Y > transB.Y + colB.Height)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        
+
+        private bool CirclevsCircle(
+            CTransform transA, CCircleCollider colA,
+            CTransform transB, CCircleCollider colB)
+        {
+            float r = colA.radius + colB.radius;
+            r *= r;
+            return r < Math.Pow(transA.X + transB.X, 2) + Math.Pow(transA.Y + transB.Y, 2);
+        }
+
+
+
+        private Vector2 GetCollisionNormal(CTransform tA, CRectCollider cA, CRigidBody rA,
+            CTransform tB, CRectCollider cB, CRigidBody rB)
+        {
+            Vector2 colNormal = Vector2.Zero;
+
+            float toRightDist = Math.Abs(tB.X - tA.X + cA.Width);
+            float toLeftDist = Math.Abs(-1f * (tA.X - tB.X + cB.Width));
+            float toBotDist = Math.Abs(tB.Y - tA.Y + cA.Height);
+            float toTopDist = Math.Abs(-1f * (tA.Y - tB.Y + cB.Height));
+
+            float xOffset = Math.Min(toRightDist, toLeftDist);
+            float yOffset = Math.Min(toTopDist, toBotDist);
+
+
+            if (xOffset < yOffset)
+            {
+                if (tA.X - tB.X > 0f)
+                {
+                    //Debug.Print("box b is to the right of box a");
+                    colNormal.X = 1f;
+
+                    //colNormal.X = tB.X - tA.X + cA.Width;
+                }
+                else if (tA.X - tB.X < 0f)
+                {
+                    //Debug.Print("box b is to the left of box a");
+                    colNormal.X = -1f;
+                    //colNormal.X = -1f * (tA.X - tB.X + cB.Width);
+                }
+            }
+            else
+            {
+                if (tA.Y - tB.Y < 0f)
+                {
+                    //Debug.Print("box b is on top of box a");
+                    colNormal.Y = -1f;
+                    //colNormal.Y = -1f * (tA.Y - tB.Y + cB.Height);
+                }
+                else if (tA.Y - tB.Y > 0f)
+                {
+                    //Debug.Print("box b is below box a");
+                    colNormal.Y = 1f;
+                    //colNormal.Y = tB.Y - tA.Y + cA.Height;
+                }
+            }
+
+            return colNormal;
+        }
+
+
+
+
+
+        // does not take into account time steps
+        // to take into account time steps, take dt and divide it up into n parts,
+        //   run the collision check with that object at each of the n time steps
+        //   to do this, take A.curPos += A.velocity * (dt / n) * i;
+        //   then check for collision. if none, advance to next time step and check
+        //   again. If there is collision, solve it and move to next objects
+        private void ResolveCollision(CTransform tA, CRectCollider cA, CRigidBody rA,
+            CTransform tB, CRectCollider cB, CRigidBody rB)
+        {
+            // calculate relative velocity
+            Vector2 relativeVel = rB.velocity - rA.velocity;
+
+            // Calculate relative velocity in terms of the normal direction
+            //      collision normal can be got by finding in which direction
+            //      the objects have moved in to overlap
+            Vector2 colNormal = GetCollisionNormal(tA, cA, rA, tB, cB, rB);
+            
+            float velAlongNormal = Vector2.Dot(relativeVel, colNormal);
+
+            // calculate resitution ( I will be using this hard coded for simplicity)
+            //                              later add physics info class or
+            //                              simply add it to rigidbody class
+            float eps = 50f; // TEMP
+            
+            // Calculate impulse scalar
+            float j = -(1 + eps) * velAlongNormal;
+            j = j / 1 / rA.mass + 1 / rB.mass;
+
+            // apply impulse
+            Vector2 impulse = j * colNormal;
+
+            float massSum = rA.mass + rB.mass;
+            float massRatio = rB.mass / massSum;
+            rA.velocity -= massRatio * impulse;
+
+            massRatio = rA.mass / massSum;
+            rB.velocity += massRatio * impulse;
+
+            float toRightDist = tB.X - tA.X + cA.Width;
+            float toLeftDist = -1f * (tA.X - tB.X + cB.Width);
+
+            float toBotDist = tB.Y - tA.Y + cA.Height;
+            float toTopDist = -1f * (tA.Y - tB.Y + cB.Height);
+
+            float xMin = 0f;
+            float yMin = 0f;
+            
+            if (Math.Abs(toRightDist) < Math.Abs(toLeftDist))
+            {
+                xMin = toRightDist;
+            }
+            else
+            {
+                xMin = toLeftDist;
+            }
+            if (Math.Abs(toTopDist) < Math.Abs(toBotDist))
+            {
+                yMin = toTopDist;
+            }
+            else
+            {
+                yMin = toBotDist;
+            }
+
+            Debug.WriteLine("xMin: " + xMin);
+            Debug.WriteLine("yMin: " + yMin);
+
+            float penDepth = 0f;
+            if (Math.Abs(xMin) < Math.Abs(yMin))
+            {
+                penDepth = xMin;
+            }
+            else
+            {
+                penDepth = yMin;
+            }
+            Debug.WriteLine("penDepth: " + penDepth);
+
+            float massBPerc = rB.mass / massSum;
+            float massAPerc = rA.mass / massSum;
+
+
+            if (penDepth < 0)
+            {
+
+
+                tA.position -= penDepth * massBPerc * colNormal;
+                tB.position += penDepth * massAPerc * colNormal;
+            }
+            else
+            {
+                tA.position += penDepth * massBPerc * colNormal;
+                tB.position -= penDepth * massAPerc * colNormal;
+            }
+
+        }
+
+
+
+
+        
+
+
+        // quadtree functionality 
+        // the quadtree will update every frame and contain all of the
+        // items that need to be updated
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -189,6 +516,11 @@ namespace ECS.Systems
      *       if else statements. we can simply throw pairs of
      *       objects into a function that knows how to handle it
      */
+
+     
+
+
+    /*
     public class CollisionSystem : UpdateSystem
     {
         private EntityManager eMan;
@@ -207,13 +539,13 @@ namespace ECS.Systems
             SolveAllCollisions(gameTime);
         }
 
-        /*
-         Need to make it so that only the dynamic entities solve
-         collisions against the static ones and dynamic one
-         against other dynamic ones (like player against wall).
-         there is no need to solve collisions for static objects against static
-         objects.
-         */
+        
+         //Need to make it so that only the dynamic entities solve
+         //collisions against the static ones and dynamic one
+         //against other dynamic ones (like player against wall).
+         //there is no need to solve collisions for static objects against static
+         //objects.
+         
         private void SolveAllCollisions(GameTime gameTime)
         {
             List<Entity> entities = eMan.GetEntities(signature).ToList();
@@ -241,9 +573,15 @@ namespace ECS.Systems
                     if (collider1.GetType() == typeof(CRectCollider) &&
                         collider2.GetType() == typeof(CRectCollider))
                     {
-                        ResolveDynamicAABB(
-                            transform1, collider1 as CRectCollider, rig1,
-                            transform2, collider2 as CRectCollider, rig2);
+                        if (AABBvsAABB(
+                            transform1, collider1 as CRectCollider, 
+                            transform2, collider2 as CRectCollider))
+                        {
+                            Debug.WriteLine("collision occuring");
+                        }
+                        //ResolveDynamicAABB(
+                        //    transform1, collider1 as CRectCollider, rig1,
+                        //    transform2, collider2 as CRectCollider, rig2);
                     }
                 }
 
@@ -273,6 +611,34 @@ namespace ECS.Systems
         //  becuase it is not being pushed as far in a given instance as it would if
         //  only velocity adjustments were used and not both velocity and transform
         //  position
+
+        private bool AABBvsAABB(
+            CTransform transA, CRectCollider colA,
+            CTransform transB, CRectCollider colB)
+        {
+            // ensure no seperating axis
+            if (transA.X + colA.Width < transB.X || transA.X > transB.X + colB.Width)
+            {
+                return false;
+            }
+
+            if (transB.Y + colA.Height < transB.Y || transA.Y > transB.Y + colB.Height)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool CirclevsCircle(CTransform transA, CCircleCollider colA,
+            CTransform transB, CCircleCollider colB)
+        {
+            float r = colA.radius + colB.radius;
+            r *= r;
+            return r < Math.Pow(transA.X + transB.X, 2) + Math.Pow(transA.Y + transB.Y, 2);
+        }
+
+
 
         private void ResolveDynamicAABB(
             CTransform transA, CRectCollider colA, CRigidBody rigA,
@@ -657,8 +1023,10 @@ namespace ECS.Systems
                 return;
             }
         }
-    }
 
+
+    }
+    */
 
 
 
