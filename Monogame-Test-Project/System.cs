@@ -85,15 +85,74 @@ namespace ECS.Systems
                 // but later implement movement system which handles
                 // actually putting the controller parts into movement / physics
 
-                rigA.velocity = contA.movement * 100f;
-                //transA.Move(contA.movement);
-                //rigA.velocity = contA.movement * 100f;
+                // GOOD player movemnt code which uses physics and
+                // not just hard coded change in position
+
+
+                // calculate additional velocity as scalar times stick input
+                //rigA.velocity += contA.movement * 10f; // movement system
+
+                // calculate friction proportional to velocity (and mass later)
+                //rigA.acceleration += rigA.velocity * -0.065f; // physics system
+
+                // apply friction to velocity
+                //rigA.velocity += rigA.acceleration; // Physics system
+
+                // set acceleration to zero
+                //rigA.acceleration = Vector2.Zero; // physics system
+
+
+
+                // later, this movement code must be implemented in the movement system.
+                // The movement system will handle taking all entities with a controller
+                //      component and ensuring that their velocity is set according to 
+                //      the directional input (Vector2 CController.movement)
+                // The physics system will ensure that the acceleration is altered according
+                //      to the friction of the room the player is in (perhaps this can be done
+                //      (using force)
             }
         }
     }
 
 
+    
 
+
+    public class MovementSystem : UpdateSystem
+    {
+        private EntityManager eMan;
+        private Bitmask signature;
+
+        public MovementSystem(EntityManager eMan)
+        {
+            this.eMan = eMan;
+            signature = new Bitmask((int)ComponentType.Count);
+            signature[ComponentType.CController] = true;
+            signature[ComponentType.CRigidBody] = true;
+        }
+
+
+        public override void Update(GameTime gameTime)
+        {
+            List<Entity> entities = eMan.GetEntities(signature).ToList();
+            foreach (Entity e in entities)
+            {
+                CController cont = (CController)eMan.GetComponent<CController>(e.id);
+                CRigidBody rig = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
+
+                if (cont == null || rig == null)
+                {
+                    throw new Exception("MovementSystem.Update: controller or rigidbody null");
+                }
+
+                // for now, all players have the same movement speed
+                float moveSpeed = 10f;
+                rig.velocity += cont.movement * moveSpeed;
+                // limit player speed gained by input this way
+                rig.acceleration += rig.velocity * -0.06f;
+            }
+        }
+    }
 
 
 
@@ -107,6 +166,37 @@ namespace ECS.Systems
     {
         private EntityManager eMan;
         private Bitmask signature;
+
+
+        // used to pack data
+        private struct PhysicsRect
+        {
+            public CTransform transform;
+            public CRectCollider collider;
+            public CRigidBody rigidBody;
+            
+            public PhysicsRect(CTransform t, CRectCollider c, CRigidBody r)
+            {
+                this.transform = t;
+                this.collider = c;
+                this.rigidBody = r;
+            }
+        }
+
+        private struct PhysicsCircle
+        {
+            public CTransform transform;
+            public CCircleCollider collider;
+            public CRigidBody rigidBody;
+
+            public PhysicsCircle(CTransform t, CCircleCollider c, CRigidBody r)
+            {
+                this.transform = t;
+                this.collider = c;
+                this.rigidBody = r;
+            }
+        }
+
 
         public PhysicsSystem(EntityManager eMan)
         {
@@ -128,12 +218,16 @@ namespace ECS.Systems
         {
             UpdatePhysics(gameTime);
         }
-        // https://code.tutsplus.com/how-to-create-a-custom-2d-physics-engine-the-basics-and-impulse-resolution--gamedev-6331t
+
         private void UpdatePhysics(GameTime gameTime)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            
             UpdateMovement(dt);
+            
             SolveCollisions(dt);
+
+            
 
 
 
@@ -185,9 +279,14 @@ namespace ECS.Systems
         }
 
 
+        // TODO: send data to other classes in chunks like structs
+        // this will allow for easier sending of data that does not require 8 parameters
         private void SolveCollisions(float dt)
         {
-            // temporary to prevent double resolution (does not work)
+            Dictionary<int, PhysicsRect> physicsObjects =
+                new Dictionary<int, PhysicsRect>();
+
+            // temporary to prevent double resolution
             Dictionary<int, int> intersections = new Dictionary<int, int>();
             
             List<Entity> entities = eMan.GetEntities(signature).ToList();
@@ -199,6 +298,13 @@ namespace ECS.Systems
                     (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
                 CRigidBody rA =
                     (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
+
+                // testing if I can pack data in struct
+                PhysicsRect rectA = new PhysicsRect(tA, cA as CRectCollider, rA);
+                if (!physicsObjects.ContainsKey(i))
+                {
+                    physicsObjects.Add(i, rectA);
+                }
 
                 for (int j = 0; j < entities.Count; j++)
                 {
@@ -228,7 +334,18 @@ namespace ECS.Systems
                             }
                             else
                             {
-                                intersections.Add(i, j);
+                                // TODO: don't use a dictionary for this.
+                                if (!intersections.ContainsKey(i))
+                                {
+                                    intersections.Add(i, j);
+                                }
+
+                                // testing if i can pack data into structs
+                                if (!physicsObjects.ContainsKey(j))
+                                {
+                                    PhysicsRect rectB = new PhysicsRect(tB, cB as CRectCollider, rB);
+                                    physicsObjects.Add(j, rectB);
+                                }
                             }
 
 
@@ -236,9 +353,6 @@ namespace ECS.Systems
                             //    rA, tB, cB as CRectCollider, rB);
                             
                         }
-                        //ResolveDynamicAABB(
-                        //    transform1, collider1 as CRectCollider, rig1,
-                        //    transform2, collider2 as CRectCollider, rig2);
                     }
                 }
 
@@ -247,29 +361,35 @@ namespace ECS.Systems
                 //       and circle-circle collisions can be resolved 
             }
 
-            // DOES NOT WORK
-            // temporary, in future we will use the quadtree for getting intersections            
             foreach (int i in intersections.Keys)
             {
 
                 int j = intersections[i];
-                CTransform tA =
-                    (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
-                CCollider cA =
-                    (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
-                CRigidBody rA =
-                    (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
-
-                CTransform tB =
-                        (CTransform)eMan.GetComponent<CTransform>(entities[j].id);
-                CCollider cB =
-                    (CCollider)eMan.GetComponent<CRectCollider>(entities[j].id);
-                CRigidBody rB =
-                    (CRigidBody)eMan.GetComponent<CRigidBody>(entities[j].id);
-
-                ResolveCollision(tA, cA as CRectCollider, rA, tB, cB as CRectCollider, rB);
+                // not very cache friendly i don't think
+                ResolveCollision(physicsObjects[i], physicsObjects[j]);
             }
 
+            // temporary, in future we will use the quadtree for getting intersections            
+            //foreach (int i in intersections.Keys)
+            //{
+
+            //    int j = intersections[i];
+            //    CTransform tA =
+            //        (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
+            //    CCollider cA =
+            //        (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
+            //    CRigidBody rA =
+            //        (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
+
+            //    CTransform tB =
+            //            (CTransform)eMan.GetComponent<CTransform>(entities[j].id);
+            //    CCollider cB =
+            //        (CCollider)eMan.GetComponent<CRectCollider>(entities[j].id);
+            //    CRigidBody rB =
+            //        (CRigidBody)eMan.GetComponent<CRigidBody>(entities[j].id);
+
+            //    ResolveCollision(tA, cA as CRectCollider, rA, tB, cB as CRectCollider, rB);
+            //}
         }
 
         // basic updating movement from velocity function
@@ -283,6 +403,29 @@ namespace ECS.Systems
                 CRigidBody rA =
                     (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
 
+
+
+                // friction (not yet location dependant or dependant on mass correctly)
+                float kN = 0.1f;
+
+                //rA.acceleration += rA.velocity * -0.06f
+
+                //rA.acceleration += (rA.velocity / rA.mass) * -kN; // decent (does not relate mass well though)
+
+                // Vector2 frictionForce = new Vector2(something, something);
+
+                //                negate | vel relate to mass | relate to surface coef
+                rA.acceleration += -1f * (rA.velocity * (1f / rA.mass)) * kN;
+
+
+               
+                // calculate velocity
+                rA.velocity += rA.acceleration;
+
+                // reset acceleration
+                rA.acceleration = Vector2.Zero;
+
+                // update position from velocity
                 tA.position += rA.velocity * dt;
             }
         }
@@ -317,16 +460,14 @@ namespace ECS.Systems
         }
 
 
-
-        private Vector2 GetCollisionNormal(CTransform tA, CRectCollider cA, CRigidBody rA,
-            CTransform tB, CRectCollider cB, CRigidBody rB)
+        private Vector2 GetCollisionNormal(PhysicsRect A, PhysicsRect B)
         {
             Vector2 colNormal = Vector2.Zero;
 
-            float toRightDist = Math.Abs(tB.X - tA.X + cA.Width);
-            float toLeftDist = Math.Abs(-1f * (tA.X - tB.X + cB.Width));
-            float toBotDist = Math.Abs(tB.Y - tA.Y + cA.Height);
-            float toTopDist = Math.Abs(-1f * (tA.Y - tB.Y + cB.Height));
+            float toRightDist = Math.Abs(B.transform.X - A.transform.X + A.collider.Width);
+            float toLeftDist = Math.Abs(-1f * (A.transform.X - B.transform.X + B.collider.Width));
+            float toBotDist = Math.Abs(B.transform.Y - A.transform.Y + A.collider.Height);
+            float toTopDist = Math.Abs(-1f * (A.transform.Y - B.transform.Y + B.collider.Height));
 
             float xOffset = Math.Min(toRightDist, toLeftDist);
             float yOffset = Math.Min(toTopDist, toBotDist);
@@ -334,33 +475,33 @@ namespace ECS.Systems
 
             if (xOffset < yOffset)
             {
-                if (tA.X - tB.X > 0f)
+                if (A.transform.X - B.transform.X > 0f)
                 {
                     //Debug.Print("box b is to the right of box a");
                     colNormal.X = 1f;
 
-                    //colNormal.X = tB.X - tA.X + cA.Width;
+                    //colNormal.X = B.transform.X - A.transform.X + cA.Width;
                 }
-                else if (tA.X - tB.X < 0f)
+                else if (A.transform.X - B.transform.X < 0f)
                 {
                     //Debug.Print("box b is to the left of box a");
                     colNormal.X = -1f;
-                    //colNormal.X = -1f * (tA.X - tB.X + cB.Width);
+                    //colNormal.X = -1f * (A.transform.X - B.transform.X + cB.Width);
                 }
             }
             else
             {
-                if (tA.Y - tB.Y < 0f)
+                if (A.transform.Y - B.transform.Y < 0f)
                 {
                     //Debug.Print("box b is on top of box a");
                     colNormal.Y = -1f;
-                    //colNormal.Y = -1f * (tA.Y - tB.Y + cB.Height);
+                    //colNormal.Y = -1f * (A.transform.Y - B.transform.Y + cB.Height);
                 }
-                else if (tA.Y - tB.Y > 0f)
+                else if (A.transform.Y - B.transform.Y > 0f)
                 {
                     //Debug.Print("box b is below box a");
                     colNormal.Y = 1f;
-                    //colNormal.Y = tB.Y - tA.Y + cA.Height;
+                    //colNormal.Y = B.transform.Y - A.transform.Y + cA.Height;
                 }
             }
 
@@ -368,56 +509,105 @@ namespace ECS.Systems
         }
 
 
+        //private Vector2 GetCollisionNormal(CTransform tA, CRectCollider cA, CRigidBody rA,
+        //    CTransform tB, CRectCollider cB, CRigidBody rB)
+        //{
+        //    Vector2 colNormal = Vector2.Zero;
+
+        //    float toRightDist = Math.Abs(tB.X - tA.X + cA.Width);
+        //    float toLeftDist = Math.Abs(-1f * (tA.X - tB.X + cB.Width));
+        //    float toBotDist = Math.Abs(tB.Y - tA.Y + cA.Height);
+        //    float toTopDist = Math.Abs(-1f * (tA.Y - tB.Y + cB.Height));
+
+        //    float xOffset = Math.Min(toRightDist, toLeftDist);
+        //    float yOffset = Math.Min(toTopDist, toBotDist);
 
 
+        //    if (xOffset < yOffset)
+        //    {
+        //        if (tA.X - tB.X > 0f)
+        //        {
+        //            //Debug.Print("box b is to the right of box a");
+        //            colNormal.X = 1f;
 
-        // does not take into account time steps
-        // to take into account time steps, take dt and divide it up into n parts,
-        //   run the collision check with that object at each of the n time steps
-        //   to do this, take A.curPos += A.velocity * (dt / n) * i;
-        //   then check for collision. if none, advance to next time step and check
-        //   again. If there is collision, solve it and move to next objects
-        private void ResolveCollision(CTransform tA, CRectCollider cA, CRigidBody rA,
-            CTransform tB, CRectCollider cB, CRigidBody rB)
+        //            //colNormal.X = tB.X - tA.X + cA.Width;
+        //        }
+        //        else if (tA.X - tB.X < 0f)
+        //        {
+        //            //Debug.Print("box b is to the left of box a");
+        //            colNormal.X = -1f;
+        //            //colNormal.X = -1f * (tA.X - tB.X + cB.Width);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        if (tA.Y - tB.Y < 0f)
+        //        {
+        //            //Debug.Print("box b is on top of box a");
+        //            colNormal.Y = -1f;
+        //            //colNormal.Y = -1f * (tA.Y - tB.Y + cB.Height);
+        //        }
+        //        else if (tA.Y - tB.Y > 0f)
+        //        {
+        //            //Debug.Print("box b is below box a");
+        //            colNormal.Y = 1f;
+        //            //colNormal.Y = tB.Y - tA.Y + cA.Height;
+        //        }
+        //    }
+
+        //    return colNormal;
+        //}
+
+        // this version uses a physics rect struct to get all of the data about
+        // each object instead of accessing the raw components
+
+        // TODO: collisions don't take mass into account when player makes them.
+        private void ResolveCollision(PhysicsRect A, PhysicsRect B)
         {
             // calculate relative velocity
-            Vector2 relativeVel = rB.velocity - rA.velocity;
+            Vector2 relativeVel = B.rigidBody.velocity - A.rigidBody.velocity;
 
             // Calculate relative velocity in terms of the normal direction
             //      collision normal can be got by finding in which direction
             //      the objects have moved in to overlap
-            Vector2 colNormal = GetCollisionNormal(tA, cA, rA, tB, cB, rB);
-            
+
+            //Vector2 colNormal = GetCollisionNormal(
+            //    A.transform, A.collider, A.rigidBody, 
+            //    B.transform, B.collider, B.rigidBody);
+
+            Vector2 colNormal = GetCollisionNormal(A, B);
+
             float velAlongNormal = Vector2.Dot(relativeVel, colNormal);
 
             // calculate resitution ( I will be using this hard coded for simplicity)
             //                              later add physics info class or
             //                              simply add it to rigidbody class
-            float eps = 50f; // TEMP
-            
+            //float eps = 0.5f; // TEMP
+            float eps = 20f;
+
             // Calculate impulse scalar
             float j = -(1 + eps) * velAlongNormal;
-            j = j / 1 / rA.mass + 1 / rB.mass;
+            j = j / 1 / A.rigidBody.mass + 1 / B.rigidBody.mass;
 
             // apply impulse
             Vector2 impulse = j * colNormal;
 
-            float massSum = rA.mass + rB.mass;
-            float massRatio = rB.mass / massSum;
-            rA.velocity -= massRatio * impulse;
+            float massSum = A.rigidBody.mass + B.rigidBody.mass;
+            float massRatio = B.rigidBody.mass / massSum;
+            A.rigidBody.velocity -= massRatio * impulse;
 
-            massRatio = rA.mass / massSum;
-            rB.velocity += massRatio * impulse;
+            massRatio = A.rigidBody.mass / massSum;
+            B.rigidBody.velocity += massRatio * impulse;
 
-            float toRightDist = tB.X - tA.X + cA.Width;
-            float toLeftDist = -1f * (tA.X - tB.X + cB.Width);
+            float toRightDist = B.transform.X - A.transform.X + A.collider.Width;
+            float toLeftDist = -1f * (A.transform.X - B.transform.X + B.collider.Width);
 
-            float toBotDist = tB.Y - tA.Y + cA.Height;
-            float toTopDist = -1f * (tA.Y - tB.Y + cB.Height);
+            float toBotDist = B.transform.Y - A.transform.Y + A.collider.Height;
+            float toTopDist = -1f * (A.transform.Y - B.transform.Y + B.collider.Height);
 
             float xMin = 0f;
             float yMin = 0f;
-            
+
             if (Math.Abs(toRightDist) < Math.Abs(toLeftDist))
             {
                 xMin = toRightDist;
@@ -435,9 +625,6 @@ namespace ECS.Systems
                 yMin = toBotDist;
             }
 
-            Debug.WriteLine("xMin: " + xMin);
-            Debug.WriteLine("yMin: " + yMin);
-
             float penDepth = 0f;
             if (Math.Abs(xMin) < Math.Abs(yMin))
             {
@@ -447,26 +634,140 @@ namespace ECS.Systems
             {
                 penDepth = yMin;
             }
-            Debug.WriteLine("penDepth: " + penDepth);
 
-            float massBPerc = rB.mass / massSum;
-            float massAPerc = rA.mass / massSum;
+            
+            float massBPerc = B.rigidBody.mass / massSum;
+            float massAPerc = A.rigidBody.mass / massSum;
+            //Debug.WriteLine("massBPerc: " + massBPerc);
+            //Debug.WriteLine("massAPerc: " + massAPerc);
 
+
+            //Vector2 correction =
+            //    penDepth / ((1f / A.rigidBody.mass) + (1f / B.rigidBody.mass)) * massAPerc * colNormal;
+            //if (penDepth < 0)
+            //{
+            //    A.transform.position -= correction * massBPerc;
+            //    B.transform.position += correction * massAPerc;
+            //}
+            //else
+            //{
+            //    A.transform.position += correction * massAPerc;
+            //    B.transform.position -= correction * massBPerc;
+            //}
 
             if (penDepth < 0)
             {
-
-
-                tA.position -= penDepth * massBPerc * colNormal;
-                tB.position += penDepth * massAPerc * colNormal;
+                A.transform.position -= penDepth * massBPerc * colNormal;
+                B.transform.position += penDepth * massAPerc * colNormal;
             }
             else
             {
-                tA.position += penDepth * massBPerc * colNormal;
-                tB.position -= penDepth * massAPerc * colNormal;
+                A.transform.position += penDepth * massBPerc * colNormal;
+                B.transform.position -= penDepth * massAPerc * colNormal;
             }
 
         }
+
+
+        //// does not take into account time steps
+        //// to take into account time steps, take dt and divide it up into n parts,
+        ////   run the collision check with that object at each of the n time steps
+        ////   to do this, take A.curPos += A.velocity * (dt / n) * i;
+        ////   then check for collision. if none, advance to next time step and check
+        ////   again. If there is collision, solve it and move to next objects
+        ///
+
+        // this version just recieves raw data instead of structs
+        //private void ResolveCollision(CTransform tA, CRectCollider cA, CRigidBody rA,
+        //    CTransform tB, CRectCollider cB, CRigidBody rB)
+        //{
+        //    // calculate relative velocity
+        //    Vector2 relativeVel = rB.velocity - rA.velocity;
+
+        //    // Calculate relative velocity in terms of the normal direction
+        //    //      collision normal can be got by finding in which direction
+        //    //      the objects have moved in to overlap
+        //    Vector2 colNormal = GetCollisionNormal(tA, cA, rA, tB, cB, rB);
+            
+        //    float velAlongNormal = Vector2.Dot(relativeVel, colNormal);
+
+        //    // calculate resitution ( I will be using this hard coded for simplicity)
+        //    //                              later add physics info class or
+        //    //                              simply add it to rigidbody class
+        //    float eps = 50f; // TEMP
+            
+        //    // Calculate impulse scalar
+        //    float j = -(1 + eps) * velAlongNormal;
+        //    j = j / 1 / rA.mass + 1 / rB.mass;
+
+        //    // apply impulse
+        //    Vector2 impulse = j * colNormal;
+
+        //    float massSum = rA.mass + rB.mass;
+        //    float massRatio = rB.mass / massSum;
+        //    rA.velocity -= massRatio * impulse;
+
+        //    massRatio = rA.mass / massSum;
+        //    rB.velocity += massRatio * impulse;
+
+        //    float toRightDist = tB.X - tA.X + cA.Width;
+        //    float toLeftDist = -1f * (tA.X - tB.X + cB.Width);
+
+        //    float toBotDist = tB.Y - tA.Y + cA.Height;
+        //    float toTopDist = -1f * (tA.Y - tB.Y + cB.Height);
+
+        //    float xMin = 0f;
+        //    float yMin = 0f;
+            
+        //    if (Math.Abs(toRightDist) < Math.Abs(toLeftDist))
+        //    {
+        //        xMin = toRightDist;
+        //    }
+        //    else
+        //    {
+        //        xMin = toLeftDist;
+        //    }
+        //    if (Math.Abs(toTopDist) < Math.Abs(toBotDist))
+        //    {
+        //        yMin = toTopDist;
+        //    }
+        //    else
+        //    {
+        //        yMin = toBotDist;
+        //    }
+
+        //    Debug.WriteLine("xMin: " + xMin);
+        //    Debug.WriteLine("yMin: " + yMin);
+
+        //    float penDepth = 0f;
+        //    if (Math.Abs(xMin) < Math.Abs(yMin))
+        //    {
+        //        penDepth = xMin;
+        //    }
+        //    else
+        //    {
+        //        penDepth = yMin;
+        //    }
+        //    Debug.WriteLine("penDepth: " + penDepth);
+
+        //    float massBPerc = rB.mass / massSum;
+        //    float massAPerc = rA.mass / massSum;
+
+
+        //    if (penDepth < 0)
+        //    {
+
+
+        //        tA.position -= penDepth * massBPerc * colNormal;
+        //        tB.position += penDepth * massAPerc * colNormal;
+        //    }
+        //    else
+        //    {
+        //        tA.position += penDepth * massBPerc * colNormal;
+        //        tB.position -= penDepth * massAPerc * colNormal;
+        //    }
+
+        //}
 
 
 

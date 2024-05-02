@@ -25,6 +25,7 @@ namespace ECS
         CCollider,
         CRigidBody,
         CController,
+        // CMovement, // contains information like movement speed (pondering if I will use this...)
         Count,
     }
 

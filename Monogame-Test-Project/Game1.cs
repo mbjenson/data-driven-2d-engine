@@ -16,6 +16,7 @@ using System.Linq;
 using Microsoft.VisualBasic;
 using bitmask;
 using System.Net.Sockets;
+using Microsoft.Xna.Framework.Content;
 
 /*
  * 
@@ -90,20 +91,25 @@ TODO
 
 [] Entity Component System
     
+    - merge matthew-dev into master (override master with matthew-dev b/c matthew-dev has the good stuff on it) ->
+
     - systems
         - movement system ->
                 * gets all the controller components and updates the entities
                     physics based on the input recieved
+                * decide how to store movement speed for each player (like in a component which stores base movement speed 
+                    and then a powerup system could use this base value as well as any powerups the player has to calculate their new
+                    movement speed)
         - collision / physics system -> 
-                * make the physics system do both movement for physics objects and 
-                    handle collisions with a quadtree structure
-                * figure out how to manage different types of colliders that might be present in the
-                    game whether they be rect or circle shape. right now I have a system that
-                    uses a generic class CCollider which rect and circle colliders inherit from
-                    this is fine for now but I might change it in the future so
-                    systems can also check if there is a specific type (child class) of
-                    the collider class.
-                * design your physics system to handle static map colliders or something like that
+                * fix how objects are affected by friction so that the heavier objects are more effected and 
+                    lighter objects less effected, as it would be in real life.
+                    Currently, it is inversly proportional to their mass so heavier objects take longer to get going but once they do, they take ages to slow down
+                                and lighter objects are easier to move but respond to friction much more
+                * figure out how to properly calculate friction based on mass
+                * 
+                * allow the physics system to query some map manager for the coefficient of kinetic friction
+                    or other information that would effect the player's movement based on where the player is in the world.
+                * implement a quadtree for collision detection optimization
 */
 
 
@@ -127,8 +133,8 @@ namespace Monogame_Test_Project
         const int WIN_WIDTH = 1440;
         const int WIN_HEIGHT = 810;
 
-        const int TARGET_WIDTH = 320; // 480;
-        const int TARGET_HEIGHT = 180; // 270
+        const int TARGET_WIDTH = 320; // 480; 
+        const int TARGET_HEIGHT = 180; // 270;
 
 
         Vector2 worldMousePos;
@@ -137,6 +143,10 @@ namespace Monogame_Test_Project
         Vector2 player;
 
         float totalGameTime = 0f;
+
+        float framesPerSecond = 0f;
+        float secondsCounter = 0f;
+        int numFrames = 0;
 
         float moveSpeed = 70f;
         float theta = 0f;
@@ -147,13 +157,17 @@ namespace Monogame_Test_Project
 
         EntityManager eMan;
         PhysicsSystem pSys;
+        MovementSystem mSys;
         //CollisionSystem cSys;
         InputSystem iSys;
+
         Entity pEnt;
+        Vector2 playerPos;
 
         EntityManagerDebug eManDebug;
 
         Texture2D dirtTex;
+        SpriteFont spriteFont;
 
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
@@ -176,6 +190,8 @@ namespace Monogame_Test_Project
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
             graphics.PreferredBackBufferHeight = WIN_HEIGHT;
 
+            IsFixedTimeStep = false;
+
             graphics.ApplyChanges();
 
             renderCanvas = new RenderTarget2D(
@@ -185,9 +201,6 @@ namespace Monogame_Test_Project
                 GraphicsDevice.PresentationParameters.BackBufferFormat,
                 DepthFormat.Depth24);
 
-            
-
-
             int numEnts = 2;
             eMan = new EntityManager(numEnts);
             numEnts--;
@@ -195,7 +208,7 @@ namespace Monogame_Test_Project
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 20f) });
-            eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 10f});
+            eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 100f});
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(16f, 16f));
 
             for (int i = 0; i < numEnts; i++)
@@ -235,6 +248,7 @@ namespace Monogame_Test_Project
             pSys = new PhysicsSystem(eMan);
             //cSys = new CollisionSystem(eMan);
             iSys = new InputSystem(eMan);
+            mSys = new MovementSystem(eMan);
 
             eManDebug = new EntityManagerDebug(eMan);
 
@@ -249,6 +263,8 @@ namespace Monogame_Test_Project
             spriteEffect = Content.Load<Effect>("spriteShader");
 
             dirtTex = Content.Load<Texture2D>("dirt");
+
+            spriteFont = Content.Load<SpriteFont>("type-face");
         }
 
 
@@ -260,6 +276,19 @@ namespace Monogame_Test_Project
 
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             totalGameTime += dt;
+
+            secondsCounter += dt;
+            numFrames += 1;
+            if (secondsCounter > 0)
+            {
+                //Debug.WriteLine("secs: " + secondsCounter + ", numFrames: " + numFrames);
+                framesPerSecond = numFrames / secondsCounter;
+
+                secondsCounter = 0f;
+                numFrames = 0;
+
+            }
+            
             
             // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
             //Vector2 viewportMousePos = new Vector2(
@@ -294,25 +323,31 @@ namespace Monogame_Test_Project
 
             if (GamePad.GetState(PlayerIndex.One).IsButtonDown(Buttons.A))
             {
-                eMan.SetComponent<CTransform>(1, new CTransform(new Vector2(0, 0)));
-                eMan.SetComponent<CRigidBody>(1, new CRigidBody(new Vector2(0, 0), new Vector2(0, 0), 100f));
+
+                //eMan.SetComponent<CTransform>(1, new CTransform(new Vector2(0, 0)));
+                //eMan.SetComponent<CRigidBody>(1, new CRigidBody(new Vector2(0, 0), new Vector2(0, 0), 10f));
+
+                CRigidBody rig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
+                rig.velocity += new Vector2(20f, 20f) * Vector2.Normalize(rig.velocity);
             }
 
+
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
-            player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
+            //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
 
             iSys.Update(gameTime);
+            mSys.Update(gameTime);
             pSys.Update(gameTime);
             //cSys.Update(gameTime);
 
 
             //CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
            
-            //CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
-            
-            cam.Position = new Vector2(0, 0);
-            //Vector2 playerPos = Vector2.Round(pTrans.position);
+            CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
+
             //cam.Update(pTrans.position, dt);
+            cam.Update(new Vector2(0, 0), dt);
+            playerPos = pTrans.position;
             //cam.Update(playerPos + new Vector2(8f, 8f), dt);
 
             //cam.Position = pTrans.position;
@@ -385,6 +420,9 @@ namespace Monogame_Test_Project
                 new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
                 Color.White);
 
+            // draw debug text
+            spriteBatch.DrawString(spriteFont, "fps " + framesPerSecond, new Vector2(10, 10), Color.Black);
+            spriteBatch.DrawString(spriteFont, "x: " + playerPos.X + "\ny: " + playerPos.Y, new Vector2(10, 40), Color.Black);
             spriteBatch.End();
 
             base.Draw(gameTime);

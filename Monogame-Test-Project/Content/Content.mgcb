@@ -67,3 +67,10 @@
 /processorParam:TextureFormat=Color
 /build:tilesheet.png
 
+#begin type-face.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:type-face.spritefont
+
