@@ -404,21 +404,11 @@ namespace ECS.Systems
                     (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
 
 
+                // calculate friction
+                float kN = 0.025f; // (TEMP) surface coefficient of dynamic friction
+                //                 direction and size * intensity of friction * related to mass
+                rA.acceleration += -rA.velocity * kN * (1f - (1f / rA.mass));
 
-                // friction (not yet location dependant or dependant on mass correctly)
-                float kN = 0.1f;
-
-                //rA.acceleration += rA.velocity * -0.06f
-
-                //rA.acceleration += (rA.velocity / rA.mass) * -kN; // decent (does not relate mass well though)
-
-                // Vector2 frictionForce = new Vector2(something, something);
-
-                //                negate | vel relate to mass | relate to surface coef
-                rA.acceleration += -1f * (rA.velocity * (1f / rA.mass)) * kN;
-
-
-               
                 // calculate velocity
                 rA.velocity += rA.acceleration;
 
@@ -583,7 +573,7 @@ namespace ECS.Systems
             //                              later add physics info class or
             //                              simply add it to rigidbody class
             //float eps = 0.5f; // TEMP
-            float eps = 20f;
+            float eps = 4f;
 
             // Calculate impulse scalar
             float j = -(1 + eps) * velAlongNormal;
@@ -599,11 +589,18 @@ namespace ECS.Systems
             massRatio = A.rigidBody.mass / massSum;
             B.rigidBody.velocity += massRatio * impulse;
 
-            float toRightDist = B.transform.X - A.transform.X + A.collider.Width;
-            float toLeftDist = -1f * (A.transform.X - B.transform.X + B.collider.Width);
 
-            float toBotDist = B.transform.Y - A.transform.Y + A.collider.Height;
-            float toTopDist = -1f * (A.transform.Y - B.transform.Y + B.collider.Height);
+
+            // position correction
+            float toRightDist = 
+                B.transform.X - A.transform.X + A.collider.Width;
+            float toLeftDist = 
+                -1f * (A.transform.X - B.transform.X + B.collider.Width);
+
+            float toBotDist = 
+                B.transform.Y - A.transform.Y + A.collider.Height;
+            float toTopDist = 
+                -1f * (A.transform.Y - B.transform.Y + B.collider.Height);
 
             float xMin = 0f;
             float yMin = 0f;
@@ -635,12 +632,19 @@ namespace ECS.Systems
                 penDepth = yMin;
             }
 
-            
             float massBPerc = B.rigidBody.mass / massSum;
             float massAPerc = A.rigidBody.mass / massSum;
-            //Debug.WriteLine("massBPerc: " + massBPerc);
-            //Debug.WriteLine("massAPerc: " + massAPerc);
 
+            if (penDepth < 0)
+            {
+                A.transform.position -= penDepth * massBPerc * colNormal;
+                B.transform.position += penDepth * massAPerc * colNormal;
+            }
+            else
+            {
+                A.transform.position += penDepth * massBPerc * colNormal;
+                B.transform.position -= penDepth * massAPerc * colNormal;
+            }
 
             //Vector2 correction =
             //    penDepth / ((1f / A.rigidBody.mass) + (1f / B.rigidBody.mass)) * massAPerc * colNormal;
@@ -654,17 +658,6 @@ namespace ECS.Systems
             //    A.transform.position += correction * massAPerc;
             //    B.transform.position -= correction * massBPerc;
             //}
-
-            if (penDepth < 0)
-            {
-                A.transform.position -= penDepth * massBPerc * colNormal;
-                B.transform.position += penDepth * massAPerc * colNormal;
-            }
-            else
-            {
-                A.transform.position += penDepth * massBPerc * colNormal;
-                B.transform.position -= penDepth * massAPerc * colNormal;
-            }
 
         }
 
@@ -688,14 +681,14 @@ namespace ECS.Systems
         //    //      collision normal can be got by finding in which direction
         //    //      the objects have moved in to overlap
         //    Vector2 colNormal = GetCollisionNormal(tA, cA, rA, tB, cB, rB);
-            
+
         //    float velAlongNormal = Vector2.Dot(relativeVel, colNormal);
 
         //    // calculate resitution ( I will be using this hard coded for simplicity)
         //    //                              later add physics info class or
         //    //                              simply add it to rigidbody class
         //    float eps = 50f; // TEMP
-            
+
         //    // Calculate impulse scalar
         //    float j = -(1 + eps) * velAlongNormal;
         //    j = j / 1 / rA.mass + 1 / rB.mass;
@@ -718,7 +711,7 @@ namespace ECS.Systems
 
         //    float xMin = 0f;
         //    float yMin = 0f;
-            
+
         //    if (Math.Abs(toRightDist) < Math.Abs(toLeftDist))
         //    {
         //        xMin = toRightDist;
@@ -772,7 +765,7 @@ namespace ECS.Systems
 
 
 
-        
+
 
 
         // quadtree functionality 

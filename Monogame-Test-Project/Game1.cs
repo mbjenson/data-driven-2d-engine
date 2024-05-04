@@ -201,23 +201,34 @@ namespace Monogame_Test_Project
                 GraphicsDevice.PresentationParameters.BackBufferFormat,
                 DepthFormat.Depth24);
 
-            int numEnts = 2;
+            int numEnts = 3;
             eMan = new EntityManager(numEnts);
-            numEnts--;
+            
 
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 20f) });
-            eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 100f});
+            eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 5f});
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(16f, 16f));
 
-            for (int i = 0; i < numEnts; i++)
-            {
-                Entity e = eMan.CreateEntity();
-                eMan.AddComponent<CTransform>(e);
-                eMan.AddComponent<CCollider>(e, new CRectCollider() { size = new Vector2(16f, 16f)});
-                eMan.AddComponent<CRigidBody>(e, new CRigidBody() { mass = 100f });
-            }
+            Entity lightBlock = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(lightBlock, new CTransform() { position = new Vector2(-40f, 10f) });
+            eMan.AddComponent<CCollider>(lightBlock, new CRectCollider() { size = new Vector2(16f, 16f) });
+            eMan.AddComponent<CRigidBody>(lightBlock, new CRigidBody() { mass = 2f });
+
+            Entity heavyBlock = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(heavyBlock, new CTransform() { position = new Vector2(40f, 40f)});
+            eMan.AddComponent<CCollider>(heavyBlock, new CRectCollider() { size = new Vector2(16f, 16f) });
+            eMan.AddComponent<CRigidBody>(heavyBlock, new CRigidBody() { mass = 20f });
+
+
+            //for (int i = 0; i < numEnts; i++)
+            //{
+            //    Entity e = eMan.CreateEntity();
+            //    eMan.AddComponent<CTransform>(e);
+            //    eMan.AddComponent<CCollider>(e, new CRectCollider() { size = new Vector2(16f, 16f)});
+            //    eMan.AddComponent<CRigidBody>(e, new CRigidBody() { mass = 100f });
+            //}
 
             //Random rand = new Random();
             //for (int i = 0; i < numEnts; i++)
@@ -327,8 +338,13 @@ namespace Monogame_Test_Project
                 //eMan.SetComponent<CTransform>(1, new CTransform(new Vector2(0, 0)));
                 //eMan.SetComponent<CRigidBody>(1, new CRigidBody(new Vector2(0, 0), new Vector2(0, 0), 10f));
 
+                
                 CRigidBody rig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
-                rig.velocity += new Vector2(20f, 20f) * Vector2.Normalize(rig.velocity);
+
+                if (rig.velocity.LengthSquared() > 0.00001f)
+                {
+                    rig.velocity += new Vector2(20f, 20f) * Vector2.Normalize(rig.velocity);
+                }
             }
 
 
