@@ -143,6 +143,7 @@ namespace Monogame_Test_Project
         Vector2 viewportMousePos;
 
         Vector2 player;
+        Vector2 entitySize = new Vector2(32f, 32f);
 
         float totalGameTime = 0f;
 
@@ -170,6 +171,8 @@ namespace Monogame_Test_Project
         EntityManagerDebug eManDebug;
 
         Texture2D dirtTex;
+        Texture2D brickTex;
+
         SpriteFont spriteFont;
 
         private GraphicsDeviceManager graphics;
@@ -208,20 +211,22 @@ namespace Monogame_Test_Project
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
             
+            
+
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 5f});
-            eMan.AddComponent<CCollider>(pEnt, new CRectCollider(16f, 16f));
+            eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
 
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, new CTransform() { position = new Vector2(-40f, 10f) });
-            eMan.AddComponent<CCollider>(lightBlock, new CRectCollider() { size = new Vector2(16f, 16f) });
+            eMan.AddComponent<CCollider>(lightBlock, new CRectCollider(entitySize));
             eMan.AddComponent<CRigidBody>(lightBlock, new CRigidBody() { mass = 2f });
 
             Entity heavyBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(heavyBlock, new CTransform() { position = new Vector2(40f, 40f)});
-            eMan.AddComponent<CCollider>(heavyBlock, new CRectCollider() { size = new Vector2(16f, 16f) });
+            eMan.AddComponent<CCollider>(heavyBlock, new CRectCollider(entitySize));
             eMan.AddComponent<CRigidBody>(heavyBlock, new CRigidBody() { mass = 20f });
 
 
@@ -243,6 +248,7 @@ namespace Monogame_Test_Project
             spriteEffect = Content.Load<Effect>("spriteShader");
 
             dirtTex = Content.Load<Texture2D>("dirt");
+            brickTex = Content.Load<Texture2D>("textures/smooth-brick");
 
             spriteFont = Content.Load<SpriteFont>("type-face");
             
@@ -280,10 +286,10 @@ namespace Monogame_Test_Project
             // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
             worldMousePos = cam.screenToWorld(viewportMousePos);
 
-            //float xDif = worldMousePos.X - player.X;
-            //float yDif = worldMousePos.Y - player.Y;
+            float xDif = worldMousePos.X - player.X;
+            float yDif = worldMousePos.Y - player.Y;
 
-            //theta = (float)Math.Atan2(yDif, xDif);
+            theta = (float)Math.Atan2(yDif, xDif);
 
             var keyState = Keyboard.GetState();
             if (keyState.IsKeyDown(Keys.W))
@@ -346,8 +352,8 @@ namespace Monogame_Test_Project
             lightEffect.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
             //lightEffect.Parameters["PointLightPosition"].SetValue(viewportMousePos);
             
-            
-            lightEffect.Parameters["PointLightPosition"].SetValue(cam.worldToScreen(playerPos + new Vector2(8f, 8f)));
+
+            lightEffect.Parameters["PointLightPosition"].SetValue(cam.worldToScreen(playerPos + new Vector2(16f, 16f)));
             lightEffect.Parameters["PointLightColor"].SetValue(new Vector3(1.0f, 1.0f, 1.0f));
             lightEffect.Parameters["PointLightRadius"].SetValue(50f);
 
@@ -369,10 +375,26 @@ namespace Monogame_Test_Project
                 CTransform transform = (CTransform)eMan.GetComponent<CTransform>(id);
                 CRectCollider collider = (CRectCollider)eMan.GetComponent<CRectCollider>(id);
 
-                if (collider != null)
+                if (id == pEnt.id)
                 {
                     spriteBatch.Draw(
-                        dirtTex,
+                        brickTex,
+                        new Rectangle(
+                            (int)transform.X, (int)transform.Y,
+                            (int)collider.Width, (int)collider.Height),
+                        null,
+                        Color.White,
+                        theta,
+                        new Vector2(16f, 16f),
+                        SpriteEffects.None,
+                        0f
+                        );
+                }
+
+                else if (collider != null)
+                {
+                    spriteBatch.Draw(
+                        brickTex,
                         new Rectangle(
                             (int)transform.X, (int)transform.Y,
                             (int)collider.Width, (int)collider.Height),

@@ -157,6 +157,11 @@ namespace ECS
             this.size.Y = height;
         }
 
+        public CRectCollider(Vector2 size)
+        {
+            this.size = size;
+        }
+
         
     }
 
