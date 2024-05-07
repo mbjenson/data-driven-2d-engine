@@ -53,63 +53,33 @@ namespace ECS.Systems
             this.eMan = eMan;
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CController] = true;
-            signature[ComponentType.CTransform] = true;
-            signature[ComponentType.CRigidBody] = true; // temp till I get movement system working
-            // used to be cRigid
         }
+
+        
+        //public void RegisterController(PlayerIndex playerIndex)
+        //{
+            
+        //}
 
         public override void Update(GameTime gameTime)
         {
             List<Entity> entities = eMan.GetEntities(signature).ToList();
-            
             foreach (Entity e in entities)
-            {
-                CTransform transA = (CTransform)eMan.GetComponent<CTransform>(e.id);
+            {            
                 CController contA = (CController)eMan.GetComponent<CController>(e.id);
-                CRigidBody rigA = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
-                
-                // update controller with gamepad state
+                // get controller gamepad state
                 GamePadState gamePadState = GamePad.GetState(contA.controllerIndex);
-                // perform actions based on input
 
-                gamePadState.ThumbSticks.Left.Normalize();
-                // Debug.WriteLine(contA.gamePadState.ThumbSticks.Left);
+                // set controller component values based on input
                 
+                // left thumb stick
+                gamePadState.ThumbSticks.Left.Normalize();
                 Vector2 stickVals = new Vector2(
                             gamePadState.ThumbSticks.Left.X,
                             -gamePadState.ThumbSticks.Left.Y);
-
                 contA.movement = stickVals;
-                // FUNCTION END HERE
-                // temporarily I will change the player's actual position here
-                // but later implement movement system which handles
-                // actually putting the controller parts into movement / physics
 
-                // GOOD player movemnt code which uses physics and
-                // not just hard coded change in position
-
-
-                // calculate additional velocity as scalar times stick input
-                //rigA.velocity += contA.movement * 10f; // movement system
-
-                // calculate friction proportional to velocity (and mass later)
-                //rigA.acceleration += rigA.velocity * -0.065f; // physics system
-
-                // apply friction to velocity
-                //rigA.velocity += rigA.acceleration; // Physics system
-
-                // set acceleration to zero
-                //rigA.acceleration = Vector2.Zero; // physics system
-
-
-
-                // later, this movement code must be implemented in the movement system.
-                // The movement system will handle taking all entities with a controller
-                //      component and ensuring that their velocity is set according to 
-                //      the directional input (Vector2 CController.movement)
-                // The physics system will ensure that the acceleration is altered according
-                //      to the friction of the room the player is in (perhaps this can be done
-                //      (using force)
+                //
             }
         }
     }
@@ -117,13 +87,18 @@ namespace ECS.Systems
 
     
 
-
-    public class MovementSystem : UpdateSystem
+    /**
+     * Action System
+     * 
+     * Uses information in controller components and translates it
+     * into actions for entites.
+     */
+    public class ActionSystem : UpdateSystem
     {
         private EntityManager eMan;
         private Bitmask signature;
 
-        public MovementSystem(EntityManager eMan)
+        public ActionSystem(EntityManager eMan)
         {
             this.eMan = eMan;
             signature = new Bitmask((int)ComponentType.Count);
@@ -157,11 +132,11 @@ namespace ECS.Systems
 
 
     
-
-    // have universal quadtree which contains things like force fields, 
-    // bounding boxes, etc. This quadtree can be queried for all intersecting
-    // objects and other things that can be affected depending on position in space
-
+    /**
+     * Physics System
+     * 
+     * Handles Physics for entities like collisions
+     */
     public class PhysicsSystem : UpdateSystem
     {
         private EntityManager eMan;
@@ -222,65 +197,11 @@ namespace ECS.Systems
         private void UpdatePhysics(GameTime gameTime)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            
             UpdateMovement(dt);
-            
             SolveCollisions(dt);
-
-            
-
-
-
-            // get all entities with rigidbody, collider, and transform
-            //List<Entity> entities = eMan.GetEntities(signature).ToList();
-            //foreach (Entity e in entities)
-            //{
-
-
-
-                //CTransform trans = 
-                //    (CTransform)eMan.GetComponent<CTransform>(e.id);
-                //CCollider col = 
-                //    (CCollider)eMan.GetComponent<CCollider>(e.id);
-                //CRigidBody rig = 
-                //    (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
-
-
-                //trans.lastPosition = trans.position;
-                //trans.position +=
-                //    (trans.position - trans.lastPosition) + rig.acceleration * (dt * dt);
-
-                //rig.acceleration = Vector2.Zero;
-
-
-
-                //rig.velocity = rig.velocity + rig.acceleration * dt;
-                //trans.position = trans.position + rig.velocity * dt;
-
-
-                //rig.velocity = trans.position - trans.lastPosition;
-
-                //trans.position = 
-                //    trans.position * 2 - trans.lastPosition + rig.acceleration * dt * dt;
-
-                //rig.acceleration = trans.position - trans.lastPosition;
-                //rig.velocity = trans.position - trans.lastPosition;
-
-                //trans.position += rig.velocity *
-                //    gameTime.ElapsedGameTime.Seconds + 0.5f *
-                //    rig.acceleration * gameTime.ElapsedGameTime.Seconds *
-                //    gameTime.ElapsedGameTime.Seconds;
-
-                //rig.velocity += rig.acceleration * gameTime.ElapsedGameTime.Seconds;
-                
-                //trans.position +=
-                //    rig.velocity * (float)gameTime.ElapsedGameTime.TotalSeconds;
-            //}
         }
 
 
-        // TODO: send data to other classes in chunks like structs
-        // this will allow for easier sending of data that does not require 8 parameters
         private void SolveCollisions(float dt)
         {
             Dictionary<int, PhysicsRect> physicsObjects =
@@ -317,6 +238,7 @@ namespace ECS.Systems
                     CRigidBody rB =
                         (CRigidBody)eMan.GetComponent<CRigidBody>(entities[j].id);
 
+                    // Note: later find a better way to do this
                     if (cA.GetType() == typeof(CRectCollider) &&
                         cB.GetType() == typeof(CRectCollider))
                     {
@@ -368,28 +290,6 @@ namespace ECS.Systems
                 // not very cache friendly i don't think
                 ResolveCollision(physicsObjects[i], physicsObjects[j]);
             }
-
-            // temporary, in future we will use the quadtree for getting intersections            
-            //foreach (int i in intersections.Keys)
-            //{
-
-            //    int j = intersections[i];
-            //    CTransform tA =
-            //        (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
-            //    CCollider cA =
-            //        (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
-            //    CRigidBody rA =
-            //        (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
-
-            //    CTransform tB =
-            //            (CTransform)eMan.GetComponent<CTransform>(entities[j].id);
-            //    CCollider cB =
-            //        (CCollider)eMan.GetComponent<CRectCollider>(entities[j].id);
-            //    CRigidBody rB =
-            //        (CRigidBody)eMan.GetComponent<CRigidBody>(entities[j].id);
-
-            //    ResolveCollision(tA, cA as CRectCollider, rA, tB, cB as CRectCollider, rB);
-            //}
         }
 
         // basic updating movement from velocity function
@@ -498,60 +398,8 @@ namespace ECS.Systems
             return colNormal;
         }
 
-
-        //private Vector2 GetCollisionNormal(CTransform tA, CRectCollider cA, CRigidBody rA,
-        //    CTransform tB, CRectCollider cB, CRigidBody rB)
-        //{
-        //    Vector2 colNormal = Vector2.Zero;
-
-        //    float toRightDist = Math.Abs(tB.X - tA.X + cA.Width);
-        //    float toLeftDist = Math.Abs(-1f * (tA.X - tB.X + cB.Width));
-        //    float toBotDist = Math.Abs(tB.Y - tA.Y + cA.Height);
-        //    float toTopDist = Math.Abs(-1f * (tA.Y - tB.Y + cB.Height));
-
-        //    float xOffset = Math.Min(toRightDist, toLeftDist);
-        //    float yOffset = Math.Min(toTopDist, toBotDist);
-
-
-        //    if (xOffset < yOffset)
-        //    {
-        //        if (tA.X - tB.X > 0f)
-        //        {
-        //            //Debug.Print("box b is to the right of box a");
-        //            colNormal.X = 1f;
-
-        //            //colNormal.X = tB.X - tA.X + cA.Width;
-        //        }
-        //        else if (tA.X - tB.X < 0f)
-        //        {
-        //            //Debug.Print("box b is to the left of box a");
-        //            colNormal.X = -1f;
-        //            //colNormal.X = -1f * (tA.X - tB.X + cB.Width);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        if (tA.Y - tB.Y < 0f)
-        //        {
-        //            //Debug.Print("box b is on top of box a");
-        //            colNormal.Y = -1f;
-        //            //colNormal.Y = -1f * (tA.Y - tB.Y + cB.Height);
-        //        }
-        //        else if (tA.Y - tB.Y > 0f)
-        //        {
-        //            //Debug.Print("box b is below box a");
-        //            colNormal.Y = 1f;
-        //            //colNormal.Y = tB.Y - tA.Y + cA.Height;
-        //        }
-        //    }
-
-        //    return colNormal;
-        //}
-
         // this version uses a physics rect struct to get all of the data about
         // each object instead of accessing the raw components
-
-        // TODO: collisions don't take mass into account when player makes them.
         private void ResolveCollision(PhysicsRect A, PhysicsRect B)
         {
             // calculate relative velocity
@@ -660,112 +508,6 @@ namespace ECS.Systems
             //}
 
         }
-
-
-        //// does not take into account time steps
-        //// to take into account time steps, take dt and divide it up into n parts,
-        ////   run the collision check with that object at each of the n time steps
-        ////   to do this, take A.curPos += A.velocity * (dt / n) * i;
-        ////   then check for collision. if none, advance to next time step and check
-        ////   again. If there is collision, solve it and move to next objects
-        ///
-
-        // this version just recieves raw data instead of structs
-        //private void ResolveCollision(CTransform tA, CRectCollider cA, CRigidBody rA,
-        //    CTransform tB, CRectCollider cB, CRigidBody rB)
-        //{
-        //    // calculate relative velocity
-        //    Vector2 relativeVel = rB.velocity - rA.velocity;
-
-        //    // Calculate relative velocity in terms of the normal direction
-        //    //      collision normal can be got by finding in which direction
-        //    //      the objects have moved in to overlap
-        //    Vector2 colNormal = GetCollisionNormal(tA, cA, rA, tB, cB, rB);
-
-        //    float velAlongNormal = Vector2.Dot(relativeVel, colNormal);
-
-        //    // calculate resitution ( I will be using this hard coded for simplicity)
-        //    //                              later add physics info class or
-        //    //                              simply add it to rigidbody class
-        //    float eps = 50f; // TEMP
-
-        //    // Calculate impulse scalar
-        //    float j = -(1 + eps) * velAlongNormal;
-        //    j = j / 1 / rA.mass + 1 / rB.mass;
-
-        //    // apply impulse
-        //    Vector2 impulse = j * colNormal;
-
-        //    float massSum = rA.mass + rB.mass;
-        //    float massRatio = rB.mass / massSum;
-        //    rA.velocity -= massRatio * impulse;
-
-        //    massRatio = rA.mass / massSum;
-        //    rB.velocity += massRatio * impulse;
-
-        //    float toRightDist = tB.X - tA.X + cA.Width;
-        //    float toLeftDist = -1f * (tA.X - tB.X + cB.Width);
-
-        //    float toBotDist = tB.Y - tA.Y + cA.Height;
-        //    float toTopDist = -1f * (tA.Y - tB.Y + cB.Height);
-
-        //    float xMin = 0f;
-        //    float yMin = 0f;
-
-        //    if (Math.Abs(toRightDist) < Math.Abs(toLeftDist))
-        //    {
-        //        xMin = toRightDist;
-        //    }
-        //    else
-        //    {
-        //        xMin = toLeftDist;
-        //    }
-        //    if (Math.Abs(toTopDist) < Math.Abs(toBotDist))
-        //    {
-        //        yMin = toTopDist;
-        //    }
-        //    else
-        //    {
-        //        yMin = toBotDist;
-        //    }
-
-        //    Debug.WriteLine("xMin: " + xMin);
-        //    Debug.WriteLine("yMin: " + yMin);
-
-        //    float penDepth = 0f;
-        //    if (Math.Abs(xMin) < Math.Abs(yMin))
-        //    {
-        //        penDepth = xMin;
-        //    }
-        //    else
-        //    {
-        //        penDepth = yMin;
-        //    }
-        //    Debug.WriteLine("penDepth: " + penDepth);
-
-        //    float massBPerc = rB.mass / massSum;
-        //    float massAPerc = rA.mass / massSum;
-
-
-        //    if (penDepth < 0)
-        //    {
-
-
-        //        tA.position -= penDepth * massBPerc * colNormal;
-        //        tB.position += penDepth * massAPerc * colNormal;
-        //    }
-        //    else
-        //    {
-        //        tA.position += penDepth * massBPerc * colNormal;
-        //        tB.position -= penDepth * massAPerc * colNormal;
-        //    }
-
-        //}
-
-
-
-
-
 
 
         // quadtree functionality 

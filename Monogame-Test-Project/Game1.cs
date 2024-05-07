@@ -89,10 +89,16 @@ Entity Component System:
 TODO
 =======================================
 
+[] shaders
+    - normal mapping
+    - multiple lights
+    - shadows
+
+
 [] Entity Component System
     
     - merge matthew-dev into master (override master with matthew-dev b/c matthew-dev has the good stuff on it) ->
-
+    
     - systems
         - movement system ->
                 * gets all the controller components and updates the entities
@@ -101,12 +107,6 @@ TODO
                     and then a powerup system could use this base value as well as any powerups the player has to calculate their new
                     movement speed)
         - collision / physics system -> 
-                * fix how objects are affected by friction so that the heavier objects are more effected and 
-                    lighter objects less effected, as it would be in real life.
-                    Currently, it is inversly proportional to their mass so heavier objects take longer to get going but once they do, they take ages to slow down
-                                and lighter objects are easier to move but respond to friction much more
-                * figure out how to properly calculate friction based on mass
-                * 
                 * allow the physics system to query some map manager for the coefficient of kinetic friction
                     or other information that would effect the player's movement based on where the player is in the world.
                 * implement a quadtree for collision detection optimization
@@ -120,12 +120,14 @@ first load in textures to texture manager (which will live in game context I bel
 then give access to the other parts of the context so they can reference the textures
 
 
-
 */
+
+
+
+
 
 namespace Monogame_Test_Project
 {
-
     public class Game1 : Game
     {
         Camera2D cam;
@@ -138,7 +140,7 @@ namespace Monogame_Test_Project
 
 
         Vector2 worldMousePos;
-
+        Vector2 viewportMousePos;
 
         Vector2 player;
 
@@ -152,12 +154,13 @@ namespace Monogame_Test_Project
         float theta = 0f;
 
         Effect spriteEffect;
+        Effect lightEffect;
 
         RenderTarget2D renderCanvas;
 
         EntityManager eMan;
         PhysicsSystem pSys;
-        MovementSystem mSys;
+        ActionSystem aSys;
         //CollisionSystem cSys;
         InputSystem iSys;
 
@@ -201,13 +204,13 @@ namespace Monogame_Test_Project
                 GraphicsDevice.PresentationParameters.BackBufferFormat,
                 DepthFormat.Depth24);
 
+            // init entities
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
             
-
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
-            eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 20f) });
+            eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 5f});
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(16f, 16f));
 
@@ -222,44 +225,10 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CRigidBody>(heavyBlock, new CRigidBody() { mass = 20f });
 
 
-            //for (int i = 0; i < numEnts; i++)
-            //{
-            //    Entity e = eMan.CreateEntity();
-            //    eMan.AddComponent<CTransform>(e);
-            //    eMan.AddComponent<CCollider>(e, new CRectCollider() { size = new Vector2(16f, 16f)});
-            //    eMan.AddComponent<CRigidBody>(e, new CRigidBody() { mass = 100f });
-            //}
-
-            //Random rand = new Random();
-            //for (int i = 0; i < numEnts; i++)
-            //{
-            //    eMan.AddComponent<CTransform>(
-            //        i);
-            //    //eMan.AddComponent<CTransform>(
-            //    //    eMan.GetEntity(i), 
-            //    //    new CTransform() {
-            //    //        position = new Vector2(rand.Next(-0, 0), rand.Next(-0, 0))
-            //    //    });
-            //    eMan.AddComponent<CRigidBody>(
-            //        eMan.GetEntity(i),
-            //        new CRigidBody()
-            //        {
-            //            acceleration = new Vector2(0, 0),
-            //            velocity = new Vector2(),
-            //            mass = 10f
-            //        });
-            //    eMan.AddComponent<CCollider>(
-            //        eMan.GetEntity(i),
-            //        new CRectCollider()
-            //        {
-            //            size = new Vector2(16f, 16f)
-            //        });
-            //}
-
             pSys = new PhysicsSystem(eMan);
             //cSys = new CollisionSystem(eMan);
             iSys = new InputSystem(eMan);
-            mSys = new MovementSystem(eMan);
+            aSys = new ActionSystem(eMan);
 
             eManDebug = new EntityManagerDebug(eMan);
 
@@ -276,6 +245,12 @@ namespace Monogame_Test_Project
             dirtTex = Content.Load<Texture2D>("dirt");
 
             spriteFont = Content.Load<SpriteFont>("type-face");
+            
+            lightEffect = Content.Load<Effect>("LightSpriteEffect");
+            // set const parameters here to save memory and time
+            // do not do it in the drawing loop it wastes resources
+            // instead set changing values in the update loop and constant ones here
+
         }
 
 
@@ -292,53 +267,44 @@ namespace Monogame_Test_Project
             numFrames += 1;
             if (secondsCounter > 0)
             {
-                //Debug.WriteLine("secs: " + secondsCounter + ", numFrames: " + numFrames);
                 framesPerSecond = numFrames / secondsCounter;
-
                 secondsCounter = 0f;
                 numFrames = 0;
-
             }
-            
-            
+
             // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
-            //Vector2 viewportMousePos = new Vector2(
-            //    ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
-            //    ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
+            viewportMousePos = new Vector2(
+                ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
+                ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
 
             // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
-            //worldMousePos = cam.screenToWorld(viewportMousePos);
+            worldMousePos = cam.screenToWorld(viewportMousePos);
 
             //float xDif = worldMousePos.X - player.X;
             //float yDif = worldMousePos.Y - player.Y;
 
             //theta = (float)Math.Atan2(yDif, xDif);
 
-            //var keyState = Keyboard.GetState();
-            //if (keyState.IsKeyDown(Keys.W))
-            //{
-            //    player = player + new Vector2(0, -moveSpeed * dt);
-            //}
-            //if (keyState.IsKeyDown(Keys.S))
-            //{
-            //    player = player + new Vector2(0, moveSpeed * dt);
-            //}
-            //if (keyState.IsKeyDown(Keys.A))
-            //{
-            //    player = player + new Vector2(-moveSpeed * dt, 0);
-            //}
-            //if (keyState.IsKeyDown(Keys.D))
-            //{
-            //    player = player + new Vector2(moveSpeed * dt, 0);
-            //}
+            var keyState = Keyboard.GetState();
+            if (keyState.IsKeyDown(Keys.W))
+            {
+                player = player + new Vector2(0, -moveSpeed * dt);
+            }
+            if (keyState.IsKeyDown(Keys.S))
+            {
+                player = player + new Vector2(0, moveSpeed * dt);
+            }
+            if (keyState.IsKeyDown(Keys.A))
+            {
+                player = player + new Vector2(-moveSpeed * dt, 0);
+            }
+            if (keyState.IsKeyDown(Keys.D))
+            {
+                player = player + new Vector2(moveSpeed * dt, 0);
+            }
 
             if (GamePad.GetState(PlayerIndex.One).IsButtonDown(Buttons.A))
-            {
-
-                //eMan.SetComponent<CTransform>(1, new CTransform(new Vector2(0, 0)));
-                //eMan.SetComponent<CRigidBody>(1, new CRigidBody(new Vector2(0, 0), new Vector2(0, 0), 10f));
-
-                
+            {                
                 CRigidBody rig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
 
                 if (rig.velocity.LengthSquared() > 0.00001f)
@@ -347,27 +313,21 @@ namespace Monogame_Test_Project
                 }
             }
 
-
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
             //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
 
             iSys.Update(gameTime);
-            mSys.Update(gameTime);
+            aSys.Update(gameTime);
             pSys.Update(gameTime);
             //cSys.Update(gameTime);
-
 
             //CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
            
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
+            playerPos = pTrans.position;
 
             //cam.Update(pTrans.position, dt);
-            cam.Update(new Vector2(0, 0), dt);
-            playerPos = pTrans.position;
-            //cam.Update(playerPos + new Vector2(8f, 8f), dt);
-
-            //cam.Position = pTrans.position;
-
+            cam.Update(player, dt);
 
             base.Update(gameTime);
         }
@@ -375,15 +335,101 @@ namespace Monogame_Test_Project
 
         protected override void Draw(GameTime gameTime)
         {
-
+            
             GraphicsDevice.SetRenderTarget(renderCanvas);
             GraphicsDevice.Clear(Color.CornflowerBlue);
             GraphicsDevice.DepthStencilState = 
                 new DepthStencilState() { DepthBufferEnable = true };
 
+            // setup shader
+            lightEffect.CurrentTechnique.Passes[0].Apply();
+            lightEffect.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
+            //lightEffect.Parameters["PointLightPosition"].SetValue(viewportMousePos);
+            
+            
+            lightEffect.Parameters["PointLightPosition"].SetValue(cam.worldToScreen(playerPos + new Vector2(8f, 8f)));
+            lightEffect.Parameters["PointLightColor"].SetValue(new Vector3(1.0f, 1.0f, 1.0f));
+            lightEffect.Parameters["PointLightRadius"].SetValue(50f);
+
             spriteBatch.Begin(
                 SpriteSortMode.Immediate, BlendState.AlphaBlend,
-                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
+                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix,
+                effect: lightEffect);
+
+            // Draw to the canvas
+
+            // TEMP (put into a render system sometime in the near future)
+            Bitmask sig = new Bitmask((int)ComponentType.Count);
+            sig[ComponentType.CTransform] = true;
+            sig[ComponentType.CCollider] = true;
+            List<int> posEnts = eMan.GetEntityIds(sig).ToList();
+
+            foreach (var id in posEnts)
+            {
+                CTransform transform = (CTransform)eMan.GetComponent<CTransform>(id);
+                CRectCollider collider = (CRectCollider)eMan.GetComponent<CRectCollider>(id);
+
+                if (collider != null)
+                {
+                    spriteBatch.Draw(
+                        dirtTex,
+                        new Rectangle(
+                            (int)transform.X, (int)transform.Y,
+                            (int)collider.Width, (int)collider.Height),
+                        null,
+                        Color.White);
+                }
+            }
+
+
+            spriteBatch.End();
+
+
+
+            // draw canvas to screen (the game has been drawn to render target, now draw that to the screen)
+            graphics.GraphicsDevice.SetRenderTarget(null);
+            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+            
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.PointClamp, DepthStencilState.Default,
+                RasterizerState.CullNone);
+
+            // draw to actual window
+            spriteBatch.Draw(
+                renderCanvas,
+                new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+                Color.White);
+
+
+
+            // draw debug text
+            spriteBatch.DrawString(spriteFont, "fps " + framesPerSecond, new Vector2(10, 10), Color.Black);
+            spriteBatch.DrawString(spriteFont, "x: " + playerPos.X + "\ny: " + playerPos.Y, new Vector2(10, 40), Color.Black);
+            spriteBatch.End();
+
+            base.Draw(gameTime);
+        }
+
+
+
+
+        /*
+        protected override void Draw(GameTime gameTime)
+        {
+
+            GraphicsDevice.SetRenderTarget(renderCanvas);
+            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.DepthStencilState =
+                new DepthStencilState() { DepthBufferEnable = true };
+
+            spriteEffect.CurrentTechnique.Passes[0].Apply();
+
+
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix,
+                effect: spriteEffect);
 
             // Draw to the canvas
             Bitmask sig = new Bitmask((int)ComponentType.Count);
@@ -409,25 +455,31 @@ namespace Monogame_Test_Project
             }
 
 
-            // render things
+            // setup shaders
 
-            spriteEffect.CurrentTechnique.Passes[0].Apply();
+
+
+
+            //spriteEffect.CurrentTechnique.Passes[0].Apply();
+
             // render sprites with effects
+
 
             spriteBatch.End();
 
             graphics.GraphicsDevice.SetRenderTarget(null);
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            
+            //lightEffect.CurrentTechnique.Passes[0].Apply();
+            //lightEffect.Parameters["LightPosition"]?.SetValue();
+            //lightEffect.Parameters["ScreenTexture"]?.SetValue(renderCanvas);
+            //.Parameters["WorldViewProjection"]?.SetValue(cam.TransformMatrix);
 
-            
+
             // draw canvas to screen
             spriteBatch.Begin(
-                SpriteSortMode.Immediate,
-                BlendState.AlphaBlend,
-                SamplerState.PointClamp,
-                DepthStencilState.Default,
+                SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.PointClamp, DepthStencilState.Default,
                 RasterizerState.CullNone);
 
             // draw to actual window
@@ -443,6 +495,32 @@ namespace Monogame_Test_Project
 
             base.Draw(gameTime);
         }
+        */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         //protected override void Draw(GameTime gameTime)
