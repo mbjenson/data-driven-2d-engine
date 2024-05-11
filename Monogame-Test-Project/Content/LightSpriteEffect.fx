@@ -7,11 +7,14 @@
 	#define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
+int LightCount = 2;
+float3 PointLightPositions[2];
+float3 PointLightColors[2];
 
 float3 AmbientLightColor = float3(0.5, 0.5, 0.5);
 
 float3 PointLightPosition = float3(0.0, 0.0, 0.0);
-float3 PointLightColor = float3(0.0, 1.0, 0.0);
+float3 PointLightColor = float3(1.0, 1.0, 1.0);
 float PointLightRadius = 100.0;
 
 //float3 LightDirection = 1.0;
@@ -26,7 +29,7 @@ sampler2D SpriteTextureSampler = sampler_state
 struct VertexShaderOutput
 {
 	float4 Position : SV_POSITION;
-    float4 Pos : SV_Position;
+    float4 Pos : SV_Position; // must use this pos if it is going to be accessed inside the pixel shader
 	float4 Color : COLOR0;
 	float2 TextureCoordinates : TEXCOORD0;
 };
@@ -50,9 +53,58 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float3 ambientLight = AmbientLightColor * input.Color.rgb;
     float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
+    float3 finalLight = 0.0;
     
-	
-	
+    for (int i = 0; i < 2; i++)
+    {
+        // calculate distance from the light
+        float dist = distance(PointLightPositions[i].xy, input.Pos.xy);
+        if (dist >= PointLightRadius)
+        {
+            continue;
+        }
+    
+        // calculate attenuation
+        float a = 0.8;
+        float att = clamp(a - dist / PointLightRadius, 0.0, 1.0);
+    
+        // add lights together
+        finalLight += (PointLightColors[i] * att);
+    }
+    
+    finalLight += ambientLight;
+    // multiply texture color and light value
+    return texColor * float4(finalLight, input.Color.w);
+}
+
+/*
+float4 MainPS(VertexShaderOutput input) : COLOR
+{
+    float3 ambientLight = AmbientLightColor * input.Color.rgb;
+    float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
+    float3 finalLight = 0.0;
+    //float3(1.0, 0.4, 0.0);
+    for (int i = 0; i < LightCount; i++)
+    {
+        float dist = distance(PointLightPositions[i].xy, input.Pos.xy);
+        float att = clamp(1.0 - dist / PointLightRadius, 0.0, 1.0);
+        
+        //if (dist >= PointLightRadius) // don't account for this light
+        //{
+        //    continue;
+        //}
+        // add lights together
+        
+        finalLight += (PointLightColor * att);
+        
+        // multiply texture color and light value
+        //return texColor * float4(finalLight, input.Color.w);
+    }
+    finalLight += ambientLight;
+    
+    return texColor * float4(finalLight, input.Color.w);
+    //return texColor * float4(ambientLight, input.Color.w);
+    
 	// add on the light value based on how far the point is from the light
 
 	// light source attenuation
@@ -66,7 +118,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     
     
     
-    float dist = distance(PointLightPosition.xy, input.Pos.xy);
+    
     
     // attenuation technique 1
     //float b = 0.01;
@@ -79,23 +131,19 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     // float a = 0.1;
     
     // attenuation technique 3
-    float att = clamp(1.0 - dist / PointLightRadius, 0.0, 1.0);
     
     
-    if (dist >= PointLightRadius)
-    {
-        return texColor * float4(ambientLight, input.Color.w);
-    }
+    
+    
     
     
     //float gradient = smoothstep(0.0, 1.0, dist);
     
-    // add lights together
-    float3 finalLight = ambientLight + (PointLightColor * att);
     
-    // multiply texture color and light value
-    return texColor * float4(finalLight, input.Color.w);
+    
+    
 }
+*/
 
 technique SpriteDrawing
 {

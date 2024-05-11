@@ -130,14 +130,15 @@ namespace Monogame_Test_Project
 {
     public class Game1 : Game
     {
-        Camera2D cam;
+        
 
         const int WIN_WIDTH = 1440;
         const int WIN_HEIGHT = 810;
 
-        const int TARGET_WIDTH = 320; // 480; 
-        const int TARGET_HEIGHT = 180; // 270;
+        const int TARGET_WIDTH = 480; //320;
+        const int TARGET_HEIGHT = 270; //180; 
 
+        Camera2D cam;
 
         Vector2 worldMousePos;
         Vector2 viewportMousePos;
@@ -151,10 +152,9 @@ namespace Monogame_Test_Project
         float secondsCounter = 0f;
         int numFrames = 0;
 
-        float moveSpeed = 70f;
+        float moveSpeed = 100f;
         float theta = 0f;
 
-        Effect spriteEffect;
         Effect lightEffect;
 
         RenderTarget2D renderCanvas;
@@ -210,8 +210,6 @@ namespace Monogame_Test_Project
             // init entities
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
-            
-            
 
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
@@ -244,8 +242,6 @@ namespace Monogame_Test_Project
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            spriteEffect = Content.Load<Effect>("spriteShader");
 
             dirtTex = Content.Load<Texture2D>("dirt");
             brickTex = Content.Load<Texture2D>("textures/smooth-brick");
@@ -286,8 +282,8 @@ namespace Monogame_Test_Project
             // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
             worldMousePos = cam.screenToWorld(viewportMousePos);
 
-            float xDif = worldMousePos.X - player.X;
-            float yDif = worldMousePos.Y - player.Y;
+            float xDif = worldMousePos.X - playerPos.X;
+            float yDif = worldMousePos.Y - playerPos.Y;
 
             theta = (float)Math.Atan2(yDif, xDif);
 
@@ -341,20 +337,38 @@ namespace Monogame_Test_Project
 
         protected override void Draw(GameTime gameTime)
         {
-            
+
             GraphicsDevice.SetRenderTarget(renderCanvas);
             GraphicsDevice.Clear(Color.CornflowerBlue);
-            GraphicsDevice.DepthStencilState = 
+            GraphicsDevice.DepthStencilState =
                 new DepthStencilState() { DepthBufferEnable = true };
 
-            // setup shader
-            lightEffect.CurrentTechnique.Passes[0].Apply();
-            lightEffect.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
-            //lightEffect.Parameters["PointLightPosition"].SetValue(viewportMousePos);
-            
 
-            lightEffect.Parameters["PointLightPosition"].SetValue(cam.worldToScreen(playerPos + new Vector2(16f, 16f)));
-            lightEffect.Parameters["PointLightColor"].SetValue(new Vector3(1.0f, 1.0f, 1.0f));
+
+            // setup shader
+
+            Vector3[] lightPositions = new Vector3[2];
+            lightPositions[0] = new Vector3(1.0f, 0.0f, 0.0f);
+            lightPositions[1] = new Vector3(0.5f, 0.0f, 0.0f);
+
+
+            lightEffect.CurrentTechnique.Passes[0].Apply();
+
+            lightEffect.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
+
+            //lightEffect.Parameters["PointLightPositions"].SetValue(new[] { new Vector3(viewportMousePos.X, viewportMousePos.Y, 0.0f), new Vector3(viewportMousePos.X , viewportMousePos.Y, 0.0f) });
+            lightEffect.Parameters["PointLightPositions"].SetValue(new[] { 
+                new Vector3(viewportMousePos.X + 50.0f, viewportMousePos.Y, 0.0f), 
+                new Vector3(viewportMousePos.X - 50.0f, viewportMousePos.Y, 0.0f)});
+            lightEffect.Parameters["PointLightColors"].SetValue(new[] {
+                new Vector3(1.0f, 1.0f, 1.0f), 
+                new Vector3(1.0f, 0.0f, 0.0f) });
+
+            //lightEffect.Parameters["PointLightPositions"].SetValue(new[] { new Vector3(0.0f, 0.0f, 0.0f) });
+            //lightEffect.Parameters["PointLightPosition"].SetValue(viewportMousePos);
+            //lightEffect.Parameters["PointLightPosition"].SetValue(cam.worldToScreen(playerPos + new Vector2(16f, 16f)));
+
+            //lightEffect.Parameters["PointLightColor"].SetValue(new Vector3(1.0f, 1.0f, 1.0f));
             lightEffect.Parameters["PointLightRadius"].SetValue(50f);
 
             spriteBatch.Begin(
@@ -383,11 +397,7 @@ namespace Monogame_Test_Project
                             (int)transform.X, (int)transform.Y,
                             (int)collider.Width, (int)collider.Height),
                         null,
-                        Color.White,
-                        theta,
-                        new Vector2(16f, 16f),
-                        SpriteEffects.None,
-                        0f
+                        Color.White
                         );
                 }
 
@@ -432,6 +442,66 @@ namespace Monogame_Test_Project
 
             base.Draw(gameTime);
         }
+
+
+
+
+
+        /*
+         * OLD SHADER CODE BEFORE INTRODUCED LOOP
+        float4 MainPS(VertexShaderOutput input) : COLOR
+{
+    float3 ambientLight = AmbientLightColor * input.Color.rgb;
+    float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
+    
+    
+    
+	// add on the light value based on how far the point is from the light
+
+	// light source attenuation
+    
+    //float b = 0.01;
+    //float radius = sqrt(1.0 / (b * minLight));
+	
+	
+    
+    
+    
+    
+    
+    float dist = distance(PointLightPosition.xy, input.Pos.xy);
+    
+    // attenuation technique 1
+    //float b = 0.01;
+    //float a = 0.1;
+    //float att = 1.0 / (1.0 + a * dist + b * dist * dist);
+    
+    // attenuation technique 2
+    // float minLight = 0.01; // cuts light off when attenuation reaches this value
+    // float b = 1.0 / (PointLightRadius * PointLightRadius * minLight); // calculate b based on radius and minline value 
+    // float a = 0.1;
+    
+    // attenuation technique 3
+    float att = clamp(1.0 - dist / PointLightRadius, 0.0, 1.0);
+    
+    
+    if (dist >= PointLightRadius)
+    {
+        return texColor * float4(ambientLight, input.Color.w);
+    }
+    
+    
+    //float gradient = smoothstep(0.0, 1.0, dist);
+    
+    // add lights together
+    float3 finalLight = ambientLight + (PointLightColor * att);
+    
+    // multiply texture color and light value
+    return texColor * float4(finalLight, input.Color.w);
+}
+
+
+        */
 
 
 
