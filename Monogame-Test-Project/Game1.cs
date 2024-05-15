@@ -90,9 +90,28 @@ TODO
 =======================================
 
 [] shaders
-    - normal mapping
-    - multiple lights
-    - shadows
+    - define structs in c# which can be sent to the shader and be used there. Hopefully the structs can be sent and not individual values.
+        * once above is done create struct for scene which has information about ambient lighting in the scene and whatnot.
+        * hopefully on the c# side of things, a struct can be created, for example: struct PointLight, which is sent verbatem to the GPU in a buffer
+          This type of rendering works in things like OpenGL but we'll see how simple it is to do here.
+    - normals
+        * take in texture which contains normal values
+        * figure out how to supply this texture to the sprite shader
+        * use this information to calculate lighting using dot product with some values I don't remember
+    - shadows (chose between hard / soft)
+        * soft shadows can be difficult to my knowledge and may not be the best choice to implement starting out
+        * 
+    - choose between forward rendering and deferred lighting
+        * forward rendering is what I am currently doing and is more costly but given that this is a 2d pixel game, I am not to worried about performance
+        * deferred lighting means you only calculate the lighting information once on seperate render targets. Then with these you can go over each pixel
+          and calculate the light for that pixel by sampling the previously draw render targets.
+        * the other passes render the whole scene with just one piece of information
+            1. normals
+            2. ambient lighting
+            3. diffuse lighting
+          Then the total rendering cost for lighting is going to be brought down to O(num lights * num pixels)!!!
+          this is much better than forward rendering which is O(num lights * num vertices)
+        * however, it may not yield any major performance benefit becuase of the way that the shader is working
 
 
 [] Entity Component System
@@ -121,7 +140,6 @@ then give access to the other parts of the context so they can reference the tex
 
 
 */
-
 
 
 
@@ -158,6 +176,7 @@ namespace Monogame_Test_Project
         RenderTarget2D renderCanvas;
 
         EntityManager eMan;
+
         PhysicsSystem pSys;
         ActionSystem aSys;
         InputSystem iSys;
@@ -242,7 +261,8 @@ namespace Monogame_Test_Project
             spriteFont = Content.Load<SpriteFont>("type-face");
             
             lightEffect = Content.Load<Effect>("LightSpriteEffect");
-            // set const parameters here to save memory and time
+
+            // set const parameters here (or in "Initialize()") to save memory and time
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
 
@@ -337,7 +357,6 @@ namespace Monogame_Test_Project
                 new DepthStencilState() { DepthBufferEnable = true };
 
 
-
             // setup shader
 
             Vector3[] lightPositions = new Vector3[2];
@@ -357,11 +376,6 @@ namespace Monogame_Test_Project
                 new Vector3(1.0f, 1.0f, 1.0f), 
                 new Vector3(1.0f, 0.0f, 0.0f) });
 
-            //lightEffect.Parameters["PointLightPositions"].SetValue(new[] { new Vector3(0.0f, 0.0f, 0.0f) });
-            //lightEffect.Parameters["PointLightPosition"].SetValue(viewportMousePos);
-            //lightEffect.Parameters["PointLightPosition"].SetValue(cam.worldToScreen(playerPos + new Vector2(16f, 16f)));
-
-            //lightEffect.Parameters["PointLightColor"].SetValue(new Vector3(1.0f, 1.0f, 1.0f));
             lightEffect.Parameters["PointLightRadius"].SetValue(50f);
 
             spriteBatch.Begin(

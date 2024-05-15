@@ -68,8 +68,19 @@ namespace ECS.Systems
 
 
     
-    
+    /*
+    the lighting system will have to use components that act as lights and render
+    them to a render target I think. I will try to use some kind of deferred
+    rendering strategy
+    */
 
+    //public class LightingSystem : UpdateSystem
+    //{
+    //    private EntityManager eMan;
+    //    private Bitmask signature;
+
+
+    //}
 
 
 

@@ -6,6 +6,14 @@ using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework.Input;
 
 
+/*
+Note:
+    How to add a component:
+        1. Add name to ComponentType enum before "Count". Ensure name starts with 'C'. (e.g. CPointLight)
+        2. Define class inheriting from IComponent
+        3. In Entity Manager, add Component Type to both dictionaries allowing for conversion between enum and type
+*/
+
 namespace ECS
 {
     // TODO: add physics info?
@@ -161,8 +169,6 @@ namespace ECS
         {
             this.size = size;
         }
-
-        
     }
 
     public class CCircleCollider : CCollider
