@@ -130,8 +130,6 @@ namespace Monogame_Test_Project
 {
     public class Game1 : Game
     {
-        
-
         const int WIN_WIDTH = 1440;
         const int WIN_HEIGHT = 810;
 
@@ -162,13 +160,12 @@ namespace Monogame_Test_Project
         EntityManager eMan;
         PhysicsSystem pSys;
         ActionSystem aSys;
-        //CollisionSystem cSys;
         InputSystem iSys;
 
         Entity pEnt;
         Vector2 playerPos;
 
-        EntityManagerDebug eManDebug;
+        //EntityManagerDebug eManDebug;
 
         Texture2D dirtTex;
         Texture2D brickTex;
@@ -196,7 +193,7 @@ namespace Monogame_Test_Project
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
             graphics.PreferredBackBufferHeight = WIN_HEIGHT;
 
-            IsFixedTimeStep = false;
+            IsFixedTimeStep = true;
 
             graphics.ApplyChanges();
 
@@ -227,13 +224,9 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CCollider>(heavyBlock, new CRectCollider(entitySize));
             eMan.AddComponent<CRigidBody>(heavyBlock, new CRigidBody() { mass = 20f });
 
-
             pSys = new PhysicsSystem(eMan);
-            //cSys = new CollisionSystem(eMan);
             iSys = new InputSystem(eMan);
             aSys = new ActionSystem(eMan);
-
-            eManDebug = new EntityManagerDebug(eMan);
 
             base.Initialize();
         }

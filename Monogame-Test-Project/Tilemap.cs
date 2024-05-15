@@ -16,7 +16,7 @@ namespace tilemap
         public Tilemap tilemap;
         public RenderTarget2D mapCanvas;
         public SpriteBatch tileBatch;
-         
+        
         public TilemapRenderer(Tilemap tilemap, GraphicsDeviceManager graphicsDeviceManager)
         {
             this.tilemap = tilemap;
