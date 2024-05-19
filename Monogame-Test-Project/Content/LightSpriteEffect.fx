@@ -7,17 +7,14 @@
 	#define PS_SHADERMODEL ps_4_0_level_9_1
 #endif
 
+
+// light parameters
 int LightCount = 2;
 float3 PointLightPositions[2];
 float3 PointLightColors[2];
+float PointLightRadii[2];
 
 float3 AmbientLightColor = float3(0.5, 0.5, 0.5);
-
-float3 PointLightPosition = float3(0.0, 0.0, 0.0);
-float3 PointLightColor = float3(1.0, 1.0, 1.0);
-float PointLightRadius = 100.0;
-
-//float3 LightDirection = 1.0;
 
 Texture2D SpriteTexture;
 
@@ -34,6 +31,7 @@ struct VertexShaderOutput
 	float2 TextureCoordinates : TEXCOORD0;
 };
 
+
 /*
 float attenuation(float distance, float radius, float max_intensity, float falloff)
 {
@@ -49,6 +47,37 @@ float attenuation(float distance, float radius, float max_intensity, float fallo
 }
 */
 
+
+float4 MainPS(VertexShaderOutput input) : COLOR
+{
+    float3 ambientLight = AmbientLightColor * input.Color.rgb;
+    float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
+    float3 finalLight = 0.0;
+    
+    for (int i = 0; i < 2; i++)
+    {
+        // calculate distance from the light
+        float dist = distance(PointLightPositions[i].xy, input.Pos.xy);
+        if (dist >= PointLightRadii[i])
+        {
+            continue;
+        }
+    
+        // calculate attenuation
+        float a = 0.8;
+        float att = clamp(a - dist / PointLightRadii[i], 0.0, 1.0);
+    
+        // add lights together
+        finalLight += (PointLightColors[i] * att);
+    }
+    
+    finalLight += ambientLight;
+    // multiply texture color and light value
+    return texColor * float4(finalLight, input.Color.w);
+}
+
+
+/*
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float3 ambientLight = AmbientLightColor * input.Color.rgb;
@@ -63,6 +92,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         {
             continue;
         }
+        
     
         // calculate attenuation
         float a = 0.8;
@@ -76,6 +106,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     // multiply texture color and light value
     return texColor * float4(finalLight, input.Color.w);
 }
+*/
 
 /*
 float4 MainPS(VertexShaderOutput input) : COLOR

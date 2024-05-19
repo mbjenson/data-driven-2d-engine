@@ -34,6 +34,7 @@ namespace ECS
         CRigidBody,
         CController,
         // CMovement, // contains information like movement speed (pondering if I will use this...)
+        CPointLight,
         Count,
     }
 
@@ -125,6 +126,19 @@ namespace ECS
     }
 
     
+
+    public class CPointLight : IComponent
+    {
+        float radius;
+        // float a; // not sure what to call this but it is the thing that affects intensity of light falloff in the shader. it is called "a" right now.
+        Vector3 color;
+    }
+
+    //public class CAmbientLight : IComponent
+    //{
+    //    Vector3 color;
+    //}
+
 
     public class CCollider : IComponent
     {

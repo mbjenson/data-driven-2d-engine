@@ -159,7 +159,7 @@ namespace Monogame_Test_Project
         Vector2 worldMousePos;
         Vector2 viewportMousePos;
 
-        Vector2 player;
+        Vector2 player; // just so I don't get confused in the future, Vector2 player is the point that the camera is looking at
         Vector2 entitySize = new Vector2(32f, 32f);
 
         float totalGameTime = 0f;
@@ -212,7 +212,7 @@ namespace Monogame_Test_Project
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
             graphics.PreferredBackBufferHeight = WIN_HEIGHT;
 
-            IsFixedTimeStep = true;
+            IsFixedTimeStep = false;
 
             graphics.ApplyChanges();
 
@@ -265,7 +265,6 @@ namespace Monogame_Test_Project
             // set const parameters here (or in "Initialize()") to save memory and time
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
-
         }
 
 
@@ -334,9 +333,6 @@ namespace Monogame_Test_Project
             iSys.Update(gameTime);
             aSys.Update(gameTime);
             pSys.Update(gameTime);
-            //cSys.Update(gameTime);
-
-            //CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
            
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
             playerPos = pTrans.position;
@@ -359,24 +355,17 @@ namespace Monogame_Test_Project
 
             // setup shader
 
-            Vector3[] lightPositions = new Vector3[2];
-            lightPositions[0] = new Vector3(1.0f, 0.0f, 0.0f);
-            lightPositions[1] = new Vector3(0.5f, 0.0f, 0.0f);
-
-
             lightEffect.CurrentTechnique.Passes[0].Apply();
-
             lightEffect.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
 
             //lightEffect.Parameters["PointLightPositions"].SetValue(new[] { new Vector3(viewportMousePos.X, viewportMousePos.Y, 0.0f), new Vector3(viewportMousePos.X , viewportMousePos.Y, 0.0f) });
-            lightEffect.Parameters["PointLightPositions"].SetValue(new[] { 
-                new Vector3(viewportMousePos.X + 50.0f, viewportMousePos.Y, 0.0f), 
+            lightEffect.Parameters["PointLightPositions"].SetValue(new[] {
+                new Vector3(viewportMousePos.X + 50.0f, viewportMousePos.Y, 0.0f),
                 new Vector3(viewportMousePos.X - 50.0f, viewportMousePos.Y, 0.0f)});
             lightEffect.Parameters["PointLightColors"].SetValue(new[] {
-                new Vector3(1.0f, 1.0f, 1.0f), 
+                new Vector3(1.0f, 1.0f, 1.0f),
                 new Vector3(1.0f, 0.0f, 0.0f) });
-
-            lightEffect.Parameters["PointLightRadius"].SetValue(50f);
+            lightEffect.Parameters["PointLightRadii"].SetValue(new[] { 30.0f, 100.0f });
 
             spriteBatch.Begin(
                 SpriteSortMode.Immediate, BlendState.AlphaBlend,
@@ -385,7 +374,6 @@ namespace Monogame_Test_Project
 
             // Draw to the canvas
 
-            // TEMP (put into a render system sometime in the near future)
             Bitmask sig = new Bitmask((int)ComponentType.Count);
             sig[ComponentType.CTransform] = true;
             sig[ComponentType.CCollider] = true;
@@ -420,12 +408,10 @@ namespace Monogame_Test_Project
                 }
             }
 
-
             spriteBatch.End();
 
 
-
-            // draw canvas to screen (the game has been drawn to render target, now draw that to the screen)
+            // draw canvas to screen
             graphics.GraphicsDevice.SetRenderTarget(null);
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
             
@@ -434,12 +420,10 @@ namespace Monogame_Test_Project
                 SamplerState.PointClamp, DepthStencilState.Default,
                 RasterizerState.CullNone);
 
-            // draw to actual window
             spriteBatch.Draw(
                 renderCanvas,
                 new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
                 Color.White);
-
 
 
             // draw debug text

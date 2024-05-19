@@ -23,6 +23,23 @@ namespace ECS.Systems
     }
 
 
+    public class Renderer
+    {
+        private EntityManager eMan;
+
+        public Renderer(EntityManager eMan)
+        {
+            this.eMan = eMan;
+            
+        }
+
+        public void Render()
+        {
+
+        }
+    }
+    
+
     /**
      * Action System
      * 
@@ -73,11 +90,36 @@ namespace ECS.Systems
     them to a render target I think. I will try to use some kind of deferred
     rendering strategy
     */
-
+    // not sure if this will be used, will probably attach it to the rendering system somehow
     //public class LightingSystem : UpdateSystem
     //{
-    //    private EntityManager eMan;
-    //    private Bitmask signature;
+    //    Bitmask signature;
+    //    private int MAX_LIGHTS; // maximum allowed lights in the scene at once
+    //    private int numLights;
+    //    // numLights is going to be sent to the shader and will represent how many lights there are in the scene to render.
+    //    // Each frame, max lights may change.
+    //    // the size of the arrays that hold the light's information will stay the same size no matter what.
+    //    //  The thing that will change is the range of the for loop which iterates through the lights
+
+    //    public LightingSystem(int maxLights)
+    //    {
+    //        this.MAX_LIGHTS = maxLights;
+    //        signature = new Bitmask((int)ComponentType.Count);
+    //        signature[ComponentType.CPointLight] = true;
+    //        signature[ComponentType.CTransform] = true;
+    //    }
+
+    //    public override void Update(GameTime gameTime)
+    //    {
+    //        return;
+    //    }
+
+
+    //    private void UpdateLights()
+    //    {
+    //        // updates the lights that will be rendered in the upcoming draw call
+            
+    //    }
 
 
     //}

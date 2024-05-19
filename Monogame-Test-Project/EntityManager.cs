@@ -99,6 +99,7 @@ namespace ECS
             { ComponentType.CCollider, typeof(CTransform) },
             { ComponentType.CRigidBody, typeof(CRigidBody) },
             { ComponentType.CController, typeof(CController) },
+            { ComponentType.CPointLight, typeof(CPointLight) },
             };
 
         private static Dictionary<Type, ComponentType> mComponentToEnum =
@@ -108,12 +109,12 @@ namespace ECS
             { typeof(CCollider), ComponentType.CCollider },
             { typeof(CRigidBody), ComponentType.CRigidBody },
             { typeof(CController), ComponentType.CController },
+            { typeof(CPointLight), ComponentType.CPointLight },
             };
 
         //private Dictionary<int, List<IComponent>> mComponents;
 
         private Queue<int> availableIds;
-
 
         public int EntityCount
         {
