@@ -4,6 +4,16 @@ using System.Collections.Generic;
 
 namespace ECS
 {
+    
+
+
+    /*
+        Redo this class, it is unintuitive and does not really help in the long term
+        make it so that textures can be accessed without having to lookup the corresponding texture sheet that it lives on(?)
+        The goal is to use sprite sheets so that few textures need to be loaded onto the GPU at a time becuase it is
+        very expensive. So related things can live on the same sprite sheet (materials, entities, etc)
+    */
+
 
     /*
     the general idea is to have a texture that has a bunch of rects paired with it that 

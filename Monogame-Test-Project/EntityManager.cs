@@ -100,6 +100,7 @@ namespace ECS
             { ComponentType.CRigidBody, typeof(CRigidBody) },
             { ComponentType.CController, typeof(CController) },
             { ComponentType.CPointLight, typeof(CPointLight) },
+            { ComponentType.CTexture, typeof(CTexture) },
             };
 
         private static Dictionary<Type, ComponentType> mComponentToEnum =
@@ -110,6 +111,7 @@ namespace ECS
             { typeof(CRigidBody), ComponentType.CRigidBody },
             { typeof(CController), ComponentType.CController },
             { typeof(CPointLight), ComponentType.CPointLight },
+            { typeof(CTexture), ComponentType.CTexture },
             };
 
         //private Dictionary<int, List<IComponent>> mComponents;

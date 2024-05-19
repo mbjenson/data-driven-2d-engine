@@ -3,10 +3,11 @@
 
 using bitmask;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Runtime.CompilerServices;
 using viewStuff;
 
 
@@ -23,18 +24,91 @@ namespace ECS.Systems
     }
 
 
+    /*
+    Renderer
+
+    The renderer will:
+        1. draw desired items to the screen
+            a. This will be done by accessing the entity manager and retreiving a list of all the items with drawable components
+               and the presence of these components indicates that the entity should be drawn
+        2. allow for items to be drawn using desired effects (hlsl shaders)
+            a. all things that are rendered will be passed through the shaders
+        3. allow for post processing effects to be done to the rendered information
+            a. this means that two rendering passes will be done, the first draws all items to a canvas,
+               and the second will draw that canvas to the actual screen (post processing will happen
+               sometime after the first pass and before the second.
+    */
+
     public class Renderer
     {
+        
+        private Bitmask signature;
         private EntityManager eMan;
+
+        private RenderTarget2D canvas; // all things are drawn to this, then this is drawn to screen
+        private SpriteBatch spriteBatch;
+
+        public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
 
         public Renderer(EntityManager eMan)
         {
             this.eMan = eMan;
-            
+
+            textureMap = new Dictionary<string, Texture2D>();
+
+            this.signature = new Bitmask((int)ComponentType.Count);
+            signature[ComponentType.CTexture] = true;
+            signature[ComponentType.CTransform] = true;
         }
+
+        // steps of rendering right now:
+
+        // retrieve stuff from eMan (done at the end of the update section of monogame test code I presume)
+
+        // set render target to canvas, activate spritebatch with required .fx
+
+        // draw all desired things (background, tilemap, tiles, items, particles, etc...)
+
+        // end sprite batch call
+        
+        // perform post processing effects on the canvas
+
+        // setup sprite batch to use null render target and then draw the canvas to the screen
+
+        // end sprite batch call and stand in awe... hopefully
+
 
         public void Render()
         {
+            return;
+            List<Entity> ents = eMan.GetEntities(signature).ToList();
+            CTexture[] textures = new CTexture[ents.Count];
+            CTransform[] transforms = new CTransform[ents.Count];
+
+            // get all necessary information into local lists\
+            for (int i = 0; i < ents.Count; i++)
+            {
+                textures[i] = ((CTexture)eMan.GetComponent<CTexture>(ents[i].id));
+                transforms[i] = ((CTransform)eMan.GetComponent<CTransform>(ents[i].id));
+            }
+
+            // spritebatch set render target(canvas)
+            // spritebatch begin
+            
+            // draw all tings
+
+            // sprite batch end
+
+            //...
+            // POST PROCESSING EFFECTS... (maybe?)
+            //...
+
+            // sprite batch set render target(null)
+            // sprite batch begin
+
+            // draw canvas to the screen
+            
+            // sprite batch end
 
         }
     }

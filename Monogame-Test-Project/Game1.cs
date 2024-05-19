@@ -19,6 +19,17 @@ using System.Net.Sockets;
 using Microsoft.Xna.Framework.Content;
 
 /*
+    Merge dev branch into master
+        1. checkout master
+        2. right click on the dev branch you wish to merge into master
+           and you will see the option to merge 'dev-branch-name' into 'master', click on this
+           and there merging process will take place.
+
+    
+*/
+
+
+/*
  * 
 =======================================
 NOTES:
@@ -88,6 +99,12 @@ Entity Component System:
 =======================================
 TODO
 =======================================
+
+[] Renderer
+    - work on renderer class in system.cs
+        * make the graphics device manager and other things like that live in the renderer and not in the game1.cs class.
+        * get a proper resource manager working
+
 
 [] shaders
     - define structs in c# which can be sent to the shader and be used there. Hopefully the structs can be sent and not individual values.
@@ -181,6 +198,8 @@ namespace Monogame_Test_Project
         ActionSystem aSys;
         InputSystem iSys;
 
+        Renderer renderer;
+
         Entity pEnt;
         Vector2 playerPos;
 
@@ -215,6 +234,10 @@ namespace Monogame_Test_Project
             IsFixedTimeStep = false;
 
             graphics.ApplyChanges();
+           
+            // test
+            renderer = new Renderer(eMan);
+            renderer.textureMap.Add("brick", Content.Load<Texture2D>("textures/smooth-brick"));
 
             renderCanvas = new RenderTarget2D(
                 GraphicsDevice,
@@ -232,6 +255,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody(){ mass = 5f});
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
+            eMan.AddComponent<CTexture>(pEnt, new CTexture("brick"));
 
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, new CTransform() { position = new Vector2(-40f, 10f) });

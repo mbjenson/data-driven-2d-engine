@@ -4,6 +4,7 @@ using bitmask;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Graphics;
 
 
 /*
@@ -27,6 +28,8 @@ namespace ECS
     //      so that the input system can take the input given 
     //      and apply it to the player according to the wishes specific in the controller(?)
 
+    // TODO: add camera component
+
     public enum ComponentType
     {
         CTransform,
@@ -34,7 +37,9 @@ namespace ECS
         CRigidBody,
         CController,
         // CMovement, // contains information like movement speed (pondering if I will use this...)
+        // CCamera, // lives in the scene and can follow a point I think
         CPointLight,
+        CTexture,
         Count,
     }
 
@@ -125,7 +130,25 @@ namespace ECS
         }
     }
 
-    
+    public class CTexture : IComponent
+    {
+        public string textureId; // some way to id this texture (subject to change)
+        public Vector2 offset;
+
+        public CTexture() { }
+        public CTexture(string textureId) 
+        {
+            this.textureId = textureId;
+            offset = new Vector2(0, 0);
+        }
+
+        public CTexture(string textureId, Vector2 offset)
+        {
+            this.textureId = textureId;
+            this.offset = offset;
+        }
+    }
+
 
     public class CPointLight : IComponent
     {
