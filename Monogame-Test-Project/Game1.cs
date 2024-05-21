@@ -103,6 +103,10 @@ Entity Component System:
 TODO
 =======================================
 
+CURRENT:
+    normal mapping is not working as of right now
+    check internet for better results.
+
 [] Renderer
     - work on renderer class in system.cs
         * make the graphics device manager and other things like that live in the renderer and not in the game1.cs class.
@@ -175,6 +179,8 @@ namespace Monogame_Test_Project
 
         const int TARGET_WIDTH = 480; //320;
         const int TARGET_HEIGHT = 270; //180; 
+
+        Texture2D normalTex;
 
         Camera2D cam;
 
@@ -282,6 +288,8 @@ namespace Monogame_Test_Project
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
 
+            normalTex = Content.Load<Texture2D>("textures/normal-map-test");
+
             renderer.font = Content.Load<SpriteFont>("type-face");
             renderer.pixelShader = Content.Load<Effect>("LightSpriteEffect");
             renderer.brickTex = Content.Load<Texture2D>("textures/smooth-brick");
@@ -306,12 +314,7 @@ namespace Monogame_Test_Project
                 numFrames = 0;
             }
 
-            // set debug text for renderer
-            renderer.debugText = new List<string> {
-                "fps: " + Math.Round(framesPerSecond, 2),
-                "cam pos: " + Math.Round(cam.Position.X, 1) + 
-                ", " + Math.Round(cam.Position.Y, 1),
-            };
+            
 
             // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
             viewportMousePos = new Vector2(
@@ -364,6 +367,17 @@ namespace Monogame_Test_Project
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
             playerPos = pTrans.position;
 
+            Vector2 playerDir = worldMousePos - playerPos;
+            playerDir = Vector2.Normalize(playerDir);
+
+            // set debug text for renderer
+            renderer.debugText = new List<string> {
+                "fps: " + Math.Round(framesPerSecond, 2),
+                "cam pos: " + Math.Round(cam.Position.X, 1) +
+                ", " + Math.Round(cam.Position.Y, 1),
+                "mouse dir: " + playerDir.X + ", " + playerDir.Y,
+            };
+
             //cam.Update(pTrans.position, dt);
             cam.Update(player, dt);
             base.Update(gameTime);
@@ -385,9 +399,7 @@ namespace Monogame_Test_Project
             renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(
                 new Vector3(0.3f, 0.3f, 0.3f));
 
-            //Debug.WriteLine(viewportMousePos.X + ", " + viewportMousePos.Y);
-            //Debug.WriteLine(cam.worldToScreen(pTrans.position));
-
+            renderer.pixelShader.Parameters["NormalTexture"]?.SetValue(normalTex);
 
             renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
                 new Vector3(viewportMousePos.X, viewportMousePos.Y, 0.0f),

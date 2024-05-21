@@ -25,6 +25,18 @@ sampler2D SpriteTextureSampler = sampler_state
 {
 	Texture = <SpriteTexture>;
 };
+/*
+SamplerState NormalSampler = sampler_state
+{
+    SpriteTexture = <NormalTexture>;
+};
+*/
+Texture2D NormalTexture;
+sampler2D NormalTextureSampler = sampler_state
+{
+    Texture = <NormalTexture>;
+};
+
 
 struct VertexShaderOutput
 {
@@ -34,6 +46,7 @@ struct VertexShaderOutput
 	float2 TextureCoordinates : TEXCOORD0;
 };
 
+// TODO: use a normal effect (vertex and frag shader) to enable to allow for access of the pox.xyz (right now can access z or w components in pixel shader)
 
 /*
 float attenuation(float distance, float radius, float max_intensity, float falloff)
@@ -50,7 +63,52 @@ float attenuation(float distance, float radius, float max_intensity, float fallo
 }
 */
 
+// attempting normal mapping
+float4 MainPS(VertexShaderOutput input) : COLOR
+{
+    float3 ambientLight = AmbientLightColor * input.Color.rgb;
+    // texture color
+    float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
+    // get texture normal
+    float3 normal = tex2D(NormalTextureSampler, input.TextureCoordinates);
+    
+    float3 finalLight = 0.0;
+    
+    for (int i = 0; i < 3; i++)
+    {
+        
+        // calculate distance from the light
+        float dist = distance(PointLightPositions[i].xy, input.Pos.xy);
+        if (dist >= PointLightRadii[i])
+        {
+            continue;
+        }
+        
+        
+        // get light direction
+        //float2 lightDir = normalize(input.Pos.xy - PointLightPositions[i].xy);
+        float2 lightDir = normalize(PointLightPositions[i].xy - input.Pos.xy);
+        float lightAmount = saturate(dot(normal, float3(-lightDir, 0.0)));
+        
+        // calculate attenuation
+        float a = 0.8;
+        float att = clamp(a - dist / PointLightRadii[i], 0.0, 1.0);
+    
+        // add lights together
+        //finalLight += (PointLightColors[i] * lightAmount * att);
+        finalLight += (PointLightColors[i] * lightAmount);
 
+        //finalLight += (PointLightColors[i] * att);
+    }
+    
+    finalLight += ambientLight;
+    // multiply texture color and light value
+    return texColor * float4(finalLight, input.Color.w);
+}
+
+
+// most recent and best prior to normal mapping
+/*
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float3 ambientLight = AmbientLightColor * input.Color.rgb;
@@ -78,6 +136,9 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     // multiply texture color and light value
     return texColor * float4(finalLight, input.Color.w);
 }
+*/
+
+
 
 
 /*
@@ -178,6 +239,8 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     
 }
 */
+
+
 
 technique SpriteDrawing
 {
