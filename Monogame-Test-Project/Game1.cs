@@ -25,7 +25,9 @@ using Microsoft.Xna.Framework.Content;
         2. right click on the dev branch you wish to merge into master
            and you will see the option to merge 'dev-branch-name' into 'master', click on this
            and there merging process will take place.
-
+        3. then, in order to actually get that to sync with github on the master branch,
+           you must then push all of these changes under "outgoing" in the master 
+           branch like you would any other change
     
 */
 
@@ -105,6 +107,10 @@ TODO
     - work on renderer class in system.cs
         * make the graphics device manager and other things like that live in the renderer and not in the game1.cs class.
         * get a proper resource manager working
+        * Will need to create lighting / particle / effect subsystem to manage
+            changing the shader parameters depending on what things are present in
+            the scene. create another class and put it in the renderer so that
+            the functionality can be enclosed within the rendering system
 
 
 [] shaders
@@ -174,8 +180,9 @@ namespace Monogame_Test_Project
 
         Vector2 worldMousePos;
         Vector2 viewportMousePos;
+        // just so I don't get confused in the future, Vector2 player is the point that the camera is looking at
+        Vector2 player = new Vector2(300f, 250f);
 
-        Vector2 player; // just so I don't get confused in the future, Vector2 player is the point that the camera is looking at
         Vector2 entitySize = new Vector2(32f, 32f);
 
         float totalGameTime = 0f;
@@ -185,11 +192,7 @@ namespace Monogame_Test_Project
         int numFrames = 0;
 
         float moveSpeed = 100f;
-        float theta = 0f;
-
-        Effect lightEffect;
-
-        RenderTarget2D renderCanvas;
+        //float theta = 0f;
 
         EntityManager eMan;
 
@@ -204,13 +207,8 @@ namespace Monogame_Test_Project
 
         //EntityManagerDebug eManDebug;
 
-        Texture2D dirtTex;
-        Texture2D brickTex;
-
-        SpriteFont spriteFont;
-
         private GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
+        //private SpriteBatch spriteBatch;
 
         public Game1()
         {
@@ -221,16 +219,7 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            cam = new Camera2D(GraphicsDevice.Viewport);
-
             IsFixedTimeStep = false;
-
-            renderCanvas = new RenderTarget2D(
-                GraphicsDevice,
-                TARGET_WIDTH, TARGET_HEIGHT,
-                false,
-                GraphicsDevice.PresentationParameters.BackBufferFormat,
-                DepthFormat.Depth24);
 
             // init entities
             int numEnts = 3;
@@ -238,12 +227,15 @@ namespace Monogame_Test_Project
 
             renderer = new RenderingSystem(eMan, graphics);
 
+            cam = new Camera2D(GraphicsDevice.Viewport);
+            
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody() { mass = 5f });
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
             eMan.AddComponent<CTexture>(pEnt, new CTexture("brick", new Vector2(32, 32)));
+            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 0.0f, 1.0f)));
 
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, 
@@ -284,10 +276,11 @@ namespace Monogame_Test_Project
 
             //lightEffect = Content.Load<Effect>("LightSpriteEffect");
 
-            // (WRONG) set const parameters here (or in "Initialize()") to save memory and time
+            // (WRONG, but keeping it here so I don't completely forget
+            // this is a possibility) set const parameters
+            // here (or in "Initialize()") to save memory and time
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
-
 
             renderer.font = Content.Load<SpriteFont>("type-face");
             renderer.pixelShader = Content.Load<Effect>("LightSpriteEffect");
@@ -315,7 +308,9 @@ namespace Monogame_Test_Project
 
             // set debug text for renderer
             renderer.debugText = new List<string> {
-                "fps: " + framesPerSecond
+                "fps: " + Math.Round(framesPerSecond, 2),
+                "cam pos: " + Math.Round(cam.Position.X, 1) + 
+                ", " + Math.Round(cam.Position.Y, 1),
             };
 
             // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
@@ -326,10 +321,10 @@ namespace Monogame_Test_Project
             // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
             worldMousePos = cam.screenToWorld(viewportMousePos);
 
-            float xDif = worldMousePos.X - playerPos.X;
-            float yDif = worldMousePos.Y - playerPos.Y;
+            //float xDif = worldMousePos.X - playerPos.X;
+            //float yDif = worldMousePos.Y - playerPos.Y;
 
-            theta = (float)Math.Atan2(yDif, xDif);
+            //theta = (float)Math.Atan2(yDif, xDif);
 
             var keyState = Keyboard.GetState();
             if (keyState.IsKeyDown(Keys.W))
@@ -377,17 +372,37 @@ namespace Monogame_Test_Project
 
         protected override void Draw(GameTime gameTime)
         {
-            // set shader parameters (temp, set this inside of renderer)
-            renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
+            //Bitmask litSignature = new Bitmask((int)ComponentType.CTransform);
+            //litSignature[ComponentType.CPointLight] = true;
+            //litSignature[ComponentType.CTransform] = true;
+
+            //List<Entity> litEnts = eMan.GetEntities(litSignature).ToList();
+
+            CPointLight pLight = (CPointLight)eMan.GetComponent<CPointLight>(pEnt.id);
+            CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
+
+            // set shader parameters (temp, set this inside of renderer one day)
+            renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(
+                new Vector3(0.3f, 0.3f, 0.3f));
+
+            //Debug.WriteLine(viewportMousePos.X + ", " + viewportMousePos.Y);
+            //Debug.WriteLine(cam.worldToScreen(pTrans.position));
+
+
             renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
-                new Vector3(viewportMousePos.X + 50.0f, viewportMousePos.Y, 0.0f),
-                new Vector3(viewportMousePos.X - 50.0f, viewportMousePos.Y, 0.0f)});
+                new Vector3(viewportMousePos.X, viewportMousePos.Y, 0.0f),
+                new Vector3(viewportMousePos.X, viewportMousePos.Y, 0.0f),
+                new Vector3(cam.worldToScreen(pTrans.position), 0.0f)
+                });
             renderer.pixelShader.Parameters["PointLightColors"].SetValue(new[] {
                 new Vector3(1.0f, 1.0f, 1.0f),
-                new Vector3(1.0f, 0.0f, 0.0f) });
-            renderer.pixelShader.Parameters["PointLightRadii"].SetValue(new[] { 100.0f, 100.0f });
+                new Vector3(1.0f, 0.0f, 0.0f),
+                pLight.color,
+            });
+            renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
+                new[] { 100.0f, 100.0f, pLight.radius });
 
-            renderer.Render(cam.TransformMatrix);
+            renderer.Render(cam);
 
             base.Draw(gameTime);
         }

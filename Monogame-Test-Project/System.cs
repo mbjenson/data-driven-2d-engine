@@ -73,7 +73,6 @@ namespace ECS.Systems
         private SpriteBatch spriteBatch;
 
         
-
         //public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
 
         public RenderingSystem(EntityManager eMan, GraphicsDeviceManager gMan)
@@ -95,17 +94,17 @@ namespace ECS.Systems
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
 
-            gMan.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
             gMan.PreferredBackBufferWidth = WIN_WIDTH;
             gMan.PreferredBackBufferHeight = WIN_HEIGHT;
+            gMan.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
 
             gMan.ApplyChanges();
         }
         
-        public void Render(Matrix camTransform)
+        public void Render(Camera2D cam)
         {
             // 1 draw to canvas
-            DrawToCanvas(camTransform);
+            DrawToCanvas(cam.TransformMatrix);
 
             // 2 perform post processing effects
             // PostProcessing();
@@ -121,7 +120,9 @@ namespace ECS.Systems
             CTexture[] textures = new CTexture[ents.Count];
             CTransform[] transforms = new CTransform[ents.Count];
 
-            // get all necessary information into local lists\
+            // get all necessary information into local arrays
+            // (might be better for cache if they are used multiple times here,
+            // not entirely sure yet)
             for (int i = 0; i < ents.Count; i++)
             {
                 textures[i] = ((CTexture)eMan.GetComponent<CTexture>(ents[i].id));
@@ -129,7 +130,7 @@ namespace ECS.Systems
             }
 
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
-            gMan.GraphicsDevice.Clear(Color.CornflowerBlue);
+            gMan.GraphicsDevice.Clear(Color.Black);
             gMan.GraphicsDevice.DepthStencilState =
                 new DepthStencilState() { DepthBufferEnable = true };
 
@@ -172,12 +173,12 @@ namespace ECS.Systems
                 new Rectangle(0, 0, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
                 Color.White);
 
-            DrawText();
+            DrawDebugText();
 
             spriteBatch.End();
         }
 
-        private void DrawText()
+        private void DrawDebugText()
         {
             for (int i = 0; i < debugText.Count; i++)
             {
@@ -190,7 +191,8 @@ namespace ECS.Systems
         {
             //pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
             // set other values here that will be gleamed from the current scene
-
+            
+            // take point light locations and convert them to world coordinates
 
             return;
             // shader.ambientlight = scene.getlight

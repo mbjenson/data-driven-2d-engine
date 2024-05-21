@@ -77,6 +77,7 @@ namespace ECS
     // base component class
     public class IComponent { }
 
+
     public class CController : IComponent
     {
         public PlayerIndex controllerIndex;
@@ -90,8 +91,6 @@ namespace ECS
         }
     }
 
-
-   
 
     public class CTransform : IComponent
     {
@@ -152,9 +151,27 @@ namespace ECS
 
     public class CPointLight : IComponent
     {
-        float radius;
+        public float radius;
         // float a; // not sure what to call this but it is the thing that affects intensity of light falloff in the shader. it is called "a" right now.
-        Vector3 color;
+        public Vector3 color;
+
+        public CPointLight()
+        {
+            radius = 30.0f;
+            color = new Vector3(1.0f, 1.0f, 1.0f);
+        }
+
+        public CPointLight(float radius, Vector3 color)
+        {
+            this.radius = radius;
+            this.color = color;
+        }
+
+        public CPointLight(float radius)
+        {
+            this.radius = radius;
+            this.color = new Vector3(1.0f, 1.0f, 1.0f);
+        }
     }
 
     //public class CAmbientLight : IComponent
