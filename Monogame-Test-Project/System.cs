@@ -39,48 +39,84 @@ namespace ECS.Systems
                sometime after the first pass and before the second.
     */
 
-    public class Renderer
+    public class RenderingSystem
     {
-        
+        const int WIN_WIDTH = 1440;
+        const int WIN_HEIGHT = 810;
+
+        const int TARGET_WIDTH = 480; //320;
+        const int TARGET_HEIGHT = 270; //180;
+
+        //float totalGameTime = 0f;
+
+        //float framesPerSecond = 0f;
+        //float secondsCounter = 0f;
+        //int numFrames = 0;
+
+        public List<String> debugText;
+
+        public Texture2D brickTex;
+        public Effect pixelShader = null;
+        public SpriteFont font;
+
+        private RenderTarget2D renderCanvas;
+
+        // getting display size (use this later)
+        //int screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
+        //int screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
+
+        private GraphicsDeviceManager gMan;
         private Bitmask signature;
         private EntityManager eMan;
 
         private RenderTarget2D canvas; // all things are drawn to this, then this is drawn to screen
         private SpriteBatch spriteBatch;
 
-        public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
+        
 
-        public Renderer(EntityManager eMan)
+        //public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
+
+        public RenderingSystem(EntityManager eMan, GraphicsDeviceManager gMan)
         {
             this.eMan = eMan;
+            this.gMan = gMan;
 
-            textureMap = new Dictionary<string, Texture2D>();
+            this.debugText = new List<String>();
 
             this.signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CTexture] = true;
             signature[ComponentType.CTransform] = true;
+
+            renderCanvas = new RenderTarget2D(
+                gMan.GraphicsDevice, 
+                TARGET_WIDTH, TARGET_HEIGHT, 
+                false, gMan.GraphicsDevice.PresentationParameters.BackBufferFormat, 
+                DepthFormat.Depth24);
+
+            spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
+
+            gMan.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            gMan.PreferredBackBufferWidth = WIN_WIDTH;
+            gMan.PreferredBackBufferHeight = WIN_HEIGHT;
+
+            gMan.ApplyChanges();
+        }
+        
+        public void Render(Matrix camTransform)
+        {
+            // 1 draw to canvas
+            DrawToCanvas(camTransform);
+
+            // 2 perform post processing effects
+            // PostProcessing();
+
+            // 3 draw to screen
+            DrawToScreen();
         }
 
-        // steps of rendering right now:
 
-        // retrieve stuff from eMan (done at the end of the update section of monogame test code I presume)
-
-        // set render target to canvas, activate spritebatch with required .fx
-
-        // draw all desired things (background, tilemap, tiles, items, particles, etc...)
-
-        // end sprite batch call
-        
-        // perform post processing effects on the canvas
-
-        // setup sprite batch to use null render target and then draw the canvas to the screen
-
-        // end sprite batch call and stand in awe... hopefully
-
-
-        public void Render()
+        private void DrawToCanvas(Matrix camTransform)
         {
-            return;
             List<Entity> ents = eMan.GetEntities(signature).ToList();
             CTexture[] textures = new CTexture[ents.Count];
             CTransform[] transforms = new CTransform[ents.Count];
@@ -92,25 +128,75 @@ namespace ECS.Systems
                 transforms[i] = ((CTransform)eMan.GetComponent<CTransform>(ents[i].id));
             }
 
-            // spritebatch set render target(canvas)
-            // spritebatch begin
-            
-            // draw all tings
+            gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
+            gMan.GraphicsDevice.Clear(Color.CornflowerBlue);
+            gMan.GraphicsDevice.DepthStencilState =
+                new DepthStencilState() { DepthBufferEnable = true };
 
-            // sprite batch end
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.PointClamp, transformMatrix: camTransform,
+                effect: pixelShader);
 
-            //...
-            // POST PROCESSING EFFECTS... (maybe?)
-            //...
+            for (int i = 0; i < ents.Count; i++)
+            {
+                spriteBatch.Draw(
+                    brickTex,
+                    new Rectangle(
+                        (int)transforms[i].X, (int)transforms[i].Y,
+                        (int)textures[i].offset.X, (int)textures[i].offset.Y),
+                    null,
+                    Color.White
+                    );
+            }
 
-            // sprite batch set render target(null)
-            // sprite batch begin
-
-            // draw canvas to the screen
-            
-            // sprite batch end
-
+            spriteBatch.End();
         }
+
+        private void PostProcessing()
+        {
+            return;
+        }
+
+        private void DrawToScreen()
+        {
+            gMan.GraphicsDevice.SetRenderTarget(null);
+            gMan.GraphicsDevice.Clear(Color.CornflowerBlue);
+
+            spriteBatch.Begin(
+                SpriteSortMode.Immediate, BlendState.AlphaBlend,
+                SamplerState.PointClamp, DepthStencilState.Default,
+                RasterizerState.CullNone);
+
+            spriteBatch.Draw(renderCanvas,
+                new Rectangle(0, 0, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
+                Color.White);
+
+            DrawText();
+
+            spriteBatch.End();
+        }
+
+        private void DrawText()
+        {
+            for (int i = 0; i < debugText.Count; i++)
+            {
+                spriteBatch.DrawString(font, debugText[i], new Vector2(10, 10 + i * 40), Color.White);
+            }
+        }
+
+
+        private void SetShaderParameters()
+        {
+            //pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
+            // set other values here that will be gleamed from the current scene
+
+
+            return;
+            // shader.ambientlight = scene.getlight
+            // shader.pointlightpositions = scene.visibellights
+        }
+
     }
     
 

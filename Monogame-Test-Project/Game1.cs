@@ -18,6 +18,7 @@ using bitmask;
 using System.Net.Sockets;
 using Microsoft.Xna.Framework.Content;
 
+
 /*
     Merge dev branch into master
         1. checkout master
@@ -159,8 +160,6 @@ then give access to the other parts of the context so they can reference the tex
 */
 
 
-
-
 namespace Monogame_Test_Project
 {
     public class Game1 : Game
@@ -198,7 +197,243 @@ namespace Monogame_Test_Project
         ActionSystem aSys;
         InputSystem iSys;
 
-        Renderer renderer;
+        RenderingSystem renderer;
+
+        Entity pEnt;
+        Vector2 playerPos;
+
+        //EntityManagerDebug eManDebug;
+
+        Texture2D dirtTex;
+        Texture2D brickTex;
+
+        SpriteFont spriteFont;
+
+        private GraphicsDeviceManager graphics;
+        private SpriteBatch spriteBatch;
+
+        public Game1()
+        {
+            graphics = new GraphicsDeviceManager(this);
+            Content.RootDirectory = "Content";
+            IsMouseVisible = true;
+        }
+
+        protected override void Initialize()
+        {
+            cam = new Camera2D(GraphicsDevice.Viewport);
+
+            IsFixedTimeStep = false;
+
+            renderCanvas = new RenderTarget2D(
+                GraphicsDevice,
+                TARGET_WIDTH, TARGET_HEIGHT,
+                false,
+                GraphicsDevice.PresentationParameters.BackBufferFormat,
+                DepthFormat.Depth24);
+
+            // init entities
+            int numEnts = 3;
+            eMan = new EntityManager(numEnts);
+
+            renderer = new RenderingSystem(eMan, graphics);
+
+            pEnt = eMan.CreateEntity();
+            eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
+            eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
+            eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody() { mass = 5f });
+            eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
+            eMan.AddComponent<CTexture>(pEnt, new CTexture("brick", new Vector2(32, 32)));
+
+            Entity lightBlock = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(lightBlock, 
+                new CTransform() { position = new Vector2(-40f, 10f) });
+            eMan.AddComponent<CCollider>(lightBlock, 
+                new CRectCollider(entitySize));
+            eMan.AddComponent<CRigidBody>(lightBlock, 
+                new CRigidBody() { mass = 2f });
+            eMan.AddComponent<CTexture>(lightBlock, 
+                new CTexture("brick", new Vector2(32, 32)));
+
+            Entity heavyBlock = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(heavyBlock, 
+                new CTransform() { position = new Vector2(40f, 40f) });
+            eMan.AddComponent<CCollider>(heavyBlock, 
+                new CRectCollider(entitySize));
+            eMan.AddComponent<CRigidBody>(heavyBlock, 
+                new CRigidBody() { mass = 20f });
+            eMan.AddComponent<CTexture>(heavyBlock,
+                new CTexture("brick", new Vector2(32, 32)));
+
+            pSys = new PhysicsSystem(eMan);
+            iSys = new InputSystem(eMan);
+            aSys = new ActionSystem(eMan);
+
+            
+
+            base.Initialize();
+        }
+
+
+        protected override void LoadContent()
+        {
+            //spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            //dirtTex = Content.Load<Texture2D>("dirt");
+            //brickTex = Content.Load<Texture2D>("textures/smooth-brick");
+
+            //lightEffect = Content.Load<Effect>("LightSpriteEffect");
+
+            // (WRONG) set const parameters here (or in "Initialize()") to save memory and time
+            // do not do it in the drawing loop it wastes resources
+            // instead set changing values in the update loop and constant ones here
+
+
+            renderer.font = Content.Load<SpriteFont>("type-face");
+            renderer.pixelShader = Content.Load<Effect>("LightSpriteEffect");
+            renderer.brickTex = Content.Load<Texture2D>("textures/smooth-brick");
+        }
+
+
+        protected override void Update(GameTime gameTime)
+        {
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed
+                || Keyboard.GetState().IsKeyDown(Keys.Escape))
+                Exit();
+
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            totalGameTime += dt;
+
+            secondsCounter += dt;
+            numFrames += 1;
+            if (secondsCounter > 0)
+            {
+                framesPerSecond = numFrames / secondsCounter;
+                secondsCounter = 0f;
+                numFrames = 0;
+            }
+
+            // set debug text for renderer
+            renderer.debugText = new List<string> {
+                "fps: " + framesPerSecond
+            };
+
+            // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
+            viewportMousePos = new Vector2(
+                ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
+                ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
+
+            // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
+            worldMousePos = cam.screenToWorld(viewportMousePos);
+
+            float xDif = worldMousePos.X - playerPos.X;
+            float yDif = worldMousePos.Y - playerPos.Y;
+
+            theta = (float)Math.Atan2(yDif, xDif);
+
+            var keyState = Keyboard.GetState();
+            if (keyState.IsKeyDown(Keys.W))
+            {
+                player = player + new Vector2(0, -moveSpeed * dt);
+            }
+            if (keyState.IsKeyDown(Keys.S))
+            {
+                player = player + new Vector2(0, moveSpeed * dt);
+            }
+            if (keyState.IsKeyDown(Keys.A))
+            {
+                player = player + new Vector2(-moveSpeed * dt, 0);
+            }
+            if (keyState.IsKeyDown(Keys.D))
+            {
+                player = player + new Vector2(moveSpeed * dt, 0);
+            }
+
+            if (GamePad.GetState(PlayerIndex.One).IsButtonDown(Buttons.A))
+            {
+                CRigidBody rig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
+
+                if (rig.velocity.LengthSquared() > 0.00001f)
+                {
+                    rig.velocity += new Vector2(20f, 20f) * Vector2.Normalize(rig.velocity);
+                }
+            }
+
+            // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
+            //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
+
+            iSys.Update(gameTime);
+            aSys.Update(gameTime);
+            pSys.Update(gameTime);
+
+            CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
+            playerPos = pTrans.position;
+
+            //cam.Update(pTrans.position, dt);
+            cam.Update(player, dt);
+            base.Update(gameTime);
+        }
+
+
+        protected override void Draw(GameTime gameTime)
+        {
+            // set shader parameters (temp, set this inside of renderer)
+            renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
+            renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
+                new Vector3(viewportMousePos.X + 50.0f, viewportMousePos.Y, 0.0f),
+                new Vector3(viewportMousePos.X - 50.0f, viewportMousePos.Y, 0.0f)});
+            renderer.pixelShader.Parameters["PointLightColors"].SetValue(new[] {
+                new Vector3(1.0f, 1.0f, 1.0f),
+                new Vector3(1.0f, 0.0f, 0.0f) });
+            renderer.pixelShader.Parameters["PointLightRadii"].SetValue(new[] { 100.0f, 100.0f });
+
+            renderer.Render(cam.TransformMatrix);
+
+            base.Draw(gameTime);
+        }
+    }
+}
+
+
+/*
+namespace Monogame_Test_Project
+{
+    public class Game1 : Game
+    {
+        const int WIN_WIDTH = 1440;
+        const int WIN_HEIGHT = 810;
+
+        const int TARGET_WIDTH = 480; //320;
+        const int TARGET_HEIGHT = 270; //180; 
+
+        Camera2D cam;
+
+        Vector2 worldMousePos;
+        Vector2 viewportMousePos;
+
+        Vector2 player; // just so I don't get confused in the future, Vector2 player is the point that the camera is looking at
+        Vector2 entitySize = new Vector2(32f, 32f);
+
+        float totalGameTime = 0f;
+
+        float framesPerSecond = 0f;
+        float secondsCounter = 0f;
+        int numFrames = 0;
+
+        float moveSpeed = 100f;
+        float theta = 0f;
+
+        Effect lightEffect;
+
+        RenderTarget2D renderCanvas;
+
+        EntityManager eMan;
+
+        PhysicsSystem pSys;
+        ActionSystem aSys;
+        InputSystem iSys;
+
+        RenderingSystem renderer;
 
         Entity pEnt;
         Vector2 playerPos;
@@ -236,7 +471,7 @@ namespace Monogame_Test_Project
             graphics.ApplyChanges();
            
             // test
-            renderer = new Renderer(eMan);
+            renderer = new RenderingSystem(eMan);
             renderer.textureMap.Add("brick", Content.Load<Texture2D>("textures/smooth-brick"));
 
             renderCanvas = new RenderTarget2D(
@@ -459,263 +694,263 @@ namespace Monogame_Test_Project
         }
 
 
+    }
+}
+*/
 
 
-
-        /*
-         * OLD SHADER CODE BEFORE INTRODUCED LOOP
-        float4 MainPS(VertexShaderOutput input) : COLOR
+/*
+ * OLD SHADER CODE BEFORE INTRODUCED LOOP
+float4 MainPS(VertexShaderOutput input) : COLOR
 {
-    float3 ambientLight = AmbientLightColor * input.Color.rgb;
-    float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
-    
-    
-    
-	// add on the light value based on how far the point is from the light
+float3 ambientLight = AmbientLightColor * input.Color.rgb;
+float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
 
-	// light source attenuation
-    
-    //float b = 0.01;
-    //float radius = sqrt(1.0 / (b * minLight));
-	
-	
-    
-    
-    
-    
-    
-    float dist = distance(PointLightPosition.xy, input.Pos.xy);
-    
-    // attenuation technique 1
-    //float b = 0.01;
-    //float a = 0.1;
-    //float att = 1.0 / (1.0 + a * dist + b * dist * dist);
-    
-    // attenuation technique 2
-    // float minLight = 0.01; // cuts light off when attenuation reaches this value
-    // float b = 1.0 / (PointLightRadius * PointLightRadius * minLight); // calculate b based on radius and minline value 
-    // float a = 0.1;
-    
-    // attenuation technique 3
-    float att = clamp(1.0 - dist / PointLightRadius, 0.0, 1.0);
-    
-    
-    if (dist >= PointLightRadius)
+
+
+// add on the light value based on how far the point is from the light
+
+// light source attenuation
+
+//float b = 0.01;
+//float radius = sqrt(1.0 / (b * minLight));
+
+
+
+
+
+
+
+float dist = distance(PointLightPosition.xy, input.Pos.xy);
+
+// attenuation technique 1
+//float b = 0.01;
+//float a = 0.1;
+//float att = 1.0 / (1.0 + a * dist + b * dist * dist);
+
+// attenuation technique 2
+// float minLight = 0.01; // cuts light off when attenuation reaches this value
+// float b = 1.0 / (PointLightRadius * PointLightRadius * minLight); // calculate b based on radius and minline value 
+// float a = 0.1;
+
+// attenuation technique 3
+float att = clamp(1.0 - dist / PointLightRadius, 0.0, 1.0);
+
+
+if (dist >= PointLightRadius)
+{
+return texColor * float4(ambientLight, input.Color.w);
+}
+
+
+//float gradient = smoothstep(0.0, 1.0, dist);
+
+// add lights together
+float3 finalLight = ambientLight + (PointLightColor * att);
+
+// multiply texture color and light value
+return texColor * float4(finalLight, input.Color.w);
+}
+
+
+*/
+
+
+
+
+/*
+protected override void Draw(GameTime gameTime)
+{
+
+    GraphicsDevice.SetRenderTarget(renderCanvas);
+    GraphicsDevice.Clear(Color.CornflowerBlue);
+    GraphicsDevice.DepthStencilState =
+        new DepthStencilState() { DepthBufferEnable = true };
+
+    spriteEffect.CurrentTechnique.Passes[0].Apply();
+
+
+    spriteBatch.Begin(
+        SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        SamplerState.PointClamp, transformMatrix: cam.TransformMatrix,
+        effect: spriteEffect);
+
+    // Draw to the canvas
+    Bitmask sig = new Bitmask((int)ComponentType.Count);
+    sig[ComponentType.CTransform] = true;
+    sig[ComponentType.CCollider] = true;
+    List<int> posEnts = eMan.GetEntityIds(sig).ToList();
+
+    foreach (var id in posEnts)
     {
-        return texColor * float4(ambientLight, input.Color.w);
-    }
-    
-    
-    //float gradient = smoothstep(0.0, 1.0, dist);
-    
-    // add lights together
-    float3 finalLight = ambientLight + (PointLightColor * att);
-    
-    // multiply texture color and light value
-    return texColor * float4(finalLight, input.Color.w);
-}
+        CTransform transform = (CTransform)eMan.GetComponent<CTransform>(id);
+        CRectCollider collider = (CRectCollider)eMan.GetComponent<CRectCollider>(id);
 
-
-        */
-
-
-
-
-        /*
-        protected override void Draw(GameTime gameTime)
+        if (collider != null)
         {
-
-            GraphicsDevice.SetRenderTarget(renderCanvas);
-            GraphicsDevice.Clear(Color.CornflowerBlue);
-            GraphicsDevice.DepthStencilState =
-                new DepthStencilState() { DepthBufferEnable = true };
-
-            spriteEffect.CurrentTechnique.Passes[0].Apply();
-
-
-            spriteBatch.Begin(
-                SpriteSortMode.Immediate, BlendState.AlphaBlend,
-                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix,
-                effect: spriteEffect);
-
-            // Draw to the canvas
-            Bitmask sig = new Bitmask((int)ComponentType.Count);
-            sig[ComponentType.CTransform] = true;
-            sig[ComponentType.CCollider] = true;
-            List<int> posEnts = eMan.GetEntityIds(sig).ToList();
-
-            foreach (var id in posEnts)
-            {
-                CTransform transform = (CTransform)eMan.GetComponent<CTransform>(id);
-                CRectCollider collider = (CRectCollider)eMan.GetComponent<CRectCollider>(id);
-
-                if (collider != null)
-                {
-                    spriteBatch.Draw(
-                        dirtTex,
-                        new Rectangle(
-                            (int)transform.X, (int)transform.Y,
-                            (int)collider.Width, (int)collider.Height),
-                        null,
-                        Color.White);
-                }
-            }
-
-
-            // setup shaders
-
-
-
-
-            //spriteEffect.CurrentTechnique.Passes[0].Apply();
-
-            // render sprites with effects
-
-
-            spriteBatch.End();
-
-            graphics.GraphicsDevice.SetRenderTarget(null);
-            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            //lightEffect.CurrentTechnique.Passes[0].Apply();
-            //lightEffect.Parameters["LightPosition"]?.SetValue();
-            //lightEffect.Parameters["ScreenTexture"]?.SetValue(renderCanvas);
-            //.Parameters["WorldViewProjection"]?.SetValue(cam.TransformMatrix);
-
-
-            // draw canvas to screen
-            spriteBatch.Begin(
-                SpriteSortMode.Immediate, BlendState.AlphaBlend,
-                SamplerState.PointClamp, DepthStencilState.Default,
-                RasterizerState.CullNone);
-
-            // draw to actual window
             spriteBatch.Draw(
-                renderCanvas,
-                new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+                dirtTex,
+                new Rectangle(
+                    (int)transform.X, (int)transform.Y,
+                    (int)collider.Width, (int)collider.Height),
+                null,
                 Color.White);
-
-            // draw debug text
-            spriteBatch.DrawString(spriteFont, "fps " + framesPerSecond, new Vector2(10, 10), Color.Black);
-            spriteBatch.DrawString(spriteFont, "x: " + playerPos.X + "\ny: " + playerPos.Y, new Vector2(10, 40), Color.Black);
-            spriteBatch.End();
-
-            base.Draw(gameTime);
         }
-        */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //protected override void Draw(GameTime gameTime)
-        //{
-        //    GraphicsDevice.Clear(Color.CornflowerBlue);
-
-        //    // render tilemap to world canvas
-
-        //    tilemapRenderer.render(graphics.GraphicsDevice);
-
-
-        //    graphics.GraphicsDevice.SetRenderTarget(renderCanvas);
-        //    graphics.GraphicsDevice.DepthStencilState = new DepthStencilState() 
-        //        { DepthBufferEnable = true };
-        //    graphics.GraphicsDevice.Clear(Color.CornflowerBlue); // clear canvas
-        //    // draw to render target
-        //    spriteBatch.Begin(
-        //        SpriteSortMode.Immediate, BlendState.AlphaBlend,
-        //        SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
-
-        //    spriteBatch.Draw(
-        //        tilemapRenderer.mapCanvas, 
-        //        new Rectangle(
-        //            0, 0, 
-        //            tilemapRenderer.mapCanvas.Width,
-        //            tilemapRenderer.mapCanvas.Height),
-        //        tilemapRenderer.mapCanvas.Bounds,
-        //        Color.White);
-
-        //    spriteEffect.CurrentTechnique.Passes[0].Apply(); // effect for player texture (nothing right now)
-
-        //    spriteBatch.Draw(
-        //        spriteMan.dSpriteSheets["tilesheet"],
-        //        player.getPosition(),
-        //        spriteMan.dSpriteRects["tilesheet"]["dirt"],
-        //        Color.White,
-        //        0f,
-        //        new Vector2(8f, 8f),
-        //        1f,
-        //        SpriteEffects.None,
-        //        0f);
-
-        //    //spriteBatch.Draw(
-        //    //     rectTexture,
-        //    //     player.getPosition(),
-        //    //     null,
-        //    //     Color.White,
-        //    //     0f, // theta
-        //    //     new Vector2(8f, 8f),
-        //    //     1f,
-        //    //     SpriteEffects.None,
-        //    //     0f);
-
-        //    spriteBatch.End();
-
-        //    graphics.GraphicsDevice.SetRenderTarget(null);
-        //    graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
-
-        //    //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
-        //    //    SamplerState.PointClamp, DepthStencilState.Default,
-        //    //    RasterizerState.CullNone);
-
-
-
-
-        //    // Draw map canvas ====================
-
-        //    spriteBatch.Begin(
-        //        SpriteSortMode.Immediate, 
-        //        BlendState.AlphaBlend,
-        //        SamplerState.PointClamp, 
-        //        DepthStencilState.Default,
-        //        RasterizerState.CullNone);
-
-        //    // draw to actual window
-        //    spriteBatch.Draw(
-        //        renderCanvas,
-        //        new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
-        //        Color.White);
-
-        //    spriteBatch.End();
-
-        //    base.Draw(gameTime);
-        //}
-
-
     }
+
+
+    // setup shaders
+
+
+
+
+    //spriteEffect.CurrentTechnique.Passes[0].Apply();
+
+    // render sprites with effects
+
+
+    spriteBatch.End();
+
+    graphics.GraphicsDevice.SetRenderTarget(null);
+    graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+
+    //lightEffect.CurrentTechnique.Passes[0].Apply();
+    //lightEffect.Parameters["LightPosition"]?.SetValue();
+    //lightEffect.Parameters["ScreenTexture"]?.SetValue(renderCanvas);
+    //.Parameters["WorldViewProjection"]?.SetValue(cam.TransformMatrix);
+
+
+    // draw canvas to screen
+    spriteBatch.Begin(
+        SpriteSortMode.Immediate, BlendState.AlphaBlend,
+        SamplerState.PointClamp, DepthStencilState.Default,
+        RasterizerState.CullNone);
+
+    // draw to actual window
+    spriteBatch.Draw(
+        renderCanvas,
+        new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+        Color.White);
+
+    // draw debug text
+    spriteBatch.DrawString(spriteFont, "fps " + framesPerSecond, new Vector2(10, 10), Color.Black);
+    spriteBatch.DrawString(spriteFont, "x: " + playerPos.X + "\ny: " + playerPos.Y, new Vector2(10, 40), Color.Black);
+    spriteBatch.End();
+
+    base.Draw(gameTime);
 }
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//protected override void Draw(GameTime gameTime)
+//{
+//    GraphicsDevice.Clear(Color.CornflowerBlue);
+
+//    // render tilemap to world canvas
+
+//    tilemapRenderer.render(graphics.GraphicsDevice);
+
+
+//    graphics.GraphicsDevice.SetRenderTarget(renderCanvas);
+//    graphics.GraphicsDevice.DepthStencilState = new DepthStencilState() 
+//        { DepthBufferEnable = true };
+//    graphics.GraphicsDevice.Clear(Color.CornflowerBlue); // clear canvas
+//    // draw to render target
+//    spriteBatch.Begin(
+//        SpriteSortMode.Immediate, BlendState.AlphaBlend,
+//        SamplerState.PointClamp, transformMatrix: cam.TransformMatrix);
+
+//    spriteBatch.Draw(
+//        tilemapRenderer.mapCanvas, 
+//        new Rectangle(
+//            0, 0, 
+//            tilemapRenderer.mapCanvas.Width,
+//            tilemapRenderer.mapCanvas.Height),
+//        tilemapRenderer.mapCanvas.Bounds,
+//        Color.White);
+
+//    spriteEffect.CurrentTechnique.Passes[0].Apply(); // effect for player texture (nothing right now)
+
+//    spriteBatch.Draw(
+//        spriteMan.dSpriteSheets["tilesheet"],
+//        player.getPosition(),
+//        spriteMan.dSpriteRects["tilesheet"]["dirt"],
+//        Color.White,
+//        0f,
+//        new Vector2(8f, 8f),
+//        1f,
+//        SpriteEffects.None,
+//        0f);
+
+//    //spriteBatch.Draw(
+//    //     rectTexture,
+//    //     player.getPosition(),
+//    //     null,
+//    //     Color.White,
+//    //     0f, // theta
+//    //     new Vector2(8f, 8f),
+//    //     1f,
+//    //     SpriteEffects.None,
+//    //     0f);
+
+//    spriteBatch.End();
+
+//    graphics.GraphicsDevice.SetRenderTarget(null);
+//    graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+
+//    //spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend,
+//    //    SamplerState.PointClamp, DepthStencilState.Default,
+//    //    RasterizerState.CullNone);
+
+
+
+
+//    // Draw map canvas ====================
+
+//    spriteBatch.Begin(
+//        SpriteSortMode.Immediate, 
+//        BlendState.AlphaBlend,
+//        SamplerState.PointClamp, 
+//        DepthStencilState.Default,
+//        RasterizerState.CullNone);
+
+//    // draw to actual window
+//    spriteBatch.Draw(
+//        renderCanvas,
+//        new Rectangle(0, 0, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight),
+//        Color.White);
+
+//    spriteBatch.End();
+
+//    base.Draw(gameTime);
+//}
+
+
 
 /*
 
