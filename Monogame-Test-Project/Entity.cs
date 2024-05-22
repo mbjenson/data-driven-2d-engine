@@ -135,7 +135,7 @@ namespace ECS
         public Vector2 offset;
 
         public CTexture() { }
-        public CTexture(string textureId) 
+        public CTexture(string textureId)
         {
             this.textureId = textureId;
             offset = new Vector2(0, 0);

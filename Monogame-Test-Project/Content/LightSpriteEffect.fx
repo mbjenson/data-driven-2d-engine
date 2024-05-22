@@ -20,7 +20,6 @@ float PointLightRadii[3];
 float3 AmbientLightColor = float3(0.5, 0.5, 0.5);
 
 Texture2D SpriteTexture;
-
 sampler2D SpriteTextureSampler = sampler_state
 {
 	Texture = <SpriteTexture>;

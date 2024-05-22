@@ -41,6 +41,10 @@ namespace viewStuff
     }
     */
 
+    
+
+
+    
     public class Camera2D
     {
         public float Zoom { get; set; }
@@ -54,7 +58,7 @@ namespace viewStuff
             get
             {
                 return
-                    Matrix.CreateTranslation(new Vector3(-Position.X, -Position.Y, 0)) *
+                    Matrix.CreateTranslation(new Vector3((int)-Position.X, (int)-Position.Y, 0)) *
                     Matrix.CreateRotationZ(Rotation) *
                     Matrix.CreateScale(Zoom) *
                     Matrix.CreateTranslation(new Vector3(Bounds.Width * 0.5f, Bounds.Height * 0.5f, 0));

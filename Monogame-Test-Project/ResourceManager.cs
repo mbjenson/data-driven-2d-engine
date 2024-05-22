@@ -2,10 +2,10 @@
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 
+
+
 namespace ECS
 {
-    
-
 
     /*
         Redo this class, it is unintuitive and does not really help in the long term

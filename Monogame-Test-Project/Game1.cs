@@ -104,8 +104,13 @@ TODO
 =======================================
 
 CURRENT:
-    fixing viewport and resolution
-    * might try and implement a camera that moves around the render canvas rather than the display or something like that   
+    FIXED: camera issue where normal texture would not line up with the 
+           brick correctly. This would only happen when I would render things
+           based on the camera's world view projection matrix.
+
+[] Camera
+    - Camera:
+    
     
 
 [] Renderer
@@ -235,27 +240,25 @@ namespace Monogame_Test_Project
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
 
+            // must happen in this order for the camera to work properly
+            // [
             graphics.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
             graphics.ApplyChanges();
+
             cam = new Camera2D(GraphicsDevice.Viewport);
             renderer = new RenderingSystem(eMan, graphics);
-            //cam = new Camera2D(GraphicsDevice.Viewport);
-
             
-
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
             graphics.PreferredBackBufferHeight = WIN_HEIGHT;
-            
             graphics.ApplyChanges();
+            // ]
             
-            
-
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody() { mass = 5f });
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
-            eMan.AddComponent<CTexture>(pEnt, new CTexture("brick", new Vector2(32, 32)));
+            eMan.AddComponent<CTexture>(pEnt, new CTexture("brick"));
             eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(3.0f, 2.0f, 0.2f)));
 
             Entity lightBlock = eMan.CreateEntity();
@@ -266,7 +269,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CRigidBody>(lightBlock, 
                 new CRigidBody() { mass = 2f });
             eMan.AddComponent<CTexture>(lightBlock, 
-                new CTexture("brick", new Vector2(32, 32)));
+                new CTexture("brick"));
 
             Entity heavyBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(heavyBlock, 
@@ -276,7 +279,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CRigidBody>(heavyBlock, 
                 new CRigidBody() { mass = 20f });
             eMan.AddComponent<CTexture>(heavyBlock,
-                new CTexture("brick", new Vector2(32, 32)));
+                new CTexture("brick"));
 
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
@@ -399,6 +402,7 @@ namespace Monogame_Test_Project
 
             //cam.Update(playerPos, dt);
             cam.Update(player, dt);
+            //cam.Update(player, dt);
             base.Update(gameTime);
         }
 

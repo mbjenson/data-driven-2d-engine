@@ -47,12 +47,6 @@ namespace ECS.Systems
         const int TARGET_WIDTH = 480; //320;
         const int TARGET_HEIGHT = 270; //180;
 
-        //float totalGameTime = 0f;
-
-        //float framesPerSecond = 0f;
-        //float secondsCounter = 0f;
-        //int numFrames = 0;
-
         public List<String> debugText;
 
         public Texture2D brickTex;
@@ -107,17 +101,17 @@ namespace ECS.Systems
         public void Render(Camera2D cam)
         {
             // 1 draw to canvas
-            DrawToCanvas(cam.TransformMatrix);
+            DrawToCanvas(cam);
 
             // 2 perform post processing effects
             // PostProcessing();
 
             // 3 draw to screen
-            DrawToScreen();
+            DrawToScreen(cam);
         }
 
 
-        private void DrawToCanvas(Matrix camTransform)
+        private void DrawToCanvas(Camera2D cam)
         {
             List<Entity> ents = eMan.GetEntities(signature).ToList();
             CTexture[] textures = new CTexture[ents.Count];
@@ -137,10 +131,17 @@ namespace ECS.Systems
             gMan.GraphicsDevice.DepthStencilState =
                 new DepthStencilState() { DepthBufferEnable = true };
 
+
             spriteBatch.Begin(
-                SpriteSortMode.Immediate, BlendState.AlphaBlend,
-                SamplerState.PointClamp, transformMatrix: camTransform,
+                SpriteSortMode.BackToFront, BlendState.AlphaBlend,
+                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix,
                 effect: pixelShader);
+
+
+            //spriteBatch.Begin(
+            //    SpriteSortMode.BackToFront, BlendState.AlphaBlend,
+            //    SamplerState.PointClamp,
+            //    effect: pixelShader);
 
             for (int i = 0; i < ents.Count; i++)
             {
@@ -148,7 +149,7 @@ namespace ECS.Systems
                     brickTex,
                     new Rectangle(
                         (int)transforms[i].X, (int)transforms[i].Y,
-                        (int)textures[i].offset.X, (int)textures[i].offset.Y),
+                        brickTex.Width, brickTex.Height),
                     null,
                     Color.White
                     );
@@ -162,7 +163,7 @@ namespace ECS.Systems
             return;
         }
 
-        private void DrawToScreen()
+        private void DrawToScreen(Camera2D cam)
         {
             gMan.GraphicsDevice.SetRenderTarget(null);
             gMan.GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -175,6 +176,11 @@ namespace ECS.Systems
             spriteBatch.Draw(renderCanvas,
                 new Rectangle(0, 0, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
                 Color.White);
+
+
+            //spriteBatch.Draw(renderCanvas,
+            //    new Rectangle((int)-cam.Position.X, (int)-cam.Position.Y, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
+            //    Color.White);
 
             DrawDebugText();
 
