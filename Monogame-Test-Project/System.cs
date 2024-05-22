@@ -94,11 +94,14 @@ namespace ECS.Systems
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
 
-            gMan.PreferredBackBufferWidth = WIN_WIDTH;
-            gMan.PreferredBackBufferHeight = WIN_HEIGHT;
-            gMan.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            //gMan.PreferredBackBufferWidth = WIN_WIDTH;
+            //gMan.PreferredBackBufferHeight = WIN_HEIGHT;
+            
+            
+            
+            //gMan.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
 
-            gMan.ApplyChanges();
+            //gMan.ApplyChanges();
         }
         
         public void Render(Camera2D cam)

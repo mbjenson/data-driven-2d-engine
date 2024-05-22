@@ -70,7 +70,10 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     // texture color
     float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
     // get texture normal
-    float3 normal = tex2D(NormalTextureSampler, input.TextureCoordinates);
+    
+    float3 normal = tex2D(NormalTextureSampler, input.TextureCoordinates).rgb;
+    normal = normalize(normal * 2.0 - 1.0);
+    normal.y *= -1;
     
     float3 finalLight = 0.0;
     
@@ -87,16 +90,16 @@ float4 MainPS(VertexShaderOutput input) : COLOR
         
         // get light direction
         //float2 lightDir = normalize(input.Pos.xy - PointLightPositions[i].xy);
-        float2 lightDir = normalize(PointLightPositions[i].xy - input.Pos.xy);
-        float lightAmount = saturate(dot(normal, float3(-lightDir, 0.0)));
+        float3 lightDir = normalize(PointLightPositions[i].xyz - float3(input.Pos.xy, 0.0));
+        float lightAmount = clamp(dot(normal, lightDir), 0.0, 1.0);
         
         // calculate attenuation
         float a = 0.8;
         float att = clamp(a - dist / PointLightRadii[i], 0.0, 1.0);
     
         // add lights together
-        //finalLight += (PointLightColors[i] * lightAmount * att);
-        finalLight += (PointLightColors[i] * lightAmount);
+        finalLight += (PointLightColors[i] * lightAmount * att);
+        
 
         //finalLight += (PointLightColors[i] * att);
     }

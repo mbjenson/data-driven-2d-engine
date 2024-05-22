@@ -104,8 +104,9 @@ TODO
 =======================================
 
 CURRENT:
-    normal mapping is not working as of right now
-    check internet for better results.
+    fixing viewport and resolution
+    * might try and implement a camera that moves around the render canvas rather than the display or something like that   
+    
 
 [] Renderer
     - work on renderer class in system.cs
@@ -115,6 +116,7 @@ CURRENT:
             changing the shader parameters depending on what things are present in
             the scene. create another class and put it in the renderer so that
             the functionality can be enclosed within the rendering system
+        * try height map for shadows and other things
 
 
 [] shaders
@@ -187,7 +189,8 @@ namespace Monogame_Test_Project
         Vector2 worldMousePos;
         Vector2 viewportMousePos;
         // just so I don't get confused in the future, Vector2 player is the point that the camera is looking at
-        Vector2 player = new Vector2(300f, 250f);
+        //Vector2 player = new Vector2(300f, 250f);
+        Vector2 player = Vector2.Zero;
 
         Vector2 entitySize = new Vector2(32f, 32f);
 
@@ -219,6 +222,7 @@ namespace Monogame_Test_Project
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
+            
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
@@ -231,17 +235,28 @@ namespace Monogame_Test_Project
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
 
-            renderer = new RenderingSystem(eMan, graphics);
-
+            graphics.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+            graphics.ApplyChanges();
             cam = new Camera2D(GraphicsDevice.Viewport);
+            renderer = new RenderingSystem(eMan, graphics);
+            //cam = new Camera2D(GraphicsDevice.Viewport);
+
             
+
+            graphics.PreferredBackBufferWidth = WIN_WIDTH;
+            graphics.PreferredBackBufferHeight = WIN_HEIGHT;
+            
+            graphics.ApplyChanges();
+            
+            
+
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody() { mass = 5f });
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
             eMan.AddComponent<CTexture>(pEnt, new CTexture("brick", new Vector2(32, 32)));
-            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 0.0f, 1.0f)));
+            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(3.0f, 2.0f, 0.2f)));
 
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, 
@@ -314,12 +329,16 @@ namespace Monogame_Test_Project
                 numFrames = 0;
             }
 
-            
+
 
             // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
             viewportMousePos = new Vector2(
                 ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
                 ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
+
+            //viewportMousePos = new Vector2(
+            //    ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)graphics.GraphicsDevice.Viewport.Width,
+            //    ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
 
             // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
             worldMousePos = cam.screenToWorld(viewportMousePos);
@@ -375,10 +394,10 @@ namespace Monogame_Test_Project
                 "fps: " + Math.Round(framesPerSecond, 2),
                 "cam pos: " + Math.Round(cam.Position.X, 1) +
                 ", " + Math.Round(cam.Position.Y, 1),
-                "mouse dir: " + playerDir.X + ", " + playerDir.Y,
+                "player pos: " + Math.Round(playerPos.X, 1) + ", " + Math.Round(playerPos.Y, 1),
             };
 
-            //cam.Update(pTrans.position, dt);
+            //cam.Update(playerPos, dt);
             cam.Update(player, dt);
             base.Update(gameTime);
         }
@@ -402,13 +421,13 @@ namespace Monogame_Test_Project
             renderer.pixelShader.Parameters["NormalTexture"]?.SetValue(normalTex);
 
             renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
-                new Vector3(viewportMousePos.X, viewportMousePos.Y, 0.0f),
-                new Vector3(viewportMousePos.X, viewportMousePos.Y, 0.0f),
-                new Vector3(cam.worldToScreen(pTrans.position), 0.0f)
-                });
+                new Vector3(viewportMousePos.X, viewportMousePos.Y + 50 * (float)Math.Sin(totalGameTime * 2), 15.0f),
+                new Vector3(viewportMousePos.X + 50 * (float)Math.Cos(totalGameTime * 2), viewportMousePos.Y + 20 * (float)Math.Sin(totalGameTime * 2), 5.0f),
+                new Vector3(cam.worldToScreen(pTrans.position + new Vector2(16, 16)), 20.0f)
+            });
             renderer.pixelShader.Parameters["PointLightColors"].SetValue(new[] {
-                new Vector3(1.0f, 1.0f, 1.0f),
-                new Vector3(1.0f, 0.0f, 0.0f),
+                new Vector3(0.0f, 1.5f, 1.5f),
+                new Vector3(1.5f, 0.0f, 0.0f),
                 pLight.color,
             });
             renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
