@@ -180,7 +180,6 @@ namespace ECS.Systems
                 CRigidBody rA =
                     (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
 
-
                 // calculate friction
                 float kN = 0.025f; // (TEMP) surface coefficient of dynamic friction
                 //                 direction and size * intensity of friction * related to mass

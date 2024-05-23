@@ -1,48 +1,39 @@
-﻿
-
-
-using bitmask;
+﻿using bitmask;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using viewStuff;
 
 
 namespace ECS.Systems
 {
-    /*
-    a system will request a set of entities from the entity manager
-    and then perform operations on those entities 
-    */
-
+    // base class for systems which are Constantly Updated
     public abstract class UpdateSystem
     {
         public abstract void Update(GameTime gameTime);
     }
 
 
-    /*
-    Renderer
+    
 
-    The renderer will:
-        1. draw desired items to the screen
-            a. This will be done by accessing the entity manager and retreiving a list of all the items with drawable components
-               and the presence of these components indicates that the entity should be drawn
-        2. allow for items to be drawn using desired effects (hlsl shaders)
-            a. all things that are rendered will be passed through the shaders
-        3. allow for post processing effects to be done to the rendered information
-            a. this means that two rendering passes will be done, the first draws all items to a canvas,
-               and the second will draw that canvas to the actual screen (post processing will happen
-               sometime after the first pass and before the second.
+    /*
+    Remeber: things are being drawn back to front now
+
+
     */
 
+    /*
+    Rendering System
+
+    Works with the Entity component system to draw things in the world
+    */
     public class RenderingSystem
     {
-        const int WIN_WIDTH = 1440;
-        const int WIN_HEIGHT = 810;
+        //const int WIN_WIDTH = 1440;
+        //const int WIN_HEIGHT = 810;
 
         const int TARGET_WIDTH = 480; //320;
         const int TARGET_HEIGHT = 270; //180;
@@ -50,9 +41,14 @@ namespace ECS.Systems
         public List<String> debugText;
 
         public Texture2D brickTex;
+        public Texture2D normalTex;
+
         public Effect pixelShader = null;
         public SpriteFont font;
+        
 
+        // the virtual render target to which all things are
+        // first draw before they are drawn to the screen.
         private RenderTarget2D renderCanvas;
 
         // getting display size (use this later)
@@ -63,7 +59,6 @@ namespace ECS.Systems
         private Bitmask signature;
         private EntityManager eMan;
 
-        private RenderTarget2D canvas; // all things are drawn to this, then this is drawn to screen
         private SpriteBatch spriteBatch;
 
         
@@ -87,15 +82,6 @@ namespace ECS.Systems
                 DepthFormat.Depth24);
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
-
-            //gMan.PreferredBackBufferWidth = WIN_WIDTH;
-            //gMan.PreferredBackBufferHeight = WIN_HEIGHT;
-            
-            
-            
-            //gMan.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
-
-            //gMan.ApplyChanges();
         }
         
         public void Render(Camera2D cam)
@@ -137,11 +123,7 @@ namespace ECS.Systems
                 SamplerState.PointClamp, transformMatrix: cam.TransformMatrix,
                 effect: pixelShader);
 
-
-            //spriteBatch.Begin(
-            //    SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-            //    SamplerState.PointClamp,
-            //    effect: pixelShader);
+            pixelShader.Parameters["NormalTexture"].SetValue(normalTex);
 
             for (int i = 0; i < ents.Count; i++)
             {
@@ -177,13 +159,8 @@ namespace ECS.Systems
                 new Rectangle(0, 0, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
                 Color.White);
 
-
-            //spriteBatch.Draw(renderCanvas,
-            //    new Rectangle((int)-cam.Position.X, (int)-cam.Position.Y, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
-            //    Color.White);
-
             DrawDebugText();
-
+            
             spriteBatch.End();
         }
 
@@ -209,8 +186,60 @@ namespace ECS.Systems
         }
 
     }
+
+
+
+    /*
     
-    // test
+    Lighting System
+
+    * the lighting  system will basically allow for seamless connection of the lights
+      in the ecs to the shader present in the renderer
+    * the tasks it will complete include 
+        1. gathering the correct light information from the ecs
+        2. setting the shader parameters with those values
+        3. handle light count overflow and underflow for the renderer
+           * i.e., because the shader uses static values for array sizes, 
+             only a const amount of lights are allowed to be sent to the shader.
+             This system will take care of ensuring correct array values
+             are set.
+    * in layman's terms, the lighting system will only be in charge of sending lighting
+      information from the ECS to the shader, as the task is different from the purpose
+      of the renderer itself and requires a seperate, decoupled system to manage it.
+    */
+
+    public class LightingSystem
+    {
+        private EntityManager eMan;
+        private Bitmask signature;
+        private int maxNumLights; // max number of lights
+        public LightingSystem(EntityManager eMan, int maxNumLights)
+        {
+            this.eMan = eMan;
+
+            signature = new Bitmask((int)ComponentType.Count);
+            signature[ComponentType.CPointLight] = true;
+            signature[ComponentType.CTransform] = true;
+
+            this.maxNumLights = maxNumLights;
+        }
+
+        public void SetShaderParameters(Effect pixelShader)
+        {
+
+            //pixelShader.Parameters["PointLightPositions"].SetValue();
+            
+        }
+
+        /*
+        This system will:
+            1. manage all of the lights in the scene by checking visibility
+            2. set shader values given the visible lights in the scene
+        */
+    }
+
+    
+    
     /**
      * Action System
      * 

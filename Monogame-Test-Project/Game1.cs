@@ -33,6 +33,55 @@ using Microsoft.Xna.Framework.Content;
 
 
 /*
+=======================================
+IDEAS:
+=======================================
+
+potential idea for Destructable items:
+    the destructable component will have a counter which determines which 
+    stage of destruction a thing is at and will be linked to a sprite sheet somehow
+    which can be the different stages of damage which a thing undergoes(?)
+   
+Figuring out how to tell the renderer which index in a sprite sheet I am at 
+    could pose potential issues because of how things are...
+
+Idea for sprite sheet:
+    every item that is to be rendererd has a sprite sheet component
+    this sprite sheet component has a texture ID (string or int) and 
+    an index into the sprite sheet which determines which of the items 
+    in the sheet we are using. For a static item, the index will be 0
+    and never change. For an animated item, the index will be changed
+    as time goes on. Perhaps, the sprite sheet can contain a floating point
+    number which represents the time in an animation frame. this will
+    probably be standardized for many different things like animated map
+    items will have a slower animation tick rate than the players sprite.
+    For items that are static, the animation frame time will be -1 or 0,
+    and the index will never change.
+
+Animations:
+    going off of the last paragraph, I now am beginning to understand
+    how I might implement sprite sheet based animations into this engine.
+    First off, I will need an AnimationSystem : UpdateSystem which can
+    manage updating the index into the sprite sheet for each of the
+    sprite sheet components. come to think of it, I could have sprite sheet
+    component for all items which have a texture, and then use an additional
+    animation component which signifies that this sprite sheet is animated.
+    This could greatly increase performance for the animation system as it
+    won't have to go through a bunch of spritesheet components that are not
+    animated. The animatino system will simply get all entities which have both
+    a sprite sheet component and an animation component, then, using
+    the information from the animatino component, it will incrememnt the
+    index in the sprite sheet component(?) (or I will store this index in
+    the animation component which makes more sense perhaps... not sure yet).
+
+    The sprite sheets will use a column or row wise traversal standard which
+    means that an increased index into the sprite sheet will move the 
+    source rectangle either 1 down or 1 to the right. I don't know which yet.
+    
+
+*/
+
+/*
  * 
 =======================================
 NOTES:
@@ -104,38 +153,40 @@ TODO
 =======================================
 
 CURRENT:
+    brainstorming how to set shader parameters without hard coding in the parameter name
+    eg: shader.Parameters["param-name"].SetValue(...);
+    goal: shader.Parameters[some-string].SetValue(some-value);
+    * idea: 
+
+    lighting system
+
+    Trying to fix the issue where the sprites are jittery around the screen when moved.
+    When rounding the position of the player, strange things happen with the movement
+    and it is not a solution.
+
     FIXED: camera issue where normal texture would not line up with the 
            brick correctly. This would only happen when I would render things
            based on the camera's world view projection matrix.
 
-[] Camera
-    - Camera:
+
     
     
 
 [] Renderer
     - work on renderer class in system.cs
-        * make the graphics device manager and other things like that live in the renderer and not in the game1.cs class.
         * get a proper resource manager working
         * Will need to create lighting / particle / effect subsystem to manage
             changing the shader parameters depending on what things are present in
             the scene. create another class and put it in the renderer so that
             the functionality can be enclosed within the rendering system
-        * try height map for shadows and other things
+        * try height map for shadows and other things(?)
+        * brain storm how to allow for setting of shader parameters
+          i.e. how can I set shader parameters without hard coding the parameter name
 
 
 [] shaders
-    - define structs in c# which can be sent to the shader and be used there. Hopefully the structs can be sent and not individual values.
-        * once above is done create struct for scene which has information about ambient lighting in the scene and whatnot.
-        * hopefully on the c# side of things, a struct can be created, for example: struct PointLight, which is sent verbatem to the GPU in a buffer
-          This type of rendering works in things like OpenGL but we'll see how simple it is to do here.
-    - normals
-        * take in texture which contains normal values
-        * figure out how to supply this texture to the sprite shader
-        * use this information to calculate lighting using dot product with some values I don't remember
     - shadows (chose between hard / soft)
         * soft shadows can be difficult to my knowledge and may not be the best choice to implement starting out
-        * 
     - choose between forward rendering and deferred lighting
         * forward rendering is what I am currently doing and is more costly but given that this is a 2d pixel game, I am not to worried about performance
         * deferred lighting means you only calculate the lighting information once on seperate render targets. Then with these you can go over each pixel
@@ -150,8 +201,6 @@ CURRENT:
 
 
 [] Entity Component System
-    
-    - merge matthew-dev into master (override master with matthew-dev b/c matthew-dev has the good stuff on it) ->
     
     - systems
         - movement system ->
@@ -181,13 +230,15 @@ namespace Monogame_Test_Project
 {
     public class Game1 : Game
     {
-        const int WIN_WIDTH = 1440;
-        const int WIN_HEIGHT = 810;
+        // in future, read this in from JSON file
+        //const int WIN_WIDTH = 1440;
+        //const int WIN_HEIGHT = 810;
+
+        const int WIN_WIDTH = 1920;
+        const int WIN_HEIGHT = 1080;
 
         const int TARGET_WIDTH = 480; //320;
         const int TARGET_HEIGHT = 270; //180; 
-
-        Texture2D normalTex;
 
         Camera2D cam;
 
@@ -227,14 +278,14 @@ namespace Monogame_Test_Project
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
-            
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            
         }
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = false;
+            IsFixedTimeStep = true; // lock at 60fps
 
             // init entities
             int numEnts = 3;
@@ -242,15 +293,23 @@ namespace Monogame_Test_Project
 
             // must happen in this order for the camera to work properly
             // [
-            graphics.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
-            graphics.ApplyChanges();
 
-            cam = new Camera2D(GraphicsDevice.Viewport);
+            // this is old, not going to change the viwport any more, just going to create
+            // one on the spot and give it to camera class, does the same thing
+
+            //graphics.GraphicsDevice.Viewport = new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT); // old
+            //graphics.ApplyChanges(); // old
+
+            // create viewport for camera
+            
+            //cam = new Camera2D(GraphicsDevice.Viewport); // old
+            cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
             renderer = new RenderingSystem(eMan, graphics);
             
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
             graphics.PreferredBackBufferHeight = WIN_HEIGHT;
             graphics.ApplyChanges();
+            // at this point the viweport is set to win width win height
             // ]
             
             pEnt = eMan.CreateEntity();
@@ -267,7 +326,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CCollider>(lightBlock, 
                 new CRectCollider(entitySize));
             eMan.AddComponent<CRigidBody>(lightBlock, 
-                new CRigidBody() { mass = 2f });
+                new CRigidBody() { mass = 2.5f });
             eMan.AddComponent<CTexture>(lightBlock, 
                 new CTexture("brick"));
 
@@ -277,15 +336,13 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CCollider>(heavyBlock, 
                 new CRectCollider(entitySize));
             eMan.AddComponent<CRigidBody>(heavyBlock, 
-                new CRigidBody() { mass = 20f });
+                new CRigidBody() { mass = 10f });
             eMan.AddComponent<CTexture>(heavyBlock,
                 new CTexture("brick"));
 
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
             aSys = new ActionSystem(eMan);
-
-            
 
             base.Initialize();
         }
@@ -306,8 +363,9 @@ namespace Monogame_Test_Project
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
 
-            normalTex = Content.Load<Texture2D>("textures/normal-map-test");
+            
 
+            renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
             renderer.pixelShader = Content.Load<Effect>("LightSpriteEffect");
             renderer.brickTex = Content.Load<Texture2D>("textures/smooth-brick");
@@ -332,23 +390,15 @@ namespace Monogame_Test_Project
                 numFrames = 0;
             }
 
-
-
             // translate the world from it's ratio across the screen to the same ratio but across the renderTarget2D
             viewportMousePos = new Vector2(
-                ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)TARGET_WIDTH,
-                ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
-
-            //viewportMousePos = new Vector2(
-            //    ((float)Mouse.GetState().X / (float)WIN_WIDTH) * (float)graphics.GraphicsDevice.Viewport.Width,
-            //    ((float)Mouse.GetState().Y / (float)WIN_HEIGHT) * (float)TARGET_HEIGHT);
-
+                (float)Mouse.GetState().X / (float)graphics.GraphicsDevice.Viewport.Width * (float)TARGET_WIDTH,
+                (float)Mouse.GetState().Y / (float)graphics.GraphicsDevice.Viewport.Height * (float)TARGET_HEIGHT);
             // transform the mouse position into the actual position that it has on the screen after the camera translate has been done
             worldMousePos = cam.screenToWorld(viewportMousePos);
 
             //float xDif = worldMousePos.X - playerPos.X;
             //float yDif = worldMousePos.Y - playerPos.Y;
-
             //theta = (float)Math.Atan2(yDif, xDif);
 
             var keyState = Keyboard.GetState();
@@ -387,21 +437,21 @@ namespace Monogame_Test_Project
             pSys.Update(gameTime);
 
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
+            //pTrans.position.Round(); // makes the jittering go away but makes the movement botched!
             playerPos = pTrans.position;
-
-            Vector2 playerDir = worldMousePos - playerPos;
-            playerDir = Vector2.Normalize(playerDir);
+            playerPos += new Vector2(16, 16);
 
             // set debug text for renderer
             renderer.debugText = new List<string> {
+                "viewport: " + + graphics.GraphicsDevice.Viewport.Width + ", " + graphics.GraphicsDevice.Viewport.Height,
                 "fps: " + Math.Round(framesPerSecond, 2),
                 "cam pos: " + Math.Round(cam.Position.X, 1) +
                 ", " + Math.Round(cam.Position.Y, 1),
-                "player pos: " + Math.Round(playerPos.X, 1) + ", " + Math.Round(playerPos.Y, 1),
+                //"player pos: " + Math.Round(playerPos.X, 1) + ", " + Math.Round(playerPos.Y, 1),
             };
 
-            //cam.Update(playerPos, dt);
-            cam.Update(player, dt);
+            cam.Update(playerPos, dt);
+            //cam.Update(player, dt);
             //cam.Update(player, dt);
             base.Update(gameTime);
         }
@@ -418,20 +468,27 @@ namespace Monogame_Test_Project
             CPointLight pLight = (CPointLight)eMan.GetComponent<CPointLight>(pEnt.id);
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
 
+            
+
             // set shader parameters (temp, set this inside of renderer one day)
             renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(
-                new Vector3(0.3f, 0.3f, 0.3f));
-
-            renderer.pixelShader.Parameters["NormalTexture"]?.SetValue(normalTex);
+                new Vector3(0.19f, 0.1f, 0.1f));
 
             renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
                 new Vector3(viewportMousePos.X, viewportMousePos.Y + 50 * (float)Math.Sin(totalGameTime * 2), 15.0f),
                 new Vector3(viewportMousePos.X + 50 * (float)Math.Cos(totalGameTime * 2), viewportMousePos.Y + 20 * (float)Math.Sin(totalGameTime * 2), 5.0f),
                 new Vector3(cam.worldToScreen(pTrans.position + new Vector2(16, 16)), 20.0f)
             });
+
+            renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
+                new Vector3(viewportMousePos.X, viewportMousePos.Y, 15.0f),
+                new Vector3(viewportMousePos.X, viewportMousePos.Y, 15.0f),
+                new Vector3(cam.worldToScreen(pTrans.position + new Vector2(16, 16)), 20.0f)
+            });
+
             renderer.pixelShader.Parameters["PointLightColors"].SetValue(new[] {
-                new Vector3(0.0f, 1.5f, 1.5f),
-                new Vector3(1.5f, 0.0f, 0.0f),
+                new Vector3(2.0f, 2.0f, 2.0f),
+                new Vector3(0.0f, 0.0f, 0.0f),
                 pLight.color,
             });
             renderer.pixelShader.Parameters["PointLightRadii"].SetValue(

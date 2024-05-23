@@ -79,6 +79,18 @@
 /processorParam:TextureFormat=Color
 /build:textures/norma-map-test.png;textures/normal-map-test.png
 
+#begin textures/smooth-brick-normal.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:textures/smooth-brick-normal.png
+
 #begin textures/smooth-brick.png
 /importer:TextureImporter
 /processor:TextureProcessor

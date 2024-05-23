@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Diagnostics;
 
 namespace viewStuff
 {
@@ -44,14 +45,16 @@ namespace viewStuff
     
 
 
-    
+    // recent change:
+    //  * casted the camera position to int to remove glitching textures when rendering 
+    //    to lower virtual resolution.
     public class Camera2D
     {
         public float Zoom { get; set; }
         public Vector2 Position { get; set; }
         public float Rotation { get; set; }
         private Rectangle Bounds { get; set; }
-        public float lag = 10f;
+        public float lag = 5f;
 
         public Matrix TransformMatrix
         {
@@ -108,9 +111,22 @@ namespace viewStuff
 
         public void Update(Vector2 followPoint, float dt)
         {
+            // original
             Vector2 lookAtDist = followPoint - this.Position;
+            this.Position += Vector2.Round(lookAtDist) * this.lag * dt;
+            
+            
 
-            this.Position += lookAtDist * this.lag * dt;
+
+            //Vector2 movement = lookAtDist * this.lag * dt
+            //this.Position += lookAtDist * this.lag * dt;
+
+            //Vector2 lookAtDist = followPoint - this.Position;
+            //if (lookAtDist.LengthSquared() > 0.00001)
+            //{
+            //    Vector2 movement = Vector2.Normalize(lookAtDist) * lookAtDist.Length() * this.lag;
+            //    this.Position += movement * dt;
+            //}
         }
 
 
