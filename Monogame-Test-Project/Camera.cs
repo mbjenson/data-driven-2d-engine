@@ -111,22 +111,8 @@ namespace viewStuff
 
         public void Update(Vector2 followPoint, float dt)
         {
-            // original
             Vector2 lookAtDist = followPoint - this.Position;
-            this.Position += Vector2.Round(lookAtDist) * this.lag * dt;
-            
-            
-
-
-            //Vector2 movement = lookAtDist * this.lag * dt
-            //this.Position += lookAtDist * this.lag * dt;
-
-            //Vector2 lookAtDist = followPoint - this.Position;
-            //if (lookAtDist.LengthSquared() > 0.00001)
-            //{
-            //    Vector2 movement = Vector2.Normalize(lookAtDist) * lookAtDist.Length() * this.lag;
-            //    this.Position += movement * dt;
-            //}
+            this.Position += lookAtDist * this.lag * dt;
         }
 
 

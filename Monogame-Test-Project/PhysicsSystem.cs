@@ -181,8 +181,10 @@ namespace ECS.Systems
                     (CRigidBody)eMan.GetComponent<CRigidBody>(entities[i].id);
 
                 // calculate friction
-                float kN = 0.025f; // (TEMP) surface coefficient of dynamic friction
+                // (TEMP) surface coefficient of dynamic friction
                 //                 direction and size * intensity of friction * related to mass
+                float kN = 0.025f;
+
                 rA.acceleration += -rA.velocity * kN * (1f - (1f / rA.mass));
 
                 // calculate velocity
@@ -190,7 +192,7 @@ namespace ECS.Systems
 
                 // reset acceleration
                 rA.acceleration = Vector2.Zero;
-
+                
                 // update position from velocity
                 tA.position += rA.velocity * dt;
             }

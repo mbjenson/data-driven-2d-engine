@@ -4,7 +4,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using viewStuff;
 
 
@@ -135,6 +137,7 @@ namespace ECS.Systems
                     null,
                     Color.White
                     );
+
             }
 
             spriteBatch.End();
@@ -239,7 +242,7 @@ namespace ECS.Systems
     }
 
     
-    
+    // (Still not sure if this class is the best idea, might be over doing it system wise here)
     /**
      * Action System
      * 
@@ -273,11 +276,19 @@ namespace ECS.Systems
                     throw new Exception("MovementSystem.Update: controller or rigidbody null");
                 }
 
+                //// for now, all players have the same movement speed
+                //float moveSpeed = 10f;
+                //rig.velocity += cont.movement * moveSpeed;
+                //// limit player speed gained by input this way
+                //rig.acceleration += rig.velocity * -0.06f;
+
+
                 // for now, all players have the same movement speed
                 float moveSpeed = 10f;
                 rig.velocity += cont.movement * moveSpeed;
+                
                 // limit player speed gained by input this way
-                rig.acceleration += rig.velocity * -0.06f;
+                rig.acceleration += rig.velocity * -0.06f;                
             }
         }
     }

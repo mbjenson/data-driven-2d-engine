@@ -6,6 +6,8 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using System.Diagnostics;
 
 
 /*
@@ -13,9 +15,11 @@ using System.Linq;
     sets values (perhaps in the controller component soon) so
     that the entity with the controller component can respond to the input
 
-    currently:
-        gets all entities with input component and rigidbody and 
-        moves them around based on controller input
+    The reason i have this seperate from the action system is because the
+    input system only gets the input components while the action system 
+    uses the controller component information and turns it into action.
+    That may not be the best way to do it but I don't have any other
+    ideas right now.
  */
 namespace ECS.Systems
 {

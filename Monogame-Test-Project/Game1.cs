@@ -268,6 +268,7 @@ namespace Monogame_Test_Project
         RenderingSystem renderer;
 
         Entity pEnt;
+        Entity ent2;
         Vector2 playerPos;
 
         //EntityManagerDebug eManDebug;
@@ -329,6 +330,7 @@ namespace Monogame_Test_Project
                 new CRigidBody() { mass = 2.5f });
             eMan.AddComponent<CTexture>(lightBlock, 
                 new CTexture("brick"));
+            ent2 = lightBlock;
 
             Entity heavyBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(heavyBlock, 
@@ -431,7 +433,7 @@ namespace Monogame_Test_Project
 
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
             //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
-
+            
             iSys.Update(gameTime);
             aSys.Update(gameTime);
             pSys.Update(gameTime);
@@ -450,7 +452,9 @@ namespace Monogame_Test_Project
                 //"player pos: " + Math.Round(playerPos.X, 1) + ", " + Math.Round(playerPos.Y, 1),
             };
 
-            cam.Update(playerPos, dt);
+            CTransform trans2 = (CTransform)eMan.GetComponent<CTransform>(ent2.id);
+            cam.Update(trans2.position, dt);
+            //cam.Update(playerPos, dt);
             //cam.Update(player, dt);
             //cam.Update(player, dt);
             base.Update(gameTime);
