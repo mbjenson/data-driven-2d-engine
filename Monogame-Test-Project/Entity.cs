@@ -111,11 +111,13 @@ namespace ECS
         public CTransform() 
         {
             this.position = new Vector2(0, 0);
+            
         }
 
         public CTransform(Vector2 position)
         {
             this.position = position;
+            
         }
 
         public void Move(Vector2 vec)

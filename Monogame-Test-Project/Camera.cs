@@ -54,7 +54,7 @@ namespace viewStuff
         public Vector2 Position { get; set; }
         public float Rotation { get; set; }
         private Rectangle Bounds { get; set; }
-        public float lag = 5f;
+        public float lag = 10f;
 
         public Matrix TransformMatrix
         {
@@ -109,10 +109,15 @@ namespace viewStuff
             return Vector2.Transform(worldCoord, TransformMatrix);
         }
 
+
         public void Update(Vector2 followPoint, float dt)
         {
-            Vector2 lookAtDist = followPoint - this.Position;
-            this.Position += lookAtDist * this.lag * dt;
+            // one liner
+            this.Position = Vector2.Lerp(this.Position, followPoint, 0.1f);
+            
+            // orig
+            //Vector2 lookAtDist = followPoint - this.Position;
+            //this.Position += lookAtDist * this.lag * dt;
         }
 
 

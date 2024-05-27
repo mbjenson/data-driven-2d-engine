@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using tilemap;
 using viewStuff;
 
 
@@ -63,6 +64,8 @@ namespace ECS.Systems
 
         private SpriteBatch spriteBatch;
 
+        public TilemapManager tilemapManager;
+
         
         //public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
 
@@ -84,10 +87,15 @@ namespace ECS.Systems
                 DepthFormat.Depth24);
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
+
+            
         }
-        
+
         public void Render(Camera2D cam)
         {
+            
+            //DrawTileMap(tilemapManager.target, cam);
+
             // 1 draw to canvas
             DrawToCanvas(cam);
 
@@ -97,6 +105,26 @@ namespace ECS.Systems
             // 3 draw to screen
             DrawToScreen(cam);
         }
+
+
+        //private void DrawTileMap(Texture2D map, Camera2D cam)
+        //{
+        //    gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
+        //    gMan.GraphicsDevice.Clear(Color.Black);
+
+        //    spriteBatch.Begin(
+        //        samplerState: SamplerState.PointClamp,
+        //        transformMatrix: cam.TransformMatrix);
+
+        //    spriteBatch.Draw(
+        //        map,
+        //        new Rectangle(0, 0, map.Width, map.Height),
+        //        null,
+        //        Color.White);
+
+            
+        //    spriteBatch.End();
+        //}
 
 
         private void DrawToCanvas(Camera2D cam)
@@ -115,15 +143,38 @@ namespace ECS.Systems
             }
 
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
-            gMan.GraphicsDevice.Clear(Color.Black);
+            gMan.GraphicsDevice.Clear(Color.Black); // orig
             gMan.GraphicsDevice.DepthStencilState =
                 new DepthStencilState() { DepthBufferEnable = true };
 
-
+            // 
+            // DRAW TILE MAP
             spriteBatch.Begin(
                 SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-                SamplerState.PointClamp, transformMatrix: cam.TransformMatrix,
+                SamplerState.PointClamp, 
+                transformMatrix: cam.TransformMatrix,
                 effect: pixelShader);
+
+            pixelShader.CurrentTechnique = pixelShader.Techniques["SpriteDrawing"];
+
+            spriteBatch.Draw(
+                tilemapManager.target,
+                new Rectangle(0, 0, tilemapManager.target.Width, 
+                tilemapManager.target.Height),
+                null,
+                Color.White
+                );
+
+            spriteBatch.End();
+
+            // DRAW ENTITIES
+            spriteBatch.Begin(
+                SpriteSortMode.BackToFront, BlendState.AlphaBlend,
+                SamplerState.PointClamp,
+                transformMatrix: cam.TransformMatrix,
+                effect: pixelShader);
+
+            pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
 
             pixelShader.Parameters["NormalTexture"].SetValue(normalTex);
 
@@ -186,8 +237,9 @@ namespace ECS.Systems
             return;
             // shader.ambientlight = scene.getlight
             // shader.pointlightpositions = scene.visibellights
-        }
 
+
+        }
     }
 
 
@@ -276,19 +328,12 @@ namespace ECS.Systems
                     throw new Exception("MovementSystem.Update: controller or rigidbody null");
                 }
 
-                //// for now, all players have the same movement speed
-                //float moveSpeed = 10f;
-                //rig.velocity += cont.movement * moveSpeed;
-                //// limit player speed gained by input this way
-                //rig.acceleration += rig.velocity * -0.06f;
-
-
                 // for now, all players have the same movement speed
-                float moveSpeed = 10f;
-                rig.velocity += cont.movement * moveSpeed;
-                
+                float moveSpeed = 20f; // 10f
+                //rig.velocity += cont.movement * moveSpeed;
+                rig.acceleration += cont.movement * moveSpeed;
                 // limit player speed gained by input this way
-                rig.acceleration += rig.velocity * -0.06f;                
+                rig.acceleration += rig.velocity * -0.2f; // -0.06f;
             }
         }
     }

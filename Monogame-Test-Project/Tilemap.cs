@@ -1,6 +1,14 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+
+
+
+
+
 
 
 /**
@@ -11,6 +19,94 @@ using System.Collections.Generic;
  */
 namespace tilemap
 {
+    /*
+    TilemapManager
+        * manages the tile map pieces
+        * goal is to ensure that every single tile is not drawn every frame
+    */
+    public class TilemapManager
+    {
+        int[] tileTypes = new int[]
+        {
+            2, 8, 2, 8, 8, 8, 8, 8, 8, 8, 2, 8, 2, 2, 2, 8,
+            2, 8, 2, 8, 8, 8, 8, 8, 8, 8, 2, 8, 2, 2, 2, 8,
+            2, 8, 2, 8, 8, 8, 8, 8, 8, 8, 2, 8, 2, 2, 2, 8,
+            2, 8, 2, 8, 8, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+            2, 4, 2, 4, 4, 4, 4, 4, 4, 4, 2, 4, 2, 2, 2, 4,
+        };
+
+        public Texture2D spriteSheet;
+        public RenderTarget2D target;
+        public SpriteBatch spriteBatch;
+
+        private GraphicsDeviceManager gMan;
+
+        public Vector2 tileDim;
+        public Vector2 mapTileDim;
+
+        public TilemapManager(Vector2 tileDim, Vector2 mapTileDim, Texture2D spriteSheet, GraphicsDeviceManager gMan)
+        {
+            this.spriteSheet = spriteSheet;
+            this.tileDim = tileDim;
+            this.mapTileDim = mapTileDim;
+
+            this.gMan = gMan;
+
+            this.spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
+
+            this.target = new RenderTarget2D(
+                gMan.GraphicsDevice, (int)(mapTileDim.X * tileDim.X), (int)(mapTileDim.Y * tileDim.Y));
+        }
+
+        public void Update(Vector2 playerPos)
+        {
+            
+            gMan.GraphicsDevice.SetRenderTarget(target);
+            gMan.GraphicsDevice.Clear(Color.White);
+
+            this.spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+            
+            for (int i = 0; i < tileTypes.Length; i++)
+            {
+                int x = i % (int)mapTileDim.X;
+                int y = (i - x) / (int)mapTileDim.X;
+
+                spriteBatch.Draw(
+                    spriteSheet,
+                    new Rectangle(
+                        x * (int)tileDim.X, y * (int)tileDim.X, (int)tileDim.X, (int)tileDim.Y),
+                    new Rectangle(
+                        0, (int)(tileTypes[i] * tileDim.Y), (int)tileDim.X, (int)tileDim.Y),
+                    Color.White);
+            }
+
+            this.spriteBatch.End();
+
+        }
+
+    }
+
+}
+
+
+
+
+
+
+
+
+    /*
     public class TilemapRenderer
     {
         public Tilemap tilemap;
@@ -73,6 +169,10 @@ namespace tilemap
 
 
     }
+    */
+
+
+
     // class logic:
     /*
      * tilemap has its own spritebatch which it uses to draw to the rendertarget
@@ -85,6 +185,7 @@ namespace tilemap
     /**
      * Tilemap class handles storing information about tiles and drawing them to the screen
     */
+    /*
     public class Tilemap
     {
         public Texture2D textureSheet;
@@ -106,72 +207,37 @@ namespace tilemap
             this.mapHeight = mapHeight;
             this.tileWidth = tileWidth;
             this.tileHeight = tileHeight;
-        }
 
-        /*
-        public void RenderToTarget(ref GraphicsDevice device)
-        {
-            // function that renders to the render texture
-            device.SetRenderTarget(mapCanvas);
-            tileSpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp);
-
-            for (int row = 0; row < mapHeight; row++)
+            tileTypes = new List<int>
             {
-                for (int col = 0; col < mapWidth; col++)
-                {
-                    tileSpriteBatch.Draw(
-                        textureSheet,
-                        new Rectangle(col * tileWidth, row * tileHeight, tileWidth, tileHeight),
-                        new Rectangle(0, tileTypes[row * mapWidth + col] * tileHeight, tileWidth, tileHeight),
-                        Color.White);
-                }
-            }
-            tileSpriteBatch.End();
-            device.SetRenderTarget(mapCanvas);
+                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+            };
         }
-        */
 
-        /*
-        public void Draw(SpriteBatch batch)
-        {
-            //Game1.graphics.GraphicsDevice.SetRenderTarget(mapCanvas);
-
-            //tileSpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp);
-
-            for (int row = 0; row < mapHeight; row++)
-            {
-                for (int col = 0; col < mapWidth; col++)
-                {
-                    batch.Draw(
-                        textureSheet,
-                        new Rectangle(col * tileWidth, row * tileHeight, tileWidth, tileHeight),
-                        new Rectangle(0, tileTypes[row * mapWidth + col] * tileHeight, tileWidth, tileHeight),
-                        Color.White);
-                }
-            }
-
-            //tileSpriteBatch.End();
-
-            //Game1.graphics.GraphicsDevice.SetRenderTarget(null);
-        }
-        */
+        
+       
 
         // Draw to the texture once
         // then draw the texture to the screen using Game1's spritebatch
-        /*
-        public void Render()
-        {
-            if (!isDrawn)
-            {
-                drawToRenderTarget();
-                isDrawn = true;
-            }
-
-        }
-        */
+        
     }
 }
-
+    */
 
 // tyring to draw tilemap to it's own render texture
 //if (!tilemap.isDrawn)

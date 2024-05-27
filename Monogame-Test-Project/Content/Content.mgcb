@@ -67,6 +67,18 @@
 /processorParam:TextureFormat=Color
 /build:test-ball.png
 
+#begin textures/example-tileset.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:textures/example-tileset.png
+
 #begin textures/norma-map-test.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -103,7 +115,7 @@
 /processorParam:TextureFormat=Color
 /build:textures/smooth-brick.png
 
-#begin tilesheet.png
+#begin textures/tilesheet.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -113,7 +125,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:tilesheet.png
+/build:textures/tilesheet.png
 
 #begin type-face.spritefont
 /importer:FontDescriptionImporter

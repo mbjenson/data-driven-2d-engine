@@ -62,6 +62,8 @@ float attenuation(float distance, float radius, float max_intensity, float fallo
 }
 */
 
+
+
 // attempting normal mapping
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
@@ -106,6 +108,14 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     finalLight += ambientLight;
     // multiply texture color and light value
     return texColor * float4(finalLight, input.Color.w);
+}
+
+
+
+float4 BasicPS(VertexShaderOutput input) : COLOR
+{
+    float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
+    return texColor;
 }
 
 
@@ -242,8 +252,24 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 }
 */
 
+technique SpriteDrawing
+{
+    pass P0
+    {
+        PixelShader = compile PS_SHADERMODEL BasicPS();
+    }
+}
+
+technique LightEffect
+{
+    pass P0
+    {
+        PixelShader = compile PS_SHADERMODEL MainPS();
+    }
+};
 
 
+/*
 technique SpriteDrawing
 {
 	pass P0
@@ -251,3 +277,4 @@ technique SpriteDrawing
 		PixelShader = compile PS_SHADERMODEL MainPS();
 	}
 };
+*/

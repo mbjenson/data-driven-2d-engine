@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System;
+using System.IO;
 
 namespace ECS.Systems
 {
@@ -192,7 +193,7 @@ namespace ECS.Systems
 
                 // reset acceleration
                 rA.acceleration = Vector2.Zero;
-                
+
                 // update position from velocity
                 tA.position += rA.velocity * dt;
             }

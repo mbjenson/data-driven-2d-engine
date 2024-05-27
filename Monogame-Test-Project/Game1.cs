@@ -146,23 +146,23 @@ Entity Component System:
     would be done on standard entities like player and enemy that would not be done on the particles. I am
     leaning towards just using lists of things which can be updated using the different managers to update
     the different components in the system.
-        
-        
+
 =======================================
 TODO
 =======================================
 
-CURRENT:
+CURRENT:    
+
+    tilemap renderer
+
+    implementing smooth camera that is not pixel perfect.
+
     brainstorming how to set shader parameters without hard coding in the parameter name
     eg: shader.Parameters["param-name"].SetValue(...);
     goal: shader.Parameters[some-string].SetValue(some-value);
     * idea: 
 
     lighting system
-
-    Trying to fix the issue where the sprites are jittery around the screen when moved.
-    When rounding the position of the player, strange things happen with the movement
-    and it is not a solution.
 
     FIXED: camera issue where normal texture would not line up with the 
            brick correctly. This would only happen when I would render things
@@ -222,8 +222,8 @@ Texture Manager
 first load in textures to texture manager (which will live in game context I believe)
 then give access to the other parts of the context so they can reference the textures
 
-
 */
+
 
 
 namespace Monogame_Test_Project
@@ -270,6 +270,9 @@ namespace Monogame_Test_Project
         Entity pEnt;
         Entity ent2;
         Vector2 playerPos;
+
+        //Tilemap tilemap;
+        //TilemapRenderer tRenderer;
 
         //EntityManagerDebug eManDebug;
 
@@ -345,6 +348,9 @@ namespace Monogame_Test_Project
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
             aSys = new ActionSystem(eMan);
+
+            renderer.tilemapManager = new TilemapManager(new Vector2(32, 32), new Vector2(16, 16),
+                Content.Load<Texture2D>("textures/example-tileset"), graphics);
 
             base.Initialize();
         }
@@ -439,7 +445,6 @@ namespace Monogame_Test_Project
             pSys.Update(gameTime);
 
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
-            //pTrans.position.Round(); // makes the jittering go away but makes the movement botched!
             playerPos = pTrans.position;
             playerPos += new Vector2(16, 16);
 
@@ -449,14 +454,12 @@ namespace Monogame_Test_Project
                 "fps: " + Math.Round(framesPerSecond, 2),
                 "cam pos: " + Math.Round(cam.Position.X, 1) +
                 ", " + Math.Round(cam.Position.Y, 1),
-                //"player pos: " + Math.Round(playerPos.X, 1) + ", " + Math.Round(playerPos.Y, 1),
             };
 
-            CTransform trans2 = (CTransform)eMan.GetComponent<CTransform>(ent2.id);
-            cam.Update(trans2.position, dt);
-            //cam.Update(playerPos, dt);
+            renderer.tilemapManager.Update(player);
+            cam.Update(playerPos, dt);
             //cam.Update(player, dt);
-            //cam.Update(player, dt);
+
             base.Update(gameTime);
         }
 
@@ -476,7 +479,7 @@ namespace Monogame_Test_Project
 
             // set shader parameters (temp, set this inside of renderer one day)
             renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(
-                new Vector3(0.19f, 0.1f, 0.1f));
+                new Vector3(0.8f, 0.8f, 0.8f));
 
             renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
                 new Vector3(viewportMousePos.X, viewportMousePos.Y + 50 * (float)Math.Sin(totalGameTime * 2), 15.0f),
@@ -497,6 +500,8 @@ namespace Monogame_Test_Project
             });
             renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
                 new[] { 100.0f, 100.0f, pLight.radius });
+
+            
 
             renderer.Render(cam);
 
