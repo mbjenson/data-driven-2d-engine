@@ -58,13 +58,13 @@ namespace ECS.Systems
         //int screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
         //int screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
 
-        private GraphicsDeviceManager gMan;
-        private Bitmask signature;
-        private EntityManager eMan;
+        public GraphicsDeviceManager gMan;
+        public Bitmask signature;
+        public EntityManager eMan;
 
-        private SpriteBatch spriteBatch;
+        public SpriteBatch spriteBatch;
 
-        public TilemapManager tilemapManager;
+        //public TilemapManager tilemapManager;
 
         
         //public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
@@ -91,19 +91,20 @@ namespace ECS.Systems
             
         }
 
-        public void Render(Camera2D cam)
+        public void Render(Camera2D cam, Tilemap tilemap)
         {
-            
+
             //DrawTileMap(tilemapManager.target, cam);
 
+            tilemap.Draw(spriteBatch, gMan.GraphicsDevice);
             // 1 draw to canvas
-            DrawToCanvas(cam);
+            //DrawToCanvas(cam);
 
             // 2 perform post processing effects
             // PostProcessing();
 
             // 3 draw to screen
-            DrawToScreen(cam);
+            //DrawToScreen(cam);
         }
 
 
@@ -149,23 +150,23 @@ namespace ECS.Systems
 
             // 
             // DRAW TILE MAP
-            spriteBatch.Begin(
-                SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-                SamplerState.PointClamp, 
-                transformMatrix: cam.TransformMatrix,
-                effect: pixelShader);
+            //spriteBatch.Begin(
+            //    SpriteSortMode.BackToFront, BlendState.AlphaBlend,
+            //    SamplerState.PointClamp, 
+            //    transformMatrix: cam.TransformMatrix,
+            //    effect: pixelShader);
 
-            pixelShader.CurrentTechnique = pixelShader.Techniques["SpriteDrawing"];
+            //pixelShader.CurrentTechnique = pixelShader.Techniques["SpriteDrawing"];
 
-            spriteBatch.Draw(
-                tilemapManager.target,
-                new Rectangle(0, 0, tilemapManager.target.Width, 
-                tilemapManager.target.Height),
-                null,
-                Color.White
-                );
+            //spriteBatch.Draw(
+            //    tilemapManager.target,
+            //    new Rectangle(0, 0, tilemapManager.target.Width, 
+            //    tilemapManager.target.Height),
+            //    null,
+            //    Color.White
+            //    );
 
-            spriteBatch.End();
+            //spriteBatch.End();
 
             // DRAW ENTITIES
             spriteBatch.Begin(

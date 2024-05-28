@@ -267,6 +267,9 @@ namespace Monogame_Test_Project
 
         RenderingSystem renderer;
 
+        Tilemap tilemap;
+        
+
         Entity pEnt;
         Entity ent2;
         Vector2 playerPos;
@@ -349,9 +352,6 @@ namespace Monogame_Test_Project
             iSys = new InputSystem(eMan);
             aSys = new ActionSystem(eMan);
 
-            renderer.tilemapManager = new TilemapManager(new Vector2(32, 32), new Vector2(16, 16),
-                Content.Load<Texture2D>("textures/example-tileset"), graphics);
-
             base.Initialize();
         }
 
@@ -371,7 +371,7 @@ namespace Monogame_Test_Project
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
 
-            
+            tilemap = new Tilemap(Content.Load<Texture2D>("textures/tilesheet"));
 
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
@@ -456,9 +456,8 @@ namespace Monogame_Test_Project
                 ", " + Math.Round(cam.Position.Y, 1),
             };
 
-            renderer.tilemapManager.Update(player);
-            cam.Update(playerPos, dt);
-            //cam.Update(player, dt);
+            //cam.Update(playerPos, dt);
+            cam.Update(player, dt);
 
             base.Update(gameTime);
         }
@@ -479,7 +478,7 @@ namespace Monogame_Test_Project
 
             // set shader parameters (temp, set this inside of renderer one day)
             renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(
-                new Vector3(0.8f, 0.8f, 0.8f));
+                new Vector3(0.6f, 0.5f, 0.5f));
 
             renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
                 new Vector3(viewportMousePos.X, viewportMousePos.Y + 50 * (float)Math.Sin(totalGameTime * 2), 15.0f),
@@ -501,9 +500,9 @@ namespace Monogame_Test_Project
             renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
                 new[] { 100.0f, 100.0f, pLight.radius });
 
-            
 
-            renderer.Render(cam);
+            //tilemap.Draw(renderer.spriteBatch, graphics.GraphicsDevice);
+            renderer.Render(cam, tilemap);
 
             base.Draw(gameTime);
         }
