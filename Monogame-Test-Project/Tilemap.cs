@@ -32,7 +32,7 @@ namespace tilemap
     public class Tilemap
     {
         private int tileDim = 16;
-        private int numTilesPerRow = 8;
+        private int atlasNumTilesPerRow = 1;
 
         private Dictionary<Vector2, int> mg;
         private Dictionary<Vector2, int> fg;
@@ -94,8 +94,9 @@ namespace tilemap
                     tileDim,
                     tileDim);
 
-                int x = item.Value % numTilesPerRow;
-                int y = item.Value / numTilesPerRow;
+
+                int x = item.Value % atlasNumTilesPerRow;
+                int y = item.Value / atlasNumTilesPerRow;
 
                 Rectangle source = new(
                     x * tileNumPixels,
