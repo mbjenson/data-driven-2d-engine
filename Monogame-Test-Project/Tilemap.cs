@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using viewStuff;
 
 
 
@@ -19,31 +21,74 @@ namespace tilemap
     The renderer needs a way to interact with the tilemap class
          Potential solutions:
 
-            1. The renderer will simply interact with the ECS (!).
+            1. (BAD) The renderer will simply interact with the ECS (!).
             create a tilemap manager which handles the pre-rendering 
             of the tilemap chunks depending on what is visible and what is not.
             The tilemap manager will handle sending information to the ECS for render.
+            2. becuase individual textures cannot be sent to the entity manager (ECS),
+            we will try and send them directly to the renderer
 
             
 
+    Steps for rendering
+
+    1. The static tilemap layers will be rendered to a static texture. This static texture
+    will be rendered and no normal texture will be used when drawing it (just plain lighting).
+    The other layers that require more lighting information like normals or material properties
+    will be rendered after this, using the correct info and shader technique.
+
     */
+
+
+    /*
+    Manages the loading and such of the tilemap
+     */
+    //public class TilemapManager
+    //{
+    //    private Tilemap tilemap;
+    //    public TilemapManager() 
+    //    {
+
+    //    }
+
+    //    /*
+    //     * Load in all layers of the tilemap into respective dictionaries
+    //    */
+    //    public void LoadMap(string mapName, string mapFilePath)
+    //    {
+    //        tilemap = new Tilemap();
+            
+    //        for (int i = 0; i < tilemap.layers.Count; i++)
+    //        {
+
+    //        }
+    //    }
+        
+
+    //}
 
 
     public class Tilemap
     {
         private int tileDim = 16;
+        
         private int atlasNumTilesPerRow = 1;
+
+        //public Dictionary<string, Dictionary<Vector2, int>> layers;
 
         private Dictionary<Vector2, int> mg;
         private Dictionary<Vector2, int> fg;
+        // private Dictionary<Vector2, int> animatedTiles; // (?)
         private Dictionary<Vector2, int> collisions;
-        private Texture2D textureAtlas;
+        //private Texture2D textureAtlas;
 
-        public Tilemap(Texture2D textureAtlas)
+        
+        public Tilemap()
         {
-            this.textureAtlas = textureAtlas;
+            //this.textureAtlas = textureAtlas;
             mg = LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv");
             //fg = LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv");
+            // animated tiles...
             //collisions = LoadMap("../../../Content/MapData/test-map/test-map_test-collisions.csv");
         }
 
@@ -73,16 +118,15 @@ namespace tilemap
             }
             return result;
         }
-
         
-        /*
-         * ERROR: the coordinates for the source and destination rectangle is off 
-         */
-        public void Draw(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice)
+        public void Draw(SpriteBatch spriteBatch, Camera2D cam, 
+            RenderTarget2D target, GraphicsDevice graphicsDevice, Texture2D textureAtlas)
         {
-            graphicsDevice.Clear(Color.CornflowerBlue);
+            //graphicsDevice.Clear(Color.CornflowerBlue);
+            graphicsDevice.SetRenderTarget(target);
 
-            spriteBatch.Begin(samplerState: SamplerState.PointClamp);
+            spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+                transformMatrix: cam.TransformMatrix);
 
             int tileNumPixels = 16;
 
@@ -109,6 +153,8 @@ namespace tilemap
 
             spriteBatch.End();
         }
+
+
 
 
     }

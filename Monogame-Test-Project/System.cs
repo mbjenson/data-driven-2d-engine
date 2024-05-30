@@ -9,7 +9,8 @@ using System.Linq;
 using System.Threading;
 using tilemap;
 using viewStuff;
-
+using resource;
+using Microsoft.Xna.Framework.Content;
 
 namespace ECS.Systems
 {
@@ -19,8 +20,6 @@ namespace ECS.Systems
         public abstract void Update(GameTime gameTime);
     }
 
-
-    
 
     /*
     Remeber: things are being drawn back to front now
@@ -48,16 +47,18 @@ namespace ECS.Systems
 
         public Effect pixelShader = null;
         public SpriteFont font;
-        
+
 
         // the virtual render target to which all things are
         // first draw before they are drawn to the screen.
         private RenderTarget2D renderCanvas;
+        private RenderTarget2D tilemapCanvas;
 
         // getting display size (use this later)
         //int screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
         //int screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
 
+        public TextureManager textureManager;
         public GraphicsDeviceManager gMan;
         public Bitmask signature;
         public EntityManager eMan;
@@ -69,10 +70,12 @@ namespace ECS.Systems
         
         //public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
 
-        public RenderingSystem(EntityManager eMan, GraphicsDeviceManager gMan)
+        public RenderingSystem(EntityManager eMan, GraphicsDeviceManager gMan, TextureManager tMan)
         {
             this.eMan = eMan;
             this.gMan = gMan;
+            this.textureManager = tMan;
+            // this.AnimationManager = aMan; // Later...
 
             this.debugText = new List<String>();
 
@@ -88,45 +91,67 @@ namespace ECS.Systems
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
 
-            
         }
+
 
         public void Render(Camera2D cam, Tilemap tilemap)
         {
+            gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
+            gMan.GraphicsDevice.Clear(Color.Black);
 
-            //DrawTileMap(tilemapManager.target, cam);
+            tilemap.Draw(spriteBatch, cam, renderCanvas, gMan.GraphicsDevice, textureManager.GetTexture("tilesheet"));
+            // 1. draw static tilemap
+            // 2. draw dynamic (animated tiles)
+            // 3. draw entities
 
-            tilemap.Draw(spriteBatch, gMan.GraphicsDevice);
-            // 1 draw to canvas
-            //DrawToCanvas(cam);
+            DrawToCanvas(cam);
+            
 
-            // 2 perform post processing effects
-            // PostProcessing();
+            // 2 perform post processing effects on the canvas
+            // Post Processing();
 
+            gMan.GraphicsDevice.SetRenderTarget(null);
+            gMan.GraphicsDevice.Clear(Color.Black);
             // 3 draw to screen
-            //DrawToScreen(cam);
+            DrawToScreen(cam);
         }
 
 
-        //private void DrawTileMap(Texture2D map, Camera2D cam)
-        //{
-        //    gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
-        //    gMan.GraphicsDevice.Clear(Color.Black);
 
-        //    spriteBatch.Begin(
-        //        samplerState: SamplerState.PointClamp,
+        
+
+        //private void DrawTileMap(Tilemap tilemap)
+        //{
+
+        //    spriteBatch.Begin(samplerState: SamplerState.PointClamp,
         //        transformMatrix: cam.TransformMatrix);
 
-        //    spriteBatch.Draw(
-        //        map,
-        //        new Rectangle(0, 0, map.Width, map.Height),
-        //        null,
-        //        Color.White);
+        //    int tileNumPixels = 16;
 
-            
+        //    foreach (var item in mg)
+        //    {
+        //        Rectangle drect = new(
+        //            (int)item.Key.X * tileDim,
+        //            (int)item.Key.Y * tileDim,
+        //            tileDim,
+        //            tileDim);
+
+
+        //        int x = item.Value % atlasNumTilesPerRow;
+        //        int y = item.Value / atlasNumTilesPerRow;
+
+        //        Rectangle source = new(
+        //            x * tileNumPixels,
+        //            y * tileNumPixels,
+        //            tileNumPixels,
+        //            tileNumPixels);
+
+        //        spriteBatch.Draw(textureAtlas, drect, source, Color.White);
+        //    }
+
         //    spriteBatch.End();
+            
         //}
-
 
         private void DrawToCanvas(Camera2D cam)
         {
@@ -143,10 +168,10 @@ namespace ECS.Systems
                 transforms[i] = ((CTransform)eMan.GetComponent<CTransform>(ents[i].id));
             }
 
-            gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
-            gMan.GraphicsDevice.Clear(Color.Black); // orig
-            gMan.GraphicsDevice.DepthStencilState =
-                new DepthStencilState() { DepthBufferEnable = true };
+            //gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
+            //gMan.GraphicsDevice.Clear(Color.Black); // orig
+            //gMan.GraphicsDevice.DepthStencilState =
+            //    new DepthStencilState() { DepthBufferEnable = true };
 
             // 
             // DRAW TILE MAP
@@ -202,8 +227,8 @@ namespace ECS.Systems
 
         private void DrawToScreen(Camera2D cam)
         {
-            gMan.GraphicsDevice.SetRenderTarget(null);
-            gMan.GraphicsDevice.Clear(Color.CornflowerBlue);
+            //gMan.GraphicsDevice.SetRenderTarget(null);
+            //gMan.GraphicsDevice.Clear(Color.CornflowerBlue);
 
             spriteBatch.Begin(
                 SpriteSortMode.Immediate, BlendState.AlphaBlend,
@@ -228,19 +253,19 @@ namespace ECS.Systems
         }
 
 
-        private void SetShaderParameters()
-        {
-            //pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
-            // set other values here that will be gleamed from the current scene
+        //private void SetShaderParameters()
+        //{
+        //    //pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.3f, 0.3f, 0.3f));
+        //    // set other values here that will be gleamed from the current scene
             
-            // take point light locations and convert them to world coordinates
+        //    // take point light locations and convert them to world coordinates
 
-            return;
-            // shader.ambientlight = scene.getlight
-            // shader.pointlightpositions = scene.visibellights
+        //    return;
+        //    // shader.ambientlight = scene.getlight
+        //    // shader.pointlightpositions = scene.visibellights
 
 
-        }
+        //}
     }
 
 

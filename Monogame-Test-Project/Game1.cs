@@ -17,6 +17,7 @@ using Microsoft.VisualBasic;
 using bitmask;
 using System.Net.Sockets;
 using Microsoft.Xna.Framework.Content;
+using resource;
 
 
 /*
@@ -151,9 +152,15 @@ Entity Component System:
 TODO
 =======================================
 
+ERRORS:
+    potential issue involving the calculation of the movement. When the fps is lower (25-30), the 
+    player glides farther than when the fps is higher (165+).
+
 CURRENT:    
 
-    tilemap renderer
+    singleton resource manager
+
+    tilemap rendering
 
     implementing smooth camera that is not pixel perfect.
 
@@ -266,9 +273,9 @@ namespace Monogame_Test_Project
         InputSystem iSys;
 
         RenderingSystem renderer;
+        TextureManager tMan;
 
         Tilemap tilemap;
-        
 
         Entity pEnt;
         Entity ent2;
@@ -292,11 +299,12 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = true; // lock at 60fps
+            IsFixedTimeStep = false; // lock at 60fps
 
             // init entities
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
+            tMan = new TextureManager();
 
             // must happen in this order for the camera to work properly
             // [
@@ -311,7 +319,7 @@ namespace Monogame_Test_Project
             
             //cam = new Camera2D(GraphicsDevice.Viewport); // old
             cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
-            renderer = new RenderingSystem(eMan, graphics);
+            renderer = new RenderingSystem(eMan, graphics, tMan);
             
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
             graphics.PreferredBackBufferHeight = WIN_HEIGHT;
@@ -371,7 +379,9 @@ namespace Monogame_Test_Project
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
 
-            tilemap = new Tilemap(Content.Load<Texture2D>("textures/tilesheet"));
+            tMan.AddTexture("tilesheet", Content.Load<Texture2D>("textures/tilesheet"));
+
+            tilemap = new Tilemap();
 
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
