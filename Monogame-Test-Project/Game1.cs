@@ -305,6 +305,7 @@ namespace Monogame_Test_Project
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
             tMan = new TextureManager();
+            
 
             // must happen in this order for the camera to work properly
             // [
@@ -380,6 +381,8 @@ namespace Monogame_Test_Project
             // instead set changing values in the update loop and constant ones here
 
             tMan.AddTexture("tilesheet", Content.Load<Texture2D>("textures/tilesheet"));
+            tMan.AddTexture("entity_tilesheet", Content.Load<Texture2D>("textures/smooth-brick"));
+            tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32));
 
             tilemap = new Tilemap();
 

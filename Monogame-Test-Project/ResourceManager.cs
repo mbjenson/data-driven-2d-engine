@@ -5,12 +5,18 @@ using System.Diagnostics;
 
 namespace resource {
 
+    
+    // public class AnimationManager {} // Later...
+
+    
     public class TextureManager
     {
         private Dictionary<string, Texture2D> textures;
+        private Dictionary<string, Rectangle> textureRects;
         
         public TextureManager()
         {
+            textureRects = new();
             textures = new();
         }
 
@@ -23,6 +29,22 @@ namespace resource {
         {
             Debug.Assert(textures.ContainsKey(name), "TextureManager: does not contain texture with name: '" + name + "'. Aborting");
             return textures[name];
+        }
+
+        /*
+         * Add named texture rect into which corresponds to a piece of the texture atlas
+         */
+        public void AddTextureRect(string name, Rectangle rect)
+        {
+            textureRects.Add(name, rect);
+        }
+
+        public Rectangle GetTextureRect(string name)
+        {
+            
+            Debug.Assert(textureRects.ContainsKey(name), "TextureManager: GetTextureRect(name) name: " + name + ". TextureManager" +
+                "does not contain texture rect with that name");
+            return textureRects[name];
         }
     }
 }

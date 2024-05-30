@@ -11,6 +11,7 @@ using tilemap;
 using viewStuff;
 using resource;
 using Microsoft.Xna.Framework.Content;
+using System.Security.Cryptography;
 
 namespace ECS.Systems
 {
@@ -52,7 +53,7 @@ namespace ECS.Systems
         // the virtual render target to which all things are
         // first draw before they are drawn to the screen.
         private RenderTarget2D renderCanvas;
-        private RenderTarget2D tilemapCanvas;
+
 
         // getting display size (use this later)
         //int screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
@@ -93,6 +94,13 @@ namespace ECS.Systems
 
         }
 
+        /*
+         * this removes draw functionality from the tilemap (goal)
+         */
+        //private void DrawTileMap(Camera2D cam, Tilemap tilemap)
+        //{
+            
+        //}
 
         public void Render(Camera2D cam, Tilemap tilemap)
         {
@@ -117,42 +125,6 @@ namespace ECS.Systems
         }
 
 
-
-        
-
-        //private void DrawTileMap(Tilemap tilemap)
-        //{
-
-        //    spriteBatch.Begin(samplerState: SamplerState.PointClamp,
-        //        transformMatrix: cam.TransformMatrix);
-
-        //    int tileNumPixels = 16;
-
-        //    foreach (var item in mg)
-        //    {
-        //        Rectangle drect = new(
-        //            (int)item.Key.X * tileDim,
-        //            (int)item.Key.Y * tileDim,
-        //            tileDim,
-        //            tileDim);
-
-
-        //        int x = item.Value % atlasNumTilesPerRow;
-        //        int y = item.Value / atlasNumTilesPerRow;
-
-        //        Rectangle source = new(
-        //            x * tileNumPixels,
-        //            y * tileNumPixels,
-        //            tileNumPixels,
-        //            tileNumPixels);
-
-        //        spriteBatch.Draw(textureAtlas, drect, source, Color.White);
-        //    }
-
-        //    spriteBatch.End();
-            
-        //}
-
         private void DrawToCanvas(Camera2D cam)
         {
             List<Entity> ents = eMan.GetEntities(signature).ToList();
@@ -168,30 +140,6 @@ namespace ECS.Systems
                 transforms[i] = ((CTransform)eMan.GetComponent<CTransform>(ents[i].id));
             }
 
-            //gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
-            //gMan.GraphicsDevice.Clear(Color.Black); // orig
-            //gMan.GraphicsDevice.DepthStencilState =
-            //    new DepthStencilState() { DepthBufferEnable = true };
-
-            // 
-            // DRAW TILE MAP
-            //spriteBatch.Begin(
-            //    SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-            //    SamplerState.PointClamp, 
-            //    transformMatrix: cam.TransformMatrix,
-            //    effect: pixelShader);
-
-            //pixelShader.CurrentTechnique = pixelShader.Techniques["SpriteDrawing"];
-
-            //spriteBatch.Draw(
-            //    tilemapManager.target,
-            //    new Rectangle(0, 0, tilemapManager.target.Width, 
-            //    tilemapManager.target.Height),
-            //    null,
-            //    Color.White
-            //    );
-
-            //spriteBatch.End();
 
             // DRAW ENTITIES
             spriteBatch.Begin(
@@ -204,16 +152,43 @@ namespace ECS.Systems
 
             pixelShader.Parameters["NormalTexture"].SetValue(normalTex);
 
+            // TODO: LOAD IN THE ENTITY TEXTURE ATLAS HERE WHICH SHOULD CONTAIN ALL NECESSARY TEXTURES FOR ENTITIES
+            Texture2D atlas = textureManager.GetTexture("entity_tilesheet");
+            
+            
             for (int i = 0; i < ents.Count; i++)
             {
+                Rectangle texRect = textureManager.GetTextureRect(textures[i].textureId);
+                // TODO: DRAW THE TEXTURE ATLAS HERE ALONGSIDE ITS CORRESPONDING RECTANGLE WHICH CAN BE GOTTEN FROM
+                //       THE TEXTURE MANAGER
                 spriteBatch.Draw(
-                    brickTex,
+                    atlas,
                     new Rectangle(
                         (int)transforms[i].X, (int)transforms[i].Y,
-                        brickTex.Width, brickTex.Height),
+                        texRect.Width,
+                        texRect.Height),
                     null,
                     Color.White
                     );
+
+                //spriteBatch.Draw(
+                //    atlas,
+                //    new Rectangle(
+                //        (int)transforms[i].X, (int)transforms[i].Y,
+                //        texWidth,
+                //        texHeight),
+                //    null,
+                //    Color.White
+                //    );
+
+                //spriteBatch.Draw(
+                //    brickTex,
+                //    new Rectangle(
+                //        (int)transforms[i].X, (int)transforms[i].Y,
+                //        brickTex.Width, brickTex.Height),
+                //    null,
+                //    Color.White
+                //    );
 
             }
 
@@ -227,9 +202,6 @@ namespace ECS.Systems
 
         private void DrawToScreen(Camera2D cam)
         {
-            //gMan.GraphicsDevice.SetRenderTarget(null);
-            //gMan.GraphicsDevice.Clear(Color.CornflowerBlue);
-
             spriteBatch.Begin(
                 SpriteSortMode.Immediate, BlendState.AlphaBlend,
                 SamplerState.PointClamp, DepthStencilState.Default,
