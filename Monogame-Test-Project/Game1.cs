@@ -156,9 +156,13 @@ ERRORS:
     potential issue involving the calculation of the movement. When the fps is lower (25-30), the 
     player glides farther than when the fps is higher (165+).
 
-CURRENT:    
+CURRENT:
 
-    singleton resource manager
+    lighting system
+        * the light is stuck in top left corner of screen. unsure why.
+
+    Add height value for transform to allow for 
+    entities to allow for more accurate drawing order
 
     tilemap rendering
 
@@ -176,12 +180,16 @@ CURRENT:
            based on the camera's world view projection matrix.
 
 
+[] entity manager
+    - add a sub system which divides all the entities up by location (quadtree) and
+      allows for querying the system to get all entities within a certain area.
+    - this will make the process of process of sifting through entities a lot easier.
+    - this is independent of the physics system and the physics system can use it if it needs to
     
     
 
 [] Renderer
     - work on renderer class in system.cs
-        * get a proper resource manager working
         * Will need to create lighting / particle / effect subsystem to manage
             changing the shader parameters depending on what things are present in
             the scene. create another class and put it in the renderer so that
@@ -271,6 +279,7 @@ namespace Monogame_Test_Project
         PhysicsSystem pSys;
         ActionSystem aSys;
         InputSystem iSys;
+        LightingSystem lSys;
 
         RenderingSystem renderer;
         TextureManager tMan;
@@ -294,7 +303,6 @@ namespace Monogame_Test_Project
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            
         }
 
         protected override void Initialize()
@@ -305,7 +313,8 @@ namespace Monogame_Test_Project
             int numEnts = 3;
             eMan = new EntityManager(numEnts);
             tMan = new TextureManager();
-            
+
+            lSys = new LightingSystem(eMan, 12);
 
             // must happen in this order for the camera to work properly
             // [
@@ -384,7 +393,7 @@ namespace Monogame_Test_Project
             tMan.AddTexture("entity_tilesheet", Content.Load<Texture2D>("textures/smooth-brick"));
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32));
 
-            tilemap = new Tilemap();
+            tilemap = new Tilemap("tilesheet");
 
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
@@ -471,6 +480,7 @@ namespace Monogame_Test_Project
 
             //cam.Update(playerPos, dt);
             cam.Update(player, dt);
+            lSys.SetShaderParameters(renderer.pixelShader);
 
             base.Update(gameTime);
         }
@@ -484,10 +494,11 @@ namespace Monogame_Test_Project
 
             //List<Entity> litEnts = eMan.GetEntities(litSignature).ToList();
 
+            /*
             CPointLight pLight = (CPointLight)eMan.GetComponent<CPointLight>(pEnt.id);
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
 
-            
+
 
             // set shader parameters (temp, set this inside of renderer one day)
             renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(
@@ -512,7 +523,7 @@ namespace Monogame_Test_Project
             });
             renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
                 new[] { 100.0f, 100.0f, pLight.radius });
-
+            */
 
             //tilemap.Draw(renderer.spriteBatch, graphics.GraphicsDevice);
             renderer.Render(cam, tilemap);

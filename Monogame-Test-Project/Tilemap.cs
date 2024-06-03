@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using viewStuff;
@@ -70,23 +71,26 @@ namespace tilemap
 
     public class Tilemap
     {
-        private int tileDim = 16;
-        
-        private int atlasNumTilesPerRow = 1;
+        public int tileDim = 16;
+        public int atlasNumTilesPerRow = 1;
 
-        //public Dictionary<string, Dictionary<Vector2, int>> layers;
-
+        public List<Dictionary<Vector2, int>> layers;
         private Dictionary<Vector2, int> mg;
         private Dictionary<Vector2, int> fg;
         // private Dictionary<Vector2, int> animatedTiles; // (?)
         private Dictionary<Vector2, int> collisions;
-        //private Texture2D textureAtlas;
-
+        public string textureAtlasID;
         
-        public Tilemap()
+        public Tilemap(string textureAtlasID)
         {
+            this.textureAtlasID = textureAtlasID;
+            layers = new List<Dictionary<Vector2, int>>();
             //this.textureAtlas = textureAtlas;
-            mg = LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv");
+            //mg = LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv");
+            
+            layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv"));
+            //layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv"));
+
             //fg = LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv");
             // animated tiles...
             //collisions = LoadMap("../../../Content/MapData/test-map/test-map_test-collisions.csv");
@@ -96,11 +100,10 @@ namespace tilemap
         private Dictionary<Vector2, int> LoadMap(string filepath)
         {
             Dictionary<Vector2, int> result = new();
-
             StreamReader reader = new(filepath);
-
             int y = 0;
             string line;
+
             while((line = reader.ReadLine()) != null)
             {
                 string[] items = line.Split(',');
@@ -119,43 +122,41 @@ namespace tilemap
             return result;
         }
         
-        public void Draw(SpriteBatch spriteBatch, Camera2D cam, 
-            RenderTarget2D target, GraphicsDevice graphicsDevice, Texture2D textureAtlas)
-        {
-            //graphicsDevice.Clear(Color.CornflowerBlue);
-            graphicsDevice.SetRenderTarget(target);
 
-            spriteBatch.Begin(samplerState: SamplerState.PointClamp,
-                transformMatrix: cam.TransformMatrix);
+        //public void Draw(SpriteBatch spriteBatch, Camera2D cam, 
+        //    RenderTarget2D target, GraphicsDevice graphicsDevice, Texture2D textureAtlas)
+        //{
+        //    //graphicsDevice.Clear(Color.CornflowerBlue);
+        //    graphicsDevice.SetRenderTarget(target);
 
-            int tileNumPixels = 16;
+        //    spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+        //        transformMatrix: cam.TransformMatrix);
 
-            foreach (var item in mg)
-            {
-                Rectangle drect = new(
-                    (int)item.Key.X * tileDim,
-                    (int)item.Key.Y * tileDim,
-                    tileDim,
-                    tileDim);
+        //    int tileNumPixels = 16;
 
-
-                int x = item.Value % atlasNumTilesPerRow;
-                int y = item.Value / atlasNumTilesPerRow;
-
-                Rectangle source = new(
-                    x * tileNumPixels,
-                    y * tileNumPixels,
-                    tileNumPixels,
-                    tileNumPixels);
-
-                spriteBatch.Draw(textureAtlas, drect, source, Color.White);
-            }
-
-            spriteBatch.End();
-        }
+        //    foreach (var item in mg)
+        //    {
+        //        Rectangle drect = new(
+        //            (int)item.Key.X * tileDim,
+        //            (int)item.Key.Y * tileDim,
+        //            tileDim,
+        //            tileDim);
 
 
+        //        int x = item.Value % atlasNumTilesPerRow;
+        //        int y = item.Value / atlasNumTilesPerRow;
 
+        //        Rectangle source = new(
+        //            x * tileNumPixels,
+        //            y * tileNumPixels,
+        //            tileNumPixels,
+        //            tileNumPixels);
+
+        //        spriteBatch.Draw(textureAtlas, drect, source, Color.White);
+        //    }
+
+        //    spriteBatch.End();
+        //}
 
     }
 }

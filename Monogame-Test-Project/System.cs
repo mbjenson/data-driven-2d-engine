@@ -97,21 +97,56 @@ namespace ECS.Systems
         /*
          * this removes draw functionality from the tilemap (goal)
          */
-        //private void DrawTileMap(Camera2D cam, Tilemap tilemap)
-        //{
+        private void DrawTileMap(Camera2D cam, Tilemap tilemap)
+        {
+            //graphicsDevice.Clear(Color.CornflowerBlue);
+            gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
+
+            spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+                transformMatrix: cam.TransformMatrix);
+
+            int tileNumPixels = 16;
+
+            Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasID);
             
-        //}
+            for (int i = 0; i < tilemap.layers.Count; i++)
+            {
+                foreach (var item in tilemap.layers[i])
+                {
+                    Rectangle drect = new(
+                        (int)item.Key.X * tilemap.tileDim,
+                        (int)item.Key.Y * tilemap.tileDim,
+                        tilemap.tileDim,
+                        tilemap.tileDim);
+
+
+                    int x = item.Value % tilemap.atlasNumTilesPerRow;
+                    int y = item.Value / tilemap.atlasNumTilesPerRow;
+
+                    Rectangle source = new(
+                        x * tileNumPixels,
+                        y * tileNumPixels,
+                        tileNumPixels,
+                        tileNumPixels);
+
+                    spriteBatch.Draw(textureAtlas, drect, source, Color.White);
+                }
+            }
+            
+
+            spriteBatch.End();
+        }
 
         public void Render(Camera2D cam, Tilemap tilemap)
         {
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
             gMan.GraphicsDevice.Clear(Color.Black);
 
-            tilemap.Draw(spriteBatch, cam, renderCanvas, gMan.GraphicsDevice, textureManager.GetTexture("tilesheet"));
-            // 1. draw static tilemap
-            // 2. draw dynamic (animated tiles)
-            // 3. draw entities
-
+            DrawTileMap(cam, tilemap);
+            // tilemap drawing process
+            // 1. draw background tiles
+            // 2. draw tiles with greater or equal to height as entities and draw entities
+            //    so that some entities can be drawn within the tiles
             DrawToCanvas(cam);
             
 
@@ -191,7 +226,6 @@ namespace ECS.Systems
                 //    );
 
             }
-
             spriteBatch.End();
         }
 
@@ -279,8 +313,42 @@ namespace ECS.Systems
 
         public void SetShaderParameters(Effect pixelShader)
         {
-
             //pixelShader.Parameters["PointLightPositions"].SetValue();
+
+            // * get all entities with light components
+            List<Entity> ents = eMan.GetEntities(signature).ToList();
+            CPointLight[] pointLights = new CPointLight[ents.Count];
+            CTransform[] transforms = new CTransform[ents.Count];
+
+            // get values from eMntity manager
+            for (int i = 0; i < ents.Count; i++)
+            {
+                pointLights[i] = (CPointLight)eMan.GetComponent<CPointLight>(ents[i].id);
+                transforms[i] = (CTransform)eMan.GetComponent<CTransform>(ents[i].id);
+            }
+
+            pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.7f, 0.7f, 0.7f));
+            // set shader parameters
+            for (int i = 0; i < maxNumLights; i++)
+            {
+                if (i < ents.Count)
+                {
+                    pixelShader.Parameters["PointLightPositions"].Elements[i].SetValue(
+                        new Vector3(transforms[i].position, 1));
+                    pixelShader.Parameters["PointLightColors"].Elements[i].SetValue(pointLights[i].color);
+                    pixelShader.Parameters["PointLightRadii"].Elements[i].SetValue(pointLights[i].radius);
+                }
+                // if more spots than lights, set values to 0
+                else
+                {
+                    pixelShader.Parameters["PointLightPositions"].Elements[i].SetValue(
+                        new Vector3(0, 0, 0));
+                    pixelShader.Parameters["PointLightColors"].Elements[i].SetValue(
+                        new Vector3(0, 0, 0));
+                    pixelShader.Parameters["PointLightRadii"].Elements[i].SetValue(0);
+                }
+                
+            }
             
         }
 

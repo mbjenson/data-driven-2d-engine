@@ -41,7 +41,6 @@ namespace resource {
 
         public Rectangle GetTextureRect(string name)
         {
-            
             Debug.Assert(textureRects.ContainsKey(name), "TextureManager: GetTextureRect(name) name: " + name + ". TextureManager" +
                 "does not contain texture rect with that name");
             return textureRects[name];

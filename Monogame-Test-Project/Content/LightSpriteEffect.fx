@@ -11,11 +11,11 @@
 // light parameters
 
 // light count can change each frame which can allow for changing number of lights
-int LightCount = 3; // remember to change the loop length below
+int LightCount = 12; // remember to change the loop length below
 // array sizes are constant throughout program lifetime
-float3 PointLightPositions[3];
-float3 PointLightColors[3];
-float PointLightRadii[3];
+float3 PointLightPositions[12];
+float3 PointLightColors[12];
+float PointLightRadii[12];
 
 float3 AmbientLightColor = float3(0.5, 0.5, 0.5);
 
@@ -71,23 +71,20 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     // texture color
     float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
     // get texture normal
-    
     float3 normal = tex2D(NormalTextureSampler, input.TextureCoordinates).rgb;
     normal = normalize(normal * 2.0 - 1.0);
     normal.y *= -1;
     
     float3 finalLight = 0.0;
     
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 12; i++) // old 3 (new 12)
     {
-        
         // calculate distance from the light
         float dist = distance(PointLightPositions[i].xy, input.Pos.xy);
         if (dist >= PointLightRadii[i])
         {
             continue;
         }
-        
         
         // get light direction
         //float2 lightDir = normalize(input.Pos.xy - PointLightPositions[i].xy);
