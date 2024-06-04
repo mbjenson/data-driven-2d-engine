@@ -9,6 +9,14 @@ namespace resource {
     // public class AnimationManager {} // Later...
 
     
+
+    /*
+    Ideally we can store the information about the texture atlas and each of its
+    internal textures in some kind of file (json) which stores information on 
+    where sprites are located in the atlas, what their ids are, and what dimensions they have.
+    Hard coding this is not an option and must be stored in a file, seperate from the code itself.
+
+     */
     public class TextureManager
     {
         private Dictionary<string, Texture2D> textures;
@@ -46,6 +54,8 @@ namespace resource {
             return textureRects[name];
         }
     }
+
+
 }
 
 

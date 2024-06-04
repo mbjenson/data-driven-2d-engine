@@ -39,63 +39,37 @@ namespace tilemap
     will be rendered after this, using the correct info and shader technique.
 
     */
-
-
-    /*
-    Manages the loading and such of the tilemap
-     */
-    //public class TilemapManager
-    //{
-    //    private Tilemap tilemap;
-    //    public TilemapManager() 
-    //    {
-
-    //    }
-
-    //    /*
-    //     * Load in all layers of the tilemap into respective dictionaries
-    //    */
-    //    public void LoadMap(string mapName, string mapFilePath)
-    //    {
-    //        tilemap = new Tilemap();
-            
-    //        for (int i = 0; i < tilemap.layers.Count; i++)
-    //        {
-
-    //        }
-    //    }
-        
-
-    //}
-
+    
 
     public class Tilemap
     {
+        
         public int tileDim = 16;
         public int atlasNumTilesPerRow = 1;
 
+        // tilemap layers loaded from file
         public List<Dictionary<Vector2, int>> layers;
-        private Dictionary<Vector2, int> mg;
-        private Dictionary<Vector2, int> fg;
-        // private Dictionary<Vector2, int> animatedTiles; // (?)
-        private Dictionary<Vector2, int> collisions;
-        public string textureAtlasID;
+        public string textureAtlasID; // string name of texture stored in resourcemanager
+
+        // this enum provides a more accesible way to concretely define which indecies within the layer
+        // list correspond to which layer in the map, functionally.
+        //enum LayerType
+        //{
+        //    background,
+        //    midground,
+        //    foreground
+        //}
         
         public Tilemap(string textureAtlasID)
         {
             this.textureAtlasID = textureAtlasID;
             layers = new List<Dictionary<Vector2, int>>();
-            //this.textureAtlas = textureAtlas;
-            //mg = LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv");
             
+            // now we can simply add a layer (in order) for the tilemap which are rendered in order
+            // and the layer indecies correspond to the enum present above (not yet implemented)
             layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv"));
             //layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv"));
-
-            //fg = LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv");
-            // animated tiles...
-            //collisions = LoadMap("../../../Content/MapData/test-map/test-map_test-collisions.csv");
         }
-
 
         private Dictionary<Vector2, int> LoadMap(string filepath)
         {
@@ -121,48 +95,54 @@ namespace tilemap
             }
             return result;
         }
-        
-
-        //public void Draw(SpriteBatch spriteBatch, Camera2D cam, 
-        //    RenderTarget2D target, GraphicsDevice graphicsDevice, Texture2D textureAtlas)
-        //{
-        //    //graphicsDevice.Clear(Color.CornflowerBlue);
-        //    graphicsDevice.SetRenderTarget(target);
-
-        //    spriteBatch.Begin(samplerState: SamplerState.PointClamp,
-        //        transformMatrix: cam.TransformMatrix);
-
-        //    int tileNumPixels = 16;
-
-        //    foreach (var item in mg)
-        //    {
-        //        Rectangle drect = new(
-        //            (int)item.Key.X * tileDim,
-        //            (int)item.Key.Y * tileDim,
-        //            tileDim,
-        //            tileDim);
-
-
-        //        int x = item.Value % atlasNumTilesPerRow;
-        //        int y = item.Value / atlasNumTilesPerRow;
-
-        //        Rectangle source = new(
-        //            x * tileNumPixels,
-        //            y * tileNumPixels,
-        //            tileNumPixels,
-        //            tileNumPixels);
-
-        //        spriteBatch.Draw(textureAtlas, drect, source, Color.White);
-        //    }
-
-        //    spriteBatch.End();
-        //}
-
     }
+
+
 }
 
 
 
+
+
+
+
+// old draw function for tilemap that I want to keep around becuase the method was
+// novel to me at the time I wrote it.
+
+//public void Draw(SpriteBatch spriteBatch, Camera2D cam, 
+//    RenderTarget2D target, GraphicsDevice graphicsDevice, Texture2D textureAtlas)
+//{
+//    //graphicsDevice.Clear(Color.CornflowerBlue);
+//    graphicsDevice.SetRenderTarget(target);
+
+//    spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+//        transformMatrix: cam.TransformMatrix);
+
+//    int tileNumPixels = 16;
+
+//    foreach (var item in mg)
+//    {
+//        Rectangle drect = new(
+//            (int)item.Key.X * tileDim,
+//            (int)item.Key.Y * tileDim,
+//            tileDim,
+//            tileDim);
+
+
+//        int x = item.Value % atlasNumTilesPerRow;
+//        int y = item.Value / atlasNumTilesPerRow;
+
+//        Rectangle source = new(
+//            x * tileNumPixels,
+//            y * tileNumPixels,
+//            tileNumPixels,
+//            tileNumPixels);
+
+//        spriteBatch.Draw(textureAtlas, drect, source, Color.White);
+//    }
+
+//    spriteBatch.End();
+//}
 
 
 
@@ -261,138 +241,138 @@ namespace tilemap
 
 */
 
-    /*
-    public class TilemapRenderer
+/*
+public class TilemapRenderer
+{
+    public Tilemap tilemap;
+    public RenderTarget2D mapCanvas;
+    public SpriteBatch tileBatch;
+
+    public TilemapRenderer(Tilemap tilemap, GraphicsDeviceManager graphicsDeviceManager)
     {
-        public Tilemap tilemap;
-        public RenderTarget2D mapCanvas;
-        public SpriteBatch tileBatch;
-        
-        public TilemapRenderer(Tilemap tilemap, GraphicsDeviceManager graphicsDeviceManager)
+        this.tilemap = tilemap;
+
+        tileBatch = new SpriteBatch(graphicsDeviceManager.GraphicsDevice);
+
+        // init map render target
+        mapCanvas = new RenderTarget2D(
+            graphicsDeviceManager.GraphicsDevice,
+            graphicsDeviceManager.PreferredBackBufferWidth, graphicsDeviceManager.PreferredBackBufferHeight,
+            false,
+            graphicsDeviceManager.GraphicsDevice.PresentationParameters.BackBufferFormat,
+            DepthFormat.Depth24);
+    }
+
+    public void render(GraphicsDevice gDevice)
+    {
+        gDevice.SetRenderTarget(mapCanvas);
+        gDevice.Clear(Color.White);
+
+        tileBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp);
+
+        drawMapToTexture();
+
+        tileBatch.End();
+
+        gDevice.SetRenderTarget(null);
+    }
+
+    private void drawMapToTexture()
+    {
+        for (int row = 0; row < tilemap.mapHeight; row++)
         {
-            this.tilemap = tilemap;
-
-            tileBatch = new SpriteBatch(graphicsDeviceManager.GraphicsDevice);
-
-            // init map render target
-            mapCanvas = new RenderTarget2D(
-                graphicsDeviceManager.GraphicsDevice,
-                graphicsDeviceManager.PreferredBackBufferWidth, graphicsDeviceManager.PreferredBackBufferHeight,
-                false,
-                graphicsDeviceManager.GraphicsDevice.PresentationParameters.BackBufferFormat,
-                DepthFormat.Depth24);
-        }
-
-        public void render(GraphicsDevice gDevice)
-        {
-            gDevice.SetRenderTarget(mapCanvas);
-            gDevice.Clear(Color.White);
-
-            tileBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp);
-
-            drawMapToTexture();
-
-            tileBatch.End();
-
-            gDevice.SetRenderTarget(null);
-        }
-
-        private void drawMapToTexture()
-        {
-            for (int row = 0; row < tilemap.mapHeight; row++)
+            for (int col = 0; col < tilemap.mapWidth; col++)
             {
-                for (int col = 0; col < tilemap.mapWidth; col++)
-                {
-                    tileBatch.Draw(
-                        tilemap.textureSheet,
-                        new Rectangle(
-                            col * tilemap.tileWidth,
-                            row * tilemap.tileHeight,
-                            tilemap.tileWidth,
-                            tilemap.tileHeight),
-                        new Rectangle(
-                            0,
-                            tilemap.tileTypes[row * tilemap.mapWidth + col] * tilemap.tileHeight,
-                            tilemap.tileWidth,
-                            tilemap.tileHeight),
-                        Color.White);
-                }
+                tileBatch.Draw(
+                    tilemap.textureSheet,
+                    new Rectangle(
+                        col * tilemap.tileWidth,
+                        row * tilemap.tileHeight,
+                        tilemap.tileWidth,
+                        tilemap.tileHeight),
+                    new Rectangle(
+                        0,
+                        tilemap.tileTypes[row * tilemap.mapWidth + col] * tilemap.tileHeight,
+                        tilemap.tileWidth,
+                        tilemap.tileHeight),
+                    Color.White);
             }
         }
-
-
-
-
     }
-    */
 
 
 
-    // class logic:
-    /*
-     * tilemap has its own spritebatch which it uses to draw to the rendertarget
-     * 
-     * when creating a new tilemap, a JSON file will be used to initialize all the values
-     * that will be used for the tilemap such as the actual tilemap data, the dimensions
-     * of the map, the size of each tile, etc.
-    */
 
-    /**
-     * Tilemap class handles storing information about tiles and drawing them to the screen
-    */
-    /*
-    public class Tilemap
-    {
-        public Texture2D textureSheet;
-        public List<int> tileTypes;
-        
-        public int mapWidth;
-        public int mapHeight;
-
-        public int tileWidth;
-        public int tileHeight;
-
-        //public RenderTarget2D mapCanvas; // later use many dynamic map chunks to get most efficient rendering
-        //private SpriteBatch tileSpriteBatch;
-
-        // later change this to take JSON object information
-        public Tilemap(int mapWidth, int mapHeight, int tileWidth, int tileHeight) 
-        {
-            this.mapWidth = mapWidth;
-            this.mapHeight = mapHeight;
-            this.tileWidth = tileWidth;
-            this.tileHeight = tileHeight;
-
-            tileTypes = new List<int>
-            {
-                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
-                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
-                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
-                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
-                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
-                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
-                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
-                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
-                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
-                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
-                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
-                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
-                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
-                1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
-                2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
-                3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
-            };
-        }
-
-        
-       
-
-        // Draw to the texture once
-        // then draw the texture to the screen using Game1's spritebatch
-        
-    }
 }
-    */
+*/
+
+
+
+// class logic:
+/*
+ * tilemap has its own spritebatch which it uses to draw to the rendertarget
+ * 
+ * when creating a new tilemap, a JSON file will be used to initialize all the values
+ * that will be used for the tilemap such as the actual tilemap data, the dimensions
+ * of the map, the size of each tile, etc.
+*/
+
+/**
+ * Tilemap class handles storing information about tiles and drawing them to the screen
+*/
+/*
+public class Tilemap
+{
+    public Texture2D textureSheet;
+    public List<int> tileTypes;
+
+    public int mapWidth;
+    public int mapHeight;
+
+    public int tileWidth;
+    public int tileHeight;
+
+    //public RenderTarget2D mapCanvas; // later use many dynamic map chunks to get most efficient rendering
+    //private SpriteBatch tileSpriteBatch;
+
+    // later change this to take JSON object information
+    public Tilemap(int mapWidth, int mapHeight, int tileWidth, int tileHeight) 
+    {
+        this.mapWidth = mapWidth;
+        this.mapHeight = mapHeight;
+        this.tileWidth = tileWidth;
+        this.tileHeight = tileHeight;
+
+        tileTypes = new List<int>
+        {
+            3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+            1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+            2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+            3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+            1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+            2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+            3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+            1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+            2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+            3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+            1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+            2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+            3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+            1, 3, 2, 2, 4, 3, 2, 1, 2, 2, 2, 2, 2, 1, 3, 4,
+            2, 5, 5, 6, 4, 3, 4, 3, 2, 1, 1, 2, 3, 1, 2, 3,
+            3, 2, 4, 3, 3, 4, 4, 2, 4, 3, 2, 2, 4, 4, 2, 4,
+        };
+    }
+
+
+
+
+    // Draw to the texture once
+    // then draw the texture to the screen using Game1's spritebatch
+
+}
+}
+*/
 
 // tyring to draw tilemap to it's own render texture
 //if (!tilemap.isDrawn)

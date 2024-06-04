@@ -25,17 +25,41 @@ sampler2D SpriteTextureSampler = sampler_state
 {
 	Texture = <SpriteTexture>;
 };
+
 /*
 SamplerState NormalSampler = sampler_state
 {
     SpriteTexture = <NormalTexture>;
 };
 */
+
 Texture2D NormalTexture;
+sampler s0 = sampler_state
+{
+    Texture = <NormalTexture>;
+    AddressU = Clamp;
+    AddressV = Clamp;
+    MagFilter = Point;
+    MinFilter = Point;
+    MipFilter = Point;
+
+};
+
+
 sampler2D NormalTextureSampler = sampler_state
 {
     Texture = <NormalTexture>;
+    //AddressU = Clamp;
+    //AddressV = Clamp;
+    //MagFilter = Point;
+    //MinFilter = Point;
+    //MipFilter = Point;
 };
+
+
+
+
+
 
 
 struct VertexShaderOutput
@@ -72,7 +96,9 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     // texture color
     float4 texColor = tex2D(SpriteTextureSampler, input.TextureCoordinates);
     // get texture normal
-    float3 normal = tex2D(NormalTextureSampler, input.TextureCoordinates).rgb;
+    
+    //float3 normal = tex2D(NormalTextureSampler, input.TextureCoordinates).rgb;
+    float3 normal = tex2D(s0, input.TextureCoordinates).rgb;
     normal = normalize(normal * 2.0 - 1.0);
     normal.y *= -1;
     

@@ -110,6 +110,19 @@ namespace viewStuff
         }
 
 
+        public void SmoothZoom(float goalZoom, float speed, float dt)
+        {
+            if (Math.Abs(this.Zoom) - goalZoom < 0.0001f)
+            {
+                float zoomToGo = goalZoom - this.Zoom;
+                this.Zoom += zoomToGo * speed * dt;
+            }
+            else
+            {
+                this.Zoom = goalZoom;
+            }
+        }
+
         public void Update(Vector2 followPoint, float dt)
         {
             // one liner

@@ -12,6 +12,7 @@ using viewStuff;
 using resource;
 using Microsoft.Xna.Framework.Content;
 using System.Security.Cryptography;
+using System.Net.Sockets;
 
 namespace ECS.Systems
 {
@@ -32,6 +33,10 @@ namespace ECS.Systems
     Rendering System
 
     Works with the Entity component system to draw things in the world
+
+    Thoughts on textures:
+        * all textures for tilemap are located in their own texture atlas
+        * all texture for entities and animations are in another texture atlas
     */
     public class RenderingSystem
     {
@@ -92,20 +97,52 @@ namespace ECS.Systems
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
 
+
+            SamplerState sState = new SamplerState();
+            
+            //sState.AddressU = TextureAddressMode.Clamp;
+            //sState.AddressV = TextureAddressMode.Clamp;
+            //gMan.GraphicsDevice.SamplerStates[0] = sState;
+
+            //SamplerState sState = new SamplerState() { Filter = TextureFilter.Point };
+            //gMan.GraphicsDevice.SamplerStates[0] = sState;
         }
+
+
+
+        public void Render(Camera2D cam, Tilemap tilemap)
+        {
+            gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
+            gMan.GraphicsDevice.Clear(Color.Black);
+            
+
+            DrawTileMap(cam, tilemap);
+            // tilemap drawing process
+            // 1. draw background tiles
+            // 2. draw tiles with greater or equal to height as entities and draw entities
+            //    so that some entities can be drawn within the tiles
+            DrawToCanvas(cam);
+
+
+            // 2 perform post processing effects on the canvas
+            // Post Processing();
+
+            gMan.GraphicsDevice.SetRenderTarget(null);
+            gMan.GraphicsDevice.Clear(Color.Black);
+            // 3 draw to screen
+            DrawToScreen(cam);
+        }
+
 
         /*
          * this removes draw functionality from the tilemap (goal)
          */
         private void DrawTileMap(Camera2D cam, Tilemap tilemap)
         {
-            //graphicsDevice.Clear(Color.CornflowerBlue);
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
 
             spriteBatch.Begin(samplerState: SamplerState.PointClamp,
                 transformMatrix: cam.TransformMatrix);
-
-            int tileNumPixels = 16;
 
             Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasID);
             
@@ -124,39 +161,16 @@ namespace ECS.Systems
                     int y = item.Value / tilemap.atlasNumTilesPerRow;
 
                     Rectangle source = new(
-                        x * tileNumPixels,
-                        y * tileNumPixels,
-                        tileNumPixels,
-                        tileNumPixels);
+                        x * tilemap.tileDim,
+                        y * tilemap.tileDim,
+                        tilemap.tileDim,
+                        tilemap.tileDim);
 
                     spriteBatch.Draw(textureAtlas, drect, source, Color.White);
                 }
             }
-            
 
             spriteBatch.End();
-        }
-
-        public void Render(Camera2D cam, Tilemap tilemap)
-        {
-            gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
-            gMan.GraphicsDevice.Clear(Color.Black);
-
-            DrawTileMap(cam, tilemap);
-            // tilemap drawing process
-            // 1. draw background tiles
-            // 2. draw tiles with greater or equal to height as entities and draw entities
-            //    so that some entities can be drawn within the tiles
-            DrawToCanvas(cam);
-            
-
-            // 2 perform post processing effects on the canvas
-            // Post Processing();
-
-            gMan.GraphicsDevice.SetRenderTarget(null);
-            gMan.GraphicsDevice.Clear(Color.Black);
-            // 3 draw to screen
-            DrawToScreen(cam);
         }
 
 
@@ -178,18 +192,18 @@ namespace ECS.Systems
 
             // DRAW ENTITIES
             spriteBatch.Begin(
-                SpriteSortMode.BackToFront, BlendState.AlphaBlend,
-                SamplerState.PointClamp,
+                SpriteSortMode.BackToFront, blendState: BlendState.AlphaBlend,
+                samplerState: SamplerState.PointClamp,
                 transformMatrix: cam.TransformMatrix,
                 effect: pixelShader);
 
             pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
 
             pixelShader.Parameters["NormalTexture"].SetValue(normalTex);
+            
 
             // TODO: LOAD IN THE ENTITY TEXTURE ATLAS HERE WHICH SHOULD CONTAIN ALL NECESSARY TEXTURES FOR ENTITIES
             Texture2D atlas = textureManager.GetTexture("entity_tilesheet");
-            
             
             for (int i = 0; i < ents.Count; i++)
             {
@@ -205,6 +219,8 @@ namespace ECS.Systems
                     null,
                     Color.White
                     );
+
+                
 
                 //spriteBatch.Draw(
                 //    atlas,
@@ -293,18 +309,25 @@ namespace ECS.Systems
     * in layman's terms, the lighting system will only be in charge of sending lighting
       information from the ECS to the shader, as the task is different from the purpose
       of the renderer itself and requires a seperate, decoupled system to manage it.
+    * for now the lighting system has hard coded values for the shader and what not, I believe this will
+      probably stay this way for the forseeable future.
     */
 
     public class LightingSystem
     {
         private EntityManager eMan;
         private Bitmask signature;
-        private int maxNumLights; // max number of lights
+        private int maxNumLights;
 
         private EffectParameter effectParamPointLightPositions;
         private EffectParameter effectParamPointLightColors;
         private EffectParameter effectParamPointLightRadii;
         private EffectParameter effectParamAmbientLightColor;
+
+        private Vector3[] pointLightPositions;
+        private Vector3[] pointLightColors;
+        private float[] pointLightRadii;
+        private Vector3 ambientLightColor;
         
         public LightingSystem(EntityManager eMan, int maxNumLights, Effect pixelShader)
         {
@@ -320,19 +343,19 @@ namespace ECS.Systems
             effectParamPointLightColors = pixelShader.Parameters["PointLightColors"];
             effectParamPointLightRadii = pixelShader.Parameters["PointLightRadii"];
             effectParamAmbientLightColor = pixelShader.Parameters["AmbientLightColor"];
+
+            pointLightPositions = new Vector3[maxNumLights];
+            pointLightColors = new Vector3[maxNumLights];
+            pointLightRadii = new float[maxNumLights];
+            ambientLightColor = new Vector3(0.3f, 0.3f, 0.3f);
         }
 
         public void SetShaderParameters(Camera2D cam)
         {
             List<Entity> ents = eMan.GetEntities(signature).ToList();
-
-            Vector3[] pointLightPositions = new Vector3[maxNumLights];
-            Vector3[] pointLightColors = new Vector3[maxNumLights];
-            float[] pointLightRadii = new float[maxNumLights];
-
             CPointLight thisLight = null;
             CTransform thisTrans = null;
-            // get values from eMntity manager
+            // gather component values
             for (int i = 0; i < ents.Count; i++)
             {
                 thisTrans = (CTransform)eMan.GetComponent<CTransform>(ents[i].id);
@@ -342,12 +365,11 @@ namespace ECS.Systems
                 pointLightColors[i] = thisLight.color;
                 pointLightRadii[i] = thisLight.radius;
             }
-
             // set shader parameters
             effectParamPointLightPositions.SetValue(pointLightPositions);
             effectParamPointLightColors.SetValue(pointLightColors);
             effectParamPointLightRadii.SetValue(pointLightRadii);
-            effectParamAmbientLightColor.SetValue(new Vector3(0.3f, 0.3f, 0.3f));
+            effectParamAmbientLightColor.SetValue(ambientLightColor);
         }
     }
 
@@ -394,6 +416,8 @@ namespace ECS.Systems
                 rig.acceleration += rig.velocity * -0.2f; // -0.06f;
             }
         }
+        
+        // private void UpdateControlledEntities(GameTime gameTime) {}
     }
 
 

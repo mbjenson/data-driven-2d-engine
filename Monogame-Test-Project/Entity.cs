@@ -95,6 +95,8 @@ namespace ECS
     public class CTransform : IComponent
     {
         public Vector2 position;
+        // public (int / float?) height;
+         //public Vector2 origin; // not sure if I am going to use it
 
         public float X
         {
@@ -111,14 +113,18 @@ namespace ECS
         public CTransform() 
         {
             this.position = new Vector2(0, 0);
-            
         }
 
         public CTransform(Vector2 position)
         {
             this.position = position;
-            
         }
+
+        public CTransform(Vector2 position, Vector2 origin)
+        {
+            this.position = position;
+        }
+
 
         public void Move(Vector2 vec)
         {

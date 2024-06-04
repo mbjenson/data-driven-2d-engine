@@ -152,14 +152,20 @@ Entity Component System:
 TODO
 =======================================
 
+Known Bugs:
+    * light radii are not manipulated correctly with camera zoom so that they are always the same size 
+      in screen space.
+
 ERRORS:
     potential issue involving the calculation of the movement. When the fps is lower (25-30), the 
     player glides farther than when the fps is higher (165+).
 
 CURRENT:
 
+    
+
     lighting system
-        * the light is stuck in top left corner of screen. unsure why.
+        * the normal texture is being linearly filtered inside the shader when it should be point clamped
 
     Add height value for transform to allow for 
     entities to allow for more accurate drawing order
@@ -310,7 +316,7 @@ namespace Monogame_Test_Project
             IsFixedTimeStep = false; // lock at 60fps
 
             // init entities
-            int numEnts = 3;
+            int numEnts = 4;
             eMan = new EntityManager(numEnts);
             tMan = new TextureManager();
 
@@ -329,6 +335,7 @@ namespace Monogame_Test_Project
             
             //cam = new Camera2D(GraphicsDevice.Viewport); // old
             cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
+            cam.Zoom = 0.5f;
             renderer = new RenderingSystem(eMan, graphics, tMan);
             
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
@@ -369,6 +376,10 @@ namespace Monogame_Test_Project
                 new CTexture("brick"));
             eMan.AddComponent<CPointLight>(heavyBlock,
                 new CPointLight(100.0f, new Vector3(0.0f, 0.0f, 3.0f)));
+
+            Entity ent3 = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(ent3, new CTransform() { position = new Vector2(-20f, -40f) });
+            eMan.AddComponent<CPointLight>(ent3, new CPointLight(100f, new Vector3(3.0f, 3.0f, 0.0f)));
 
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
@@ -467,7 +478,11 @@ namespace Monogame_Test_Project
 
             // round player position so that it exists only within whole numbered coordinates (removes texture distortion)
             //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
-            
+
+
+
+            cam.SmoothZoom(1.0f, 5f, dt);
+
             iSys.Update(gameTime);
             aSys.Update(gameTime);
             pSys.Update(gameTime);
@@ -475,7 +490,8 @@ namespace Monogame_Test_Project
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
             playerPos = pTrans.position;
             playerPos += new Vector2(16, 16);
-            pTrans.position = worldMousePos;
+            //pTrans.position = worldMousePos;
+
             // set debug text for renderer
             renderer.debugText = new List<string> {
                 "viewport: " + + graphics.GraphicsDevice.Viewport.Width + ", " + graphics.GraphicsDevice.Viewport.Height,
@@ -486,7 +502,6 @@ namespace Monogame_Test_Project
 
             //cam.Update(playerPos, dt);
             cam.Update(player, dt);
-            
 
             base.Update(gameTime);
         }
