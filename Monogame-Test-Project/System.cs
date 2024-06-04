@@ -300,7 +300,13 @@ namespace ECS.Systems
         private EntityManager eMan;
         private Bitmask signature;
         private int maxNumLights; // max number of lights
-        public LightingSystem(EntityManager eMan, int maxNumLights)
+
+        private EffectParameter effectParamPointLightPositions;
+        private EffectParameter effectParamPointLightColors;
+        private EffectParameter effectParamPointLightRadii;
+        private EffectParameter effectParamAmbientLightColor;
+        
+        public LightingSystem(EntityManager eMan, int maxNumLights, Effect pixelShader)
         {
             this.eMan = eMan;
 
@@ -309,54 +315,40 @@ namespace ECS.Systems
             signature[ComponentType.CTransform] = true;
 
             this.maxNumLights = maxNumLights;
+            
+            effectParamPointLightPositions = pixelShader.Parameters["PointLightPositions"];
+            effectParamPointLightColors = pixelShader.Parameters["PointLightColors"];
+            effectParamPointLightRadii = pixelShader.Parameters["PointLightRadii"];
+            effectParamAmbientLightColor = pixelShader.Parameters["AmbientLightColor"];
         }
 
-        public void SetShaderParameters(Effect pixelShader)
+        public void SetShaderParameters(Camera2D cam)
         {
-            //pixelShader.Parameters["PointLightPositions"].SetValue();
-
-            // * get all entities with light components
             List<Entity> ents = eMan.GetEntities(signature).ToList();
-            CPointLight[] pointLights = new CPointLight[ents.Count];
-            CTransform[] transforms = new CTransform[ents.Count];
 
+            Vector3[] pointLightPositions = new Vector3[maxNumLights];
+            Vector3[] pointLightColors = new Vector3[maxNumLights];
+            float[] pointLightRadii = new float[maxNumLights];
+
+            CPointLight thisLight = null;
+            CTransform thisTrans = null;
             // get values from eMntity manager
             for (int i = 0; i < ents.Count; i++)
             {
-                pointLights[i] = (CPointLight)eMan.GetComponent<CPointLight>(ents[i].id);
-                transforms[i] = (CTransform)eMan.GetComponent<CTransform>(ents[i].id);
+                thisTrans = (CTransform)eMan.GetComponent<CTransform>(ents[i].id);
+                thisLight = (CPointLight)eMan.GetComponent<CPointLight>(ents[i].id);
+
+                pointLightPositions[i] = new Vector3(cam.worldToScreen(thisTrans.position), 5);
+                pointLightColors[i] = thisLight.color;
+                pointLightRadii[i] = thisLight.radius;
             }
 
-            pixelShader.Parameters["AmbientLightColor"].SetValue(new Vector3(0.7f, 0.7f, 0.7f));
             // set shader parameters
-            for (int i = 0; i < maxNumLights; i++)
-            {
-                if (i < ents.Count)
-                {
-                    pixelShader.Parameters["PointLightPositions"].Elements[i].SetValue(
-                        new Vector3(transforms[i].position, 1));
-                    pixelShader.Parameters["PointLightColors"].Elements[i].SetValue(pointLights[i].color);
-                    pixelShader.Parameters["PointLightRadii"].Elements[i].SetValue(pointLights[i].radius);
-                }
-                // if more spots than lights, set values to 0
-                else
-                {
-                    pixelShader.Parameters["PointLightPositions"].Elements[i].SetValue(
-                        new Vector3(0, 0, 0));
-                    pixelShader.Parameters["PointLightColors"].Elements[i].SetValue(
-                        new Vector3(0, 0, 0));
-                    pixelShader.Parameters["PointLightRadii"].Elements[i].SetValue(0);
-                }
-                
-            }
-            
+            effectParamPointLightPositions.SetValue(pointLightPositions);
+            effectParamPointLightColors.SetValue(pointLightColors);
+            effectParamPointLightRadii.SetValue(pointLightRadii);
+            effectParamAmbientLightColor.SetValue(new Vector3(0.3f, 0.3f, 0.3f));
         }
-
-        /*
-        This system will:
-            1. manage all of the lights in the scene by checking visibility
-            2. set shader values given the visible lights in the scene
-        */
     }
 
     

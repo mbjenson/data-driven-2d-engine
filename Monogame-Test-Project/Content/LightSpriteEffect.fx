@@ -11,11 +11,12 @@
 // light parameters
 
 // light count can change each frame which can allow for changing number of lights
-int LightCount = 12; // remember to change the loop length below
+static const int LightCount = 12; // remember to change the loop length below
+
 // array sizes are constant throughout program lifetime
-float3 PointLightPositions[12];
-float3 PointLightColors[12];
-float PointLightRadii[12];
+float3 PointLightPositions[LightCount];
+float3 PointLightColors[LightCount];
+float PointLightRadii[LightCount];
 
 float3 AmbientLightColor = float3(0.5, 0.5, 0.5);
 
@@ -77,7 +78,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     
     float3 finalLight = 0.0;
     
-    for (int i = 0; i < 12; i++) // old 3 (new 12)
+    for (int i = 0; i < LightCount; i++) // old 3 (new 12)
     {
         // calculate distance from the light
         float dist = distance(PointLightPositions[i].xy, input.Pos.xy);

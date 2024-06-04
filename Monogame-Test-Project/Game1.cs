@@ -314,7 +314,7 @@ namespace Monogame_Test_Project
             eMan = new EntityManager(numEnts);
             tMan = new TextureManager();
 
-            lSys = new LightingSystem(eMan, 12);
+            
 
             // must happen in this order for the camera to work properly
             // [
@@ -343,7 +343,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody() { mass = 5f });
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
             eMan.AddComponent<CTexture>(pEnt, new CTexture("brick"));
-            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(3.0f, 2.0f, 0.2f)));
+            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 3.0f, 0.0f)));
 
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, 
@@ -354,6 +354,8 @@ namespace Monogame_Test_Project
                 new CRigidBody() { mass = 2.5f });
             eMan.AddComponent<CTexture>(lightBlock, 
                 new CTexture("brick"));
+            eMan.AddComponent<CPointLight>(lightBlock,
+                new CPointLight(100.0f, new Vector3(3.0f, 0.0f, 0.0f)));
             ent2 = lightBlock;
 
             Entity heavyBlock = eMan.CreateEntity();
@@ -365,6 +367,8 @@ namespace Monogame_Test_Project
                 new CRigidBody() { mass = 10f });
             eMan.AddComponent<CTexture>(heavyBlock,
                 new CTexture("brick"));
+            eMan.AddComponent<CPointLight>(heavyBlock,
+                new CPointLight(100.0f, new Vector3(0.0f, 0.0f, 3.0f)));
 
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
@@ -394,11 +398,13 @@ namespace Monogame_Test_Project
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32));
 
             tilemap = new Tilemap("tilesheet");
-
+            
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
             renderer.pixelShader = Content.Load<Effect>("LightSpriteEffect");
             renderer.brickTex = Content.Load<Texture2D>("textures/smooth-brick");
+
+            lSys = new LightingSystem(eMan, 12, renderer.pixelShader);
         }
 
 
@@ -469,7 +475,7 @@ namespace Monogame_Test_Project
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
             playerPos = pTrans.position;
             playerPos += new Vector2(16, 16);
-
+            pTrans.position = worldMousePos;
             // set debug text for renderer
             renderer.debugText = new List<string> {
                 "viewport: " + + graphics.GraphicsDevice.Viewport.Width + ", " + graphics.GraphicsDevice.Viewport.Height,
@@ -480,7 +486,7 @@ namespace Monogame_Test_Project
 
             //cam.Update(playerPos, dt);
             cam.Update(player, dt);
-            lSys.SetShaderParameters(renderer.pixelShader);
+            
 
             base.Update(gameTime);
         }
@@ -524,7 +530,7 @@ namespace Monogame_Test_Project
             renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
                 new[] { 100.0f, 100.0f, pLight.radius });
             */
-
+            lSys.SetShaderParameters(cam);
             //tilemap.Draw(renderer.spriteBatch, graphics.GraphicsDevice);
             renderer.Render(cam, tilemap);
 
