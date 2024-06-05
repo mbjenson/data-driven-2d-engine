@@ -335,7 +335,7 @@ namespace Monogame_Test_Project
             
             //cam = new Camera2D(GraphicsDevice.Viewport); // old
             cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
-            cam.Zoom = 0.5f;
+            cam.Zoom = 0.4f;
             renderer = new RenderingSystem(eMan, graphics, tMan);
             
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
@@ -480,14 +480,18 @@ namespace Monogame_Test_Project
             //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
 
 
-
-            cam.SmoothZoom(1.0f, 5f, dt);
+            if (cam.Zoom != 1.0f)
+            {
+                cam.SmoothZoom(1.0f, 5f, dt);
+            }
+            
 
             iSys.Update(gameTime);
             aSys.Update(gameTime);
             pSys.Update(gameTime);
 
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
+            CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
             playerPos = pTrans.position;
             playerPos += new Vector2(16, 16);
             //pTrans.position = worldMousePos;
@@ -501,7 +505,9 @@ namespace Monogame_Test_Project
             };
 
             //cam.Update(playerPos, dt);
-            cam.Update(player, dt);
+
+            //cam.Update(player, dt);
+            cam.Update(playerPos, pRig.velocity, dt);
 
             base.Update(gameTime);
         }
@@ -542,9 +548,11 @@ namespace Monogame_Test_Project
                 new Vector3(0.0f, 0.0f, 0.0f),
                 pLight.color,
             });
+
             renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
                 new[] { 100.0f, 100.0f, pLight.radius });
             */
+
             lSys.SetShaderParameters(cam);
             //tilemap.Draw(renderer.spriteBatch, graphics.GraphicsDevice);
             renderer.Render(cam, tilemap);

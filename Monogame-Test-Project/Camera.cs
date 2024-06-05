@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Diagnostics;
+using System.Net.Http.Headers;
 
 namespace viewStuff
 {
@@ -55,6 +56,7 @@ namespace viewStuff
         public float Rotation { get; set; }
         private Rectangle Bounds { get; set; }
         public float lag = 10f;
+
 
         public Matrix TransformMatrix
         {
@@ -123,17 +125,37 @@ namespace viewStuff
             }
         }
 
-        public void Update(Vector2 followPoint, float dt)
+        //public void Update(Vector2 followPoint, float dt)
+        //{
+        //    // one liner
+        //    this.Position = Vector2.Lerp(this.Position, followPoint, 0.1f);
+
+        //    // orig
+        //    //Vector2 lookAtDist = followPoint - this.Position;
+        //    //this.Position += lookAtDist * this.lag * dt;
+        //}
+
+        
+        public void Update(Vector2 followPoint, Vector2 entityVel, float dt)
         {
-            // one liner
-            this.Position = Vector2.Lerp(this.Position, followPoint, 0.1f);
-            
-            // orig
-            //Vector2 lookAtDist = followPoint - this.Position;
-            //this.Position += lookAtDist * this.lag * dt;
+            Vector2 calcPos = Vector2.Lerp(this.Position, followPoint, 0.1f);
+
+            // used to take in player vel as parameter
+            // might be able to use this to make the speeding up process smoother with the camera
+            //calcPos = new Vector2(
+            //(Math.Abs(entityVel.X) < 0.5f) ? calcPos.X : (float)Math.Round(calcPos.X),
+            //(Math.Abs(entityVel.Y) < 0.5f ? calcPos.Y : (float)Math.Round(calcPos.Y)));
+
+            //Debug.WriteLine(entityVel.X + ", " + entityVel.Y);
+
+            //calcPos = new Vector2(
+            //    (Math.Abs(entityVel.X) < 100.0f) ? calcPos.X : (float)Math.Round(calcPos.X),
+            //    (Math.Abs(entityVel.Y) < 100.0f ? calcPos.Y : (float)Math.Round(calcPos.Y)));
+
+
+
+            this.Position = new Vector2((float)Math.Round(calcPos.X), (float)Math.Round(calcPos.Y));
         }
-
-
     }
 }
 

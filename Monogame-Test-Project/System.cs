@@ -97,7 +97,6 @@ namespace ECS.Systems
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
 
-
             SamplerState sState = new SamplerState();
             
             //sState.AddressU = TextureAddressMode.Clamp;
@@ -256,10 +255,15 @@ namespace ECS.Systems
                 SpriteSortMode.Immediate, BlendState.AlphaBlend,
                 SamplerState.PointClamp, DepthStencilState.Default,
                 RasterizerState.CullNone);
-
+            
             spriteBatch.Draw(renderCanvas,
                 new Rectangle(0, 0, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
+                new Rectangle(renderCanvas.Bounds.X, renderCanvas.Bounds.Y, renderCanvas.Bounds.Width, renderCanvas.Bounds.Height),
                 Color.White);
+
+            //spriteBatch.Draw(renderCanvas,
+            //    new Rectangle(0, 0, gMan.PreferredBackBufferWidth, gMan.PreferredBackBufferHeight),
+            //    Color.White);
 
             DrawDebugText();
             
