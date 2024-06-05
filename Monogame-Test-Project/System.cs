@@ -50,6 +50,7 @@ namespace ECS.Systems
 
         public Texture2D brickTex;
         public Texture2D normalTex;
+        public Texture2D flatNormal;
 
         public Effect pixelShader = null;
         public SpriteFont font;
@@ -140,8 +141,15 @@ namespace ECS.Systems
         {
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
 
+            //spriteBatch.Begin(samplerState: SamplerState.PointClamp,
+            //    transformMatrix: cam.TransformMatrix);
+
             spriteBatch.Begin(samplerState: SamplerState.PointClamp,
-                transformMatrix: cam.TransformMatrix);
+                transformMatrix: cam.TransformMatrix, effect: pixelShader);
+
+            pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
+
+            pixelShader.Parameters["NormalTexture"].SetValue(flatNormal);
 
             Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasID);
             
@@ -365,7 +373,7 @@ namespace ECS.Systems
                 thisTrans = (CTransform)eMan.GetComponent<CTransform>(ents[i].id);
                 thisLight = (CPointLight)eMan.GetComponent<CPointLight>(ents[i].id);
 
-                pointLightPositions[i] = new Vector3(cam.worldToScreen(thisTrans.position), 5);
+                pointLightPositions[i] = new Vector3(cam.worldToScreen(thisTrans.position + thisLight.offset), 10);
                 pointLightColors[i] = thisLight.color;
                 pointLightRadii[i] = thisLight.radius;
             }

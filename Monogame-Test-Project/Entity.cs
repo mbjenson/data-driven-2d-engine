@@ -162,23 +162,33 @@ namespace ECS
         public float radius;
         // float a; // not sure what to call this but it is the thing that affects intensity of light falloff in the shader. it is called "a" right now.
         public Vector3 color;
-
+        public Vector2 offset;
         public CPointLight()
         {
             radius = 30.0f;
             color = new Vector3(1.0f, 1.0f, 1.0f);
+            offset = Vector2.Zero;
         }
 
         public CPointLight(float radius, Vector3 color)
         {
             this.radius = radius;
             this.color = color;
+            offset = Vector2.Zero;
         }
 
         public CPointLight(float radius)
         {
             this.radius = radius;
             this.color = new Vector3(1.0f, 1.0f, 1.0f);
+            offset = Vector2.Zero;
+        }
+
+        public CPointLight(float radius, Vector3 color, Vector2 offset)
+        {
+            this.radius = radius;
+            this.color = color;
+            this.offset = offset;
         }
     }
 

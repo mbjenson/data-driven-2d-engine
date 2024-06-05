@@ -162,24 +162,14 @@ ERRORS:
 
 CURRENT:
 
-    
-
     lighting system
-        * the normal texture is being linearly filtered inside the shader when it should be point clamped
-
-    Add height value for transform to allow for 
-    entities to allow for more accurate drawing order
-
-    tilemap rendering
-
-    implementing smooth camera that is not pixel perfect.
 
     brainstorming how to set shader parameters without hard coding in the parameter name
     eg: shader.Parameters["param-name"].SetValue(...);
     goal: shader.Parameters[some-string].SetValue(some-value);
     * idea: 
 
-    lighting system
+    
 
     FIXED: camera issue where normal texture would not line up with the 
            brick correctly. This would only happen when I would render things
@@ -316,7 +306,7 @@ namespace Monogame_Test_Project
             IsFixedTimeStep = false; // lock at 60fps
 
             // init entities
-            int numEnts = 4;
+            int numEnts = 6;
             eMan = new EntityManager(numEnts);
             tMan = new TextureManager();
 
@@ -350,7 +340,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody() { mass = 5f });
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
             eMan.AddComponent<CTexture>(pEnt, new CTexture("brick"));
-            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 3.0f, 0.0f)));
+            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 1.0f, 0.0f), new Vector2(16, 16)));
 
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, 
@@ -380,6 +370,32 @@ namespace Monogame_Test_Project
             Entity ent3 = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(ent3, new CTransform() { position = new Vector2(-20f, -40f) });
             eMan.AddComponent<CPointLight>(ent3, new CPointLight(100f, new Vector3(3.0f, 3.0f, 0.0f)));
+            eMan.AddComponent<CTexture>(ent3,
+                new CTexture("brick"));
+            eMan.AddComponent<CRigidBody>(ent3,
+                new CRigidBody() { mass = 10f });
+            eMan.AddComponent<CCollider>(ent3,
+                new CRectCollider(entitySize));
+
+            Entity ent4 = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(ent4, new CTransform() { position = new Vector2(-20f, -80f) });
+            eMan.AddComponent<CPointLight>(ent4, new CPointLight(100f, new Vector3(3.0f, 3.0f, 0.0f)));
+            eMan.AddComponent<CTexture>(ent4,
+                new CTexture("brick"));
+            eMan.AddComponent<CRigidBody>(ent4,
+                new CRigidBody() { mass = 10f });
+            eMan.AddComponent<CCollider>(ent4,
+                new CRectCollider(entitySize));
+
+            Entity ent5 = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(ent5, new CTransform() { position = new Vector2(20f, 200f) });
+            eMan.AddComponent<CPointLight>(ent5, new CPointLight(100f, new Vector3(1.0f, 1.0f, 0.0f)));
+            eMan.AddComponent<CTexture>(ent5,
+                new CTexture("brick"));
+            eMan.AddComponent<CRigidBody>(ent5,
+                new CRigidBody() { mass = 10f });
+            eMan.AddComponent<CCollider>(ent5,
+                new CRectCollider(entitySize));
 
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
@@ -414,6 +430,7 @@ namespace Monogame_Test_Project
             renderer.font = Content.Load<SpriteFont>("type-face");
             renderer.pixelShader = Content.Load<Effect>("LightSpriteEffect");
             renderer.brickTex = Content.Load<Texture2D>("textures/smooth-brick");
+            renderer.flatNormal = Content.Load<Texture2D>("textures/FlatNormal");
 
             lSys = new LightingSystem(eMan, 12, renderer.pixelShader);
         }
@@ -484,7 +501,8 @@ namespace Monogame_Test_Project
             {
                 cam.SmoothZoom(1.0f, 5f, dt);
             }
-            
+
+
 
             iSys.Update(gameTime);
             aSys.Update(gameTime);
@@ -507,7 +525,7 @@ namespace Monogame_Test_Project
             //cam.Update(playerPos, dt);
 
             //cam.Update(player, dt);
-            cam.Update(playerPos, pRig.velocity, dt);
+            cam.Update(playerPos, dt);
 
             base.Update(gameTime);
         }
@@ -515,48 +533,8 @@ namespace Monogame_Test_Project
 
         protected override void Draw(GameTime gameTime)
         {
-            //Bitmask litSignature = new Bitmask((int)ComponentType.CTransform);
-            //litSignature[ComponentType.CPointLight] = true;
-            //litSignature[ComponentType.CTransform] = true;
-
-            //List<Entity> litEnts = eMan.GetEntities(litSignature).ToList();
-
-            /*
-            CPointLight pLight = (CPointLight)eMan.GetComponent<CPointLight>(pEnt.id);
-            CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
-
-
-
-            // set shader parameters (temp, set this inside of renderer one day)
-            renderer.pixelShader.Parameters["AmbientLightColor"].SetValue(
-                new Vector3(0.6f, 0.5f, 0.5f));
-
-            renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
-                new Vector3(viewportMousePos.X, viewportMousePos.Y + 50 * (float)Math.Sin(totalGameTime * 2), 15.0f),
-                new Vector3(viewportMousePos.X + 50 * (float)Math.Cos(totalGameTime * 2), viewportMousePos.Y + 20 * (float)Math.Sin(totalGameTime * 2), 5.0f),
-                new Vector3(cam.worldToScreen(pTrans.position + new Vector2(16, 16)), 20.0f)
-            });
-
-            renderer.pixelShader.Parameters["PointLightPositions"].SetValue(new[] {
-                new Vector3(viewportMousePos.X, viewportMousePos.Y, 15.0f),
-                new Vector3(viewportMousePos.X, viewportMousePos.Y, 15.0f),
-                new Vector3(cam.worldToScreen(pTrans.position + new Vector2(16, 16)), 20.0f)
-            });
-
-            renderer.pixelShader.Parameters["PointLightColors"].SetValue(new[] {
-                new Vector3(2.0f, 2.0f, 2.0f),
-                new Vector3(0.0f, 0.0f, 0.0f),
-                pLight.color,
-            });
-
-            renderer.pixelShader.Parameters["PointLightRadii"].SetValue(
-                new[] { 100.0f, 100.0f, pLight.radius });
-            */
-
             lSys.SetShaderParameters(cam);
-            //tilemap.Draw(renderer.spriteBatch, graphics.GraphicsDevice);
             renderer.Render(cam, tilemap);
-
             base.Draw(gameTime);
         }
     }

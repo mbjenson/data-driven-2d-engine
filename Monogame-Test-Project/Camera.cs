@@ -135,7 +135,12 @@ namespace viewStuff
         //    //this.Position += lookAtDist * this.lag * dt;
         //}
 
-        
+        public void Update(Vector2 followPoint, float dt)
+        {
+            Vector2 calcPos = Vector2.Lerp(this.Position, followPoint, 0.1f);
+            this.Position = new Vector2((float)Math.Round(calcPos.X), (float)Math.Round(calcPos.Y));
+        }
+
         public void Update(Vector2 followPoint, Vector2 entityVel, float dt)
         {
             Vector2 calcPos = Vector2.Lerp(this.Position, followPoint, 0.1f);
