@@ -162,12 +162,8 @@ ERRORS:
 
 CURRENT:
 
-    lighting system
+    Work on texture atlas.
 
-    brainstorming how to set shader parameters without hard coding in the parameter name
-    eg: shader.Parameters["param-name"].SetValue(...);
-    goal: shader.Parameters[some-string].SetValue(some-value);
-    * idea: 
 
     
 
