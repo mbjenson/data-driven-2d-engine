@@ -520,8 +520,8 @@ namespace Monogame_Test_Project
 
             //cam.Update(playerPos, dt);
 
-            //cam.Update(player, dt);
-            cam.Update(playerPos, dt);
+            cam.Update(player, dt);
+            //cam.Update(playerPos, dt);
 
             base.Update(gameTime);
         }
