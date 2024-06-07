@@ -46,19 +46,15 @@ sampler s0 = sampler_state
 };
 
 
-sampler2D NormalTextureSampler = sampler_state
-{
-    Texture = <NormalTexture>;
+//sampler2D NormalTextureSampler = sampler_state
+//{
+    //Texture = <NormalTexture>;
     //AddressU = Clamp;
     //AddressV = Clamp;
     //MagFilter = Point;
     //MinFilter = Point;
     //MipFilter = Point;
-};
-
-
-
-
+//};
 
 
 

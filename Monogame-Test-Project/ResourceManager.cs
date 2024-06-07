@@ -21,7 +21,7 @@ namespace resource {
     {
         private Dictionary<string, Texture2D> textures;
         private Dictionary<string, Rectangle> textureRects;
-        
+
         public TextureManager()
         {
             textureRects = new();
@@ -54,6 +54,7 @@ namespace resource {
             return textureRects[name];
         }
     }
+
 
 
 }

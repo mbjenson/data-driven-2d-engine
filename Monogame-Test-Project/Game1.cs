@@ -321,7 +321,7 @@ namespace Monogame_Test_Project
             
             //cam = new Camera2D(GraphicsDevice.Viewport); // old
             cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
-            cam.Zoom = 0.4f;
+            cam.Zoom = 0.3f;
             renderer = new RenderingSystem(eMan, graphics, tMan);
             
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
@@ -348,7 +348,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CTexture>(lightBlock, 
                 new CTexture("brick"));
             eMan.AddComponent<CPointLight>(lightBlock,
-                new CPointLight(100.0f, new Vector3(3.0f, 0.0f, 0.0f)));
+                new CPointLight(100.0f, new Vector3(3.0f, 0.0f, 0.0f), new Vector2(16, 16)));
             ent2 = lightBlock;
 
             Entity heavyBlock = eMan.CreateEntity();
@@ -361,11 +361,12 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CTexture>(heavyBlock,
                 new CTexture("brick"));
             eMan.AddComponent<CPointLight>(heavyBlock,
-                new CPointLight(100.0f, new Vector3(0.0f, 0.0f, 3.0f)));
+                new CPointLight(100.0f, new Vector3(0.0f, 0.0f, 3.0f), new Vector2(16, 16)));
 
             Entity ent3 = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(ent3, new CTransform() { position = new Vector2(-20f, -40f) });
-            eMan.AddComponent<CPointLight>(ent3, new CPointLight(100f, new Vector3(3.0f, 3.0f, 0.0f)));
+            eMan.AddComponent<CPointLight>(ent3, 
+                new CPointLight(100f, new Vector3(3.0f, 3.0f, 0.0f), new Vector2(16, 16)));
             eMan.AddComponent<CTexture>(ent3,
                 new CTexture("brick"));
             eMan.AddComponent<CRigidBody>(ent3,
@@ -374,8 +375,10 @@ namespace Monogame_Test_Project
                 new CRectCollider(entitySize));
 
             Entity ent4 = eMan.CreateEntity();
-            eMan.AddComponent<CTransform>(ent4, new CTransform() { position = new Vector2(-20f, -80f) });
-            eMan.AddComponent<CPointLight>(ent4, new CPointLight(100f, new Vector3(3.0f, 3.0f, 0.0f)));
+            eMan.AddComponent<CTransform>(ent4, 
+                new CTransform() { position = new Vector2(-20f, -80f) });
+            eMan.AddComponent<CPointLight>(ent4, 
+                new CPointLight(100f, new Vector3(3.0f, 3.0f, 0.0f), new Vector2(16, 16)));
             eMan.AddComponent<CTexture>(ent4,
                 new CTexture("brick"));
             eMan.AddComponent<CRigidBody>(ent4,
@@ -385,7 +388,8 @@ namespace Monogame_Test_Project
 
             Entity ent5 = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(ent5, new CTransform() { position = new Vector2(20f, 200f) });
-            eMan.AddComponent<CPointLight>(ent5, new CPointLight(100f, new Vector3(1.0f, 1.0f, 0.0f)));
+            eMan.AddComponent<CPointLight>(ent5, 
+                new CPointLight(100f, new Vector3(1.0f, 1.0f, 0.0f), new Vector2(16, 16)));
             eMan.AddComponent<CTexture>(ent5,
                 new CTexture("brick"));
             eMan.AddComponent<CRigidBody>(ent5,
@@ -493,12 +497,7 @@ namespace Monogame_Test_Project
             //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
 
 
-            if (cam.Zoom != 1.0f)
-            {
-                cam.SmoothZoom(1.0f, 5f, dt);
-            }
-
-
+            cam.SmoothZoom(1.0f, 3f, dt);
 
             iSys.Update(gameTime);
             aSys.Update(gameTime);
