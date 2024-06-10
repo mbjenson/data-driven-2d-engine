@@ -375,7 +375,7 @@ namespace ECS.Systems
 
                 pointLightPositions[i] = new Vector3(cam.worldToScreen(thisTrans.position + thisLight.offset), 10);
                 pointLightColors[i] = thisLight.color;
-                pointLightRadii[i] = thisLight.radius;
+                pointLightRadii[i] = thisLight.radius * cam.Zoom;
             }
             // set shader parameters
             effectParamPointLightPositions.SetValue(pointLightPositions);

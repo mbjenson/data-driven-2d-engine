@@ -152,9 +152,6 @@ Entity Component System:
 TODO
 =======================================
 
-Known Bugs:
-    * light radii are not manipulated correctly with camera zoom so that they are always the same size 
-      in screen space.
 
 ERRORS:
     potential issue involving the calculation of the movement. When the fps is lower (25-30), the 
@@ -299,7 +296,7 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = false; // lock at 60fps
+            IsFixedTimeStep = true; // lock at 60fps
 
             // init entities
             int numEnts = 6;
@@ -321,7 +318,7 @@ namespace Monogame_Test_Project
             
             //cam = new Camera2D(GraphicsDevice.Viewport); // old
             cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
-            cam.Zoom = 0.3f;
+            cam.Zoom = 0.4f;
             renderer = new RenderingSystem(eMan, graphics, tMan);
             
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
