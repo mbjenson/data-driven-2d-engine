@@ -43,9 +43,8 @@ namespace tilemap
 
     public class Tilemap
     {
-        
         public int tileDim = 16;
-        public int atlasNumTilesPerRow = 1;
+        public int atlasNumTilesPerRow = 4;
 
         // tilemap layers loaded from file
         public List<Dictionary<Vector2, int>> layers;
@@ -96,7 +95,7 @@ namespace tilemap
             return result;
         }
 
-        
+
     }
 }
 

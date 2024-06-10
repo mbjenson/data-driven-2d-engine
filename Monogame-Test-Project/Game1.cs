@@ -159,7 +159,13 @@ ERRORS:
 
 CURRENT:
 
-    Work on texture atlas.
+    make new tilemap file for the project
+
+    figure out a way to encode that a tile is animated into the tilemap. Implement a system into the renderer or tilemap
+    which can animate the tiles in the tilemap
+    idea for animation:
+        * very simple system which just looks at the game start time and does some math to determine 
+          which frame should be drawn. i.e. when calculating texture rect, it is RECTANGLE(x * which frame, y, frame width, frame height)
 
 
     
@@ -269,6 +275,7 @@ namespace Monogame_Test_Project
         ActionSystem aSys;
         InputSystem iSys;
         LightingSystem lSys;
+        AnimationSystem animSys;
 
         RenderingSystem renderer;
         TextureManager tMan;
@@ -397,6 +404,7 @@ namespace Monogame_Test_Project
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
             aSys = new ActionSystem(eMan);
+            animSys = new AnimationSystem(eMan);
 
             base.Initialize();
         }
@@ -417,11 +425,11 @@ namespace Monogame_Test_Project
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
 
-            tMan.AddTexture("tilesheet", Content.Load<Texture2D>("textures/tilesheet"));
+            tMan.AddTexture("atlas-dev", Content.Load<Texture2D>("textures/atlas-dev"));
             tMan.AddTexture("entity_tilesheet", Content.Load<Texture2D>("textures/smooth-brick"));
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32));
 
-            tilemap = new Tilemap("tilesheet");
+            tilemap = new Tilemap("atlas-dev");
             
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
@@ -499,6 +507,7 @@ namespace Monogame_Test_Project
             iSys.Update(gameTime);
             aSys.Update(gameTime);
             pSys.Update(gameTime);
+            animSys.Update(gameTime);
 
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
             CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);

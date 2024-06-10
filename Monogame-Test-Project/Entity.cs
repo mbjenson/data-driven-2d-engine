@@ -40,6 +40,7 @@ namespace ECS
         // CCamera, // lives in the scene and can follow a point I think
         CPointLight,
         CTexture,
+        CAnimation,
         Count,
     }
 
@@ -136,6 +137,33 @@ namespace ECS
             this.position.Y += y;
         }
     }
+
+    public class CAnimation : IComponent 
+    {
+        public string animationID;
+        public int frame;
+        public int numFrames;
+        public Vector2 offset;
+
+        public CAnimation() { }
+
+        public CAnimation(string animationID, int numFrames)
+        {
+            this.animationID = animationID;
+            this.offset = Vector2.Zero;
+            frame = 0;
+            this.numFrames = numFrames;
+        }
+
+        public CAnimation(string animationID, Vector2 offset, int numFrames)
+        {
+            this.animationID = animationID;
+            this.offset = offset;
+            frame = 0;
+            this.numFrames = numFrames;
+        }
+    }
+
 
     public class CTexture : IComponent
     {
