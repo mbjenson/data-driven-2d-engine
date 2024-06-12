@@ -6,6 +6,7 @@ using System;
 using System.Reflection.Metadata.Ecma335;
 using Microsoft.Xna.Framework.Graphics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace ECS
 {
@@ -103,7 +104,6 @@ namespace ECS
             { ComponentType.CPointLight, typeof(CPointLight) },
             { ComponentType.CTexture, typeof(CTexture) },
             { ComponentType.CAnimation, typeof(CAnimation) },
-            { ComponentType.CStaticBody, typeof(CStaticBody) },
             };
 
         private static Dictionary<Type, ComponentType> mComponentToEnum =
@@ -116,7 +116,6 @@ namespace ECS
             { typeof(CPointLight), ComponentType.CPointLight },
             { typeof(CTexture), ComponentType.CTexture },
             { typeof(CAnimation), ComponentType.CAnimation },
-            { typeof(CStaticBody), ComponentType.CStaticBody },
             };
 
         //private Dictionary<int, List<IComponent>> mComponents;
@@ -249,6 +248,20 @@ namespace ECS
             return false;
         }
 
+        public IComponent TryGetComponent<T>(int entityId) where T : IComponent
+        {
+            if (mComponents.TryGetValue(entityId, out var component))
+            {
+                foreach(var item in mComponents[entityId])
+                {
+                    if (item.GetType() == typeof(T))
+                    {
+                        return item;
+                    }
+                }
+            }
+            return null;
+        }
 
         public IComponent GetComponent<T>(int entityId) where T : IComponent
         {

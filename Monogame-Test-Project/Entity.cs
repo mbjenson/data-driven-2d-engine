@@ -309,10 +309,7 @@ namespace ECS
     }
 
 
-    public class CStaticBody : IComponent
-    {
-        public CStaticBody() { }
-    }
+    
 
 
 

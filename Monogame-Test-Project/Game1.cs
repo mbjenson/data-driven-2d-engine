@@ -154,13 +154,13 @@ TODO
 =======================================
 
 
-ERRORS:
+ISSUES:
     potential issue involving the calculation of the movement. When the fps is lower (25-30), the 
     player glides farther than when the fps is higher (165+).
 
 CURRENT:
-
-    make new tilemap file for the project
+    
+    getting collisions working with static static shapes
 
     figure out a way to encode that a tile is animated into the tilemap. Implement a system into the renderer or tilemap
     which can animate the tiles in the tilemap
@@ -168,8 +168,6 @@ CURRENT:
         * very simple system which just looks at the game start time and does some math to determine 
           which frame should be drawn. i.e. when calculating texture rect, it is RECTANGLE(x * which frame, y, frame width, frame height)
 
-
-    
 
     FIXED: camera issue where normal texture would not line up with the 
            brick correctly. This would only happen when I would render things
@@ -405,7 +403,7 @@ namespace Monogame_Test_Project
 
             Entity e6 = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(e6, new CTransform(new Vector2(100f, 100f)));
-            eMan.AddComponent<CStaticBody>(e6, new CStaticBody());
+            //eMan.AddComponent<CStaticBody>(e6, new CStaticBody());
             eMan.AddComponent<CTexture>(e6, new CTexture("brick"));
             eMan.AddComponent<CCollider>(e6, new CRectCollider(32f, 32f));
 
