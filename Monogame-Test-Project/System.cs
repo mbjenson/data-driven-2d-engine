@@ -13,6 +13,11 @@ using resource;
 using Microsoft.Xna.Framework.Content;
 using System.Security.Cryptography;
 using System.Net.Sockets;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.IO;
+using System.Runtime.InteropServices;
+
 
 namespace ECS.Systems
 {
@@ -20,14 +25,18 @@ namespace ECS.Systems
     public abstract class UpdateSystem
     {
         public abstract void Update(GameTime gameTime);
+        
     }
 
 
+    /*
+    Manages animated entities by switching between their animations appropriately
+    */
     public class AnimationSystem : UpdateSystem
     {
         private EntityManager eMan;
         private Bitmask signature;
-        private float tickRate = 0.5f;
+        private float tickRate = 0.2f;
         private float lastTick = 0.0f;
 
         public AnimationSystem(EntityManager eMan)
@@ -36,7 +45,6 @@ namespace ECS.Systems
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CAnimation] = true;
             signature[ComponentType.CTransform] = true;
-
         }
 
         public override void Update(GameTime gameTime)
@@ -58,6 +66,8 @@ namespace ECS.Systems
             }
         }
     }
+
+
 
 
     /*
@@ -186,14 +196,21 @@ namespace ECS.Systems
 
             pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
 
-            pixelShader.Parameters["NormalTexture"].SetValue(flatNormal);
-
-            Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasID);
             
+
+            Texture2D normalAtlas = textureManager.GetTexture(tilemap.textureNormalAtlasID);
+            Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasID);
+
+            // setting the normals for the tilemap as being flat for now so the light still affects them
+            pixelShader.Parameters["NormalTexture"].SetValue(normalAtlas);
+
             for (int i = 0; i < tilemap.layers.Count; i++)
             {
+
+                
                 foreach (var item in tilemap.layers[i])
                 {
+                    
                     Rectangle drect = new(
                         (int)item.Key.X * tilemap.tileDim,
                         (int)item.Key.Y * tilemap.tileDim,
@@ -213,7 +230,6 @@ namespace ECS.Systems
                     spriteBatch.Draw(textureAtlas, drect, source, Color.White);
                 }
             }
-
             spriteBatch.End();
         }
 
@@ -244,7 +260,6 @@ namespace ECS.Systems
             pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
 
             pixelShader.Parameters["NormalTexture"].SetValue(normalTex);
-            
 
             // TODO: LOAD IN THE ENTITY TEXTURE ATLAS HERE WHICH SHOULD CONTAIN ALL NECESSARY TEXTURES FOR ENTITIES
             Texture2D atlas = textureManager.GetTexture("entity_tilesheet");
@@ -396,7 +411,7 @@ namespace ECS.Systems
             pointLightPositions = new Vector3[maxNumLights];
             pointLightColors = new Vector3[maxNumLights];
             pointLightRadii = new float[maxNumLights];
-            ambientLightColor = new Vector3(0.3f, 0.3f, 0.3f);
+            ambientLightColor = new Vector3(0.7f, 0.7f, 0.7f);
         }
 
         public void SetShaderParameters(Camera2D cam)

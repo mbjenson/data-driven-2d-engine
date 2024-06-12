@@ -185,6 +185,8 @@ namespace ECS
     }
 
 
+
+
     public class CPointLight : IComponent
     {
         public float radius;

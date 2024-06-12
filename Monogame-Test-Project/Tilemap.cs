@@ -10,6 +10,8 @@ using viewStuff;
 
 namespace tilemap
 {
+
+
     /*
     Tilemap in general
 
@@ -47,27 +49,47 @@ namespace tilemap
         public int atlasNumTilesPerRow = 4;
 
         // tilemap layers loaded from file
+        //public Dictionary<string, Dictionary<Vector2, int>> layers;
         public List<Dictionary<Vector2, int>> layers;
+        
         public string textureAtlasID; // string name of texture stored in resourcemanager
+        public string textureNormalAtlasID;
 
         // this enum provides a more accesible way to concretely define which indecies within the layer
         // list correspond to which layer in the map, functionally.
-        //enum LayerType
-        //{
-        //    background,
-        //    midground,
-        //    foreground
-        //}
-        
+        enum LayerType
+        {
+            background,
+            midground,
+            midground_normal,
+            collision,
+            foreground,
+            COUNT
+        }
+
         public Tilemap(string textureAtlasID)
         {
             this.textureAtlasID = textureAtlasID;
-            layers = new List<Dictionary<Vector2, int>>();
-            
+            this.textureNormalAtlasID = "normal-atlas-dev";
+
+            layers = new List<Dictionary<Vector2, int>>((int)LayerType.COUNT);
+            //layers = new Dictionary<string, Dictionary<Vector2, int>>();
+
             // now we can simply add a layer (in order) for the tilemap which are rendered in order
             // and the layer indecies correspond to the enum present above (not yet implemented)
-            layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv"));
+            //layers.Add("midground", LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv"));
+            //layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv"));
+
+            // this must be done in correct order (I will automate this later using the map name + _layername or something like that).
+            layers.Add(LoadMap("../../../Content/MapData/map1/map1_background.csv"));
+            layers.Add(LoadMap("../../../Content/MapData/map1/map1_midground.csv"));
+            layers.Add(LoadMap("../../../Content/MapData/map1/map1_midground_normal.csv"));
+            layers.Add(LoadMap("../../../Content/MapData/map1/map1_collision.csv"));
+            layers.Add(LoadMap("../../../Content/MapData/map1/map1_foreground.csv"));
+
+
             //layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv"));
+
         }
 
         private Dictionary<Vector2, int> LoadMap(string filepath)
@@ -80,7 +102,7 @@ namespace tilemap
             while((line = reader.ReadLine()) != null)
             {
                 string[] items = line.Split(',');
-                for (int x = 0; x < items.Length; x++) 
+                for (int x = 0; x < items.Length; x++)
                 {
                     if (int.TryParse(items[x], out int value)) 
                     {
@@ -96,6 +118,35 @@ namespace tilemap
         }
 
 
+        //public bool isSolidAt(int x, int y)
+        //{
+        //    if (layers.ContainsKey("collisions"))
+        //    {
+        //        if (layers["collisions"][new Vector2(x, y)] > 0)
+        //        {
+        //            return true;
+        //        }
+        //    }
+        //    return false;
+        //}
+
+        
+
+        public bool isSolidAt(Vector2 pos)
+        {
+            if (layers[(int)LayerType.collision][pos] > 0)
+            {
+                return true;
+            }
+            //if (layers.ContainsKey("collisions"))
+            //{
+            //    if (layers["collisions"][pos] > 0)
+            //    {
+            //        return true;
+            //    }
+            //}
+            return false;
+        }
     }
 }
 

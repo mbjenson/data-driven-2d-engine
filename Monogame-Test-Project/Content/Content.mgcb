@@ -115,6 +115,18 @@
 /processorParam:TextureFormat=Color
 /build:textures/norma-map-test.png;textures/normal-map-test.png
 
+#begin textures/normal-atlas-dev.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:textures/normal-atlas-dev.png
+
 #begin textures/smooth-brick-normal.png
 /importer:TextureImporter
 /processor:TextureProcessor

@@ -18,6 +18,7 @@ using bitmask;
 using System.Net.Sockets;
 using Microsoft.Xna.Framework.Content;
 using resource;
+using System.Text.Json;
 
 
 /*
@@ -238,6 +239,7 @@ then give access to the other parts of the context so they can reference the tex
 
 namespace Monogame_Test_Project
 {
+
     public class Game1 : Game
     {
         // in future, read this in from JSON file
@@ -426,8 +428,10 @@ namespace Monogame_Test_Project
             // instead set changing values in the update loop and constant ones here
 
             tMan.AddTexture("atlas-dev", Content.Load<Texture2D>("textures/atlas-dev"));
+            tMan.AddTexture("normal-atlas-dev", Content.Load<Texture2D>("textures/normal-atlas-dev"));
             tMan.AddTexture("entity_tilesheet", Content.Load<Texture2D>("textures/smooth-brick"));
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32));
+            
 
             tilemap = new Tilemap("atlas-dev");
             
@@ -502,7 +506,7 @@ namespace Monogame_Test_Project
             //player = Vector2.Round(player); // IMPORTANT For pixel perfect camera to not bug out (!!!)
 
 
-            cam.SmoothZoom(1.0f, 3f, dt);
+            cam.SmoothZoom(1.0f, 4f, dt);
 
             iSys.Update(gameTime);
             aSys.Update(gameTime);
@@ -510,7 +514,7 @@ namespace Monogame_Test_Project
             animSys.Update(gameTime);
 
             CTransform pTrans = (CTransform)eMan.GetComponent<CTransform>(pEnt.id);
-            CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
+            //CRigidBody pRig = (CRigidBody)eMan.GetComponent<CRigidBody>(pEnt.id);
             playerPos = pTrans.position;
             playerPos += new Vector2(16, 16);
             //pTrans.position = worldMousePos;
