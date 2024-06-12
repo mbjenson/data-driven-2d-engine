@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using ECS;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -52,8 +53,10 @@ namespace tilemap
         //public Dictionary<string, Dictionary<Vector2, int>> layers;
         public List<Dictionary<Vector2, int>> layers;
         
-        public string textureAtlasID; // string name of texture stored in resourcemanager
-        public string textureNormalAtlasID;
+        public string textureAtlasId; // string name of texture stored in resourcemanager
+        public string normalAtlasId;
+
+        EntityManager eMan;
 
         // this enum provides a more accesible way to concretely define which indecies within the layer
         // list correspond to which layer in the map, functionally.
@@ -67,10 +70,12 @@ namespace tilemap
             COUNT
         }
 
-        public Tilemap(string textureAtlasID)
+        public Tilemap(string textureAtlasId, string normalAtlasId, EntityManager eMan)
         {
-            this.textureAtlasID = textureAtlasID;
-            this.textureNormalAtlasID = "normal-atlas-dev";
+            this.textureAtlasId = textureAtlasId;
+            this.normalAtlasId = normalAtlasId;
+
+            this.eMan = eMan;
 
             layers = new List<Dictionary<Vector2, int>>((int)LayerType.COUNT);
             //layers = new Dictionary<string, Dictionary<Vector2, int>>();
@@ -91,6 +96,9 @@ namespace tilemap
             //layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv"));
 
         }
+
+        
+
 
         private Dictionary<Vector2, int> LoadMap(string filepath)
         {
@@ -118,20 +126,6 @@ namespace tilemap
         }
 
 
-        //public bool isSolidAt(int x, int y)
-        //{
-        //    if (layers.ContainsKey("collisions"))
-        //    {
-        //        if (layers["collisions"][new Vector2(x, y)] > 0)
-        //        {
-        //            return true;
-        //        }
-        //    }
-        //    return false;
-        //}
-
-        
-
         public bool isSolidAt(Vector2 pos)
         {
             if (layers[(int)LayerType.collision][pos] > 0)
@@ -147,6 +141,23 @@ namespace tilemap
             //}
             return false;
         }
+
+
+        //public bool isSolidAt(int x, int y)
+        //{
+        //    if (layers.ContainsKey("collisions"))
+        //    {
+        //        if (layers["collisions"][new Vector2(x, y)] > 0)
+        //        {
+        //            return true;
+        //        }
+        //    }
+        //    return false;
+        //}
+
+
+
+
     }
 }
 

@@ -156,12 +156,10 @@ namespace ECS.Systems
         }
 
 
-
         public void Render(Camera2D cam, Tilemap tilemap)
         {
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
             gMan.GraphicsDevice.Clear(Color.Black);
-            
 
             DrawTileMap(cam, tilemap);
             // tilemap drawing process
@@ -169,7 +167,6 @@ namespace ECS.Systems
             // 2. draw tiles with greater or equal to height as entities and draw entities
             //    so that some entities can be drawn within the tiles
             DrawToCanvas(cam);
-
 
             // 2 perform post processing effects on the canvas
             // Post Processing();
@@ -196,10 +193,8 @@ namespace ECS.Systems
 
             pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
 
-            
-
-            Texture2D normalAtlas = textureManager.GetTexture(tilemap.textureNormalAtlasID);
-            Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasID);
+            Texture2D normalAtlas = textureManager.GetTexture(tilemap.normalAtlasId);
+            Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasId);
 
             // setting the normals for the tilemap as being flat for now so the light still affects them
             pixelShader.Parameters["NormalTexture"].SetValue(normalAtlas);
@@ -232,6 +227,7 @@ namespace ECS.Systems
             }
             spriteBatch.End();
         }
+
 
 
         private void DrawToCanvas(Camera2D cam)
@@ -411,7 +407,7 @@ namespace ECS.Systems
             pointLightPositions = new Vector3[maxNumLights];
             pointLightColors = new Vector3[maxNumLights];
             pointLightRadii = new float[maxNumLights];
-            ambientLightColor = new Vector3(0.7f, 0.7f, 0.7f);
+            ambientLightColor = new Vector3(0.6f, 0.6f, 0.6f);
         }
 
         public void SetShaderParameters(Camera2D cam)

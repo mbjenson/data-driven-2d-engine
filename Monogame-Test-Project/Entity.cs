@@ -41,6 +41,7 @@ namespace ECS
         CPointLight,
         CTexture,
         CAnimation,
+        CStaticBody,
         Count,
     }
 
@@ -168,20 +169,20 @@ namespace ECS
     public class CTexture : IComponent
     {
         public string textureId; // some way to id this texture (subject to change)
-        public Vector2 offset;
+        //public Vector2 offset;
 
         public CTexture() { }
         public CTexture(string textureId)
         {
             this.textureId = textureId;
-            offset = new Vector2(0, 0);
+            //offset = new Vector2(0, 0);
         }
 
-        public CTexture(string textureId, Vector2 offset)
-        {
-            this.textureId = textureId;
-            this.offset = offset;
-        }
+        //public CTexture(string textureId, Vector2 offset)
+        //{
+        //    this.textureId = textureId;
+        //    this.offset = offset;
+        //}
     }
 
 
@@ -306,6 +307,15 @@ namespace ECS
         //    velocity += acceleration;
         //}
     }
+
+
+    public class CStaticBody : IComponent
+    {
+        public CStaticBody() { }
+    }
+
+
+
 }
 
 

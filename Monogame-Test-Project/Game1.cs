@@ -305,10 +305,10 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = true; // lock at 60fps
+            IsFixedTimeStep = false; // lock at 60fps
 
             // init entities
-            int numEnts = 6;
+            int numEnts = 12;
             eMan = new EntityManager(numEnts);
             tMan = new TextureManager();
 
@@ -403,6 +403,12 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CCollider>(ent5,
                 new CRectCollider(entitySize));
 
+            Entity e6 = eMan.CreateEntity();
+            eMan.AddComponent<CTransform>(e6, new CTransform(new Vector2(100f, 100f)));
+            eMan.AddComponent<CStaticBody>(e6, new CStaticBody());
+            eMan.AddComponent<CTexture>(e6, new CTexture("brick"));
+            eMan.AddComponent<CCollider>(e6, new CRectCollider(32f, 32f));
+
             pSys = new PhysicsSystem(eMan);
             iSys = new InputSystem(eMan);
             aSys = new ActionSystem(eMan);
@@ -433,7 +439,7 @@ namespace Monogame_Test_Project
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32));
             
 
-            tilemap = new Tilemap("atlas-dev");
+            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev", eMan);
             
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");

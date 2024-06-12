@@ -19,7 +19,19 @@ namespace ECS.Systems
     {
         private EntityManager eMan;
         private Bitmask signature;
+        
 
+        //struct StaticRect
+        //{
+        //    public CTransform transform;
+        //    public CRectCollider collider;
+            
+        //    public StaticRect(CTransform transform, CRectCollider collider)
+        //    {
+        //        this.transform = transform;
+        //        this.collider = collider;
+        //    }
+        //}
 
         // used to pack data
         public struct PhysicsRect
@@ -78,6 +90,12 @@ namespace ECS.Systems
             UpdateMovement(dt);
             SolveCollisions(dt);
         }
+
+
+        //private void SolveCollisions(float dt)
+        //{
+            
+        //}
 
 
         private void SolveCollisions(float dt)
@@ -147,7 +165,6 @@ namespace ECS.Systems
                                     physicsObjects.Add(j, rectB);
                                 }
                             }
-
 
                             //ResolveCollision(tA, cA as CRectCollider,
                             //    rA, tB, cB as CRectCollider, rB);
@@ -241,7 +258,6 @@ namespace ECS.Systems
             float xOffset = Math.Min(toRightDist, toLeftDist);
             float yOffset = Math.Min(toTopDist, toBotDist);
 
-
             if (xOffset < yOffset)
             {
                 if (A.transform.X - B.transform.X > 0f)
@@ -273,7 +289,6 @@ namespace ECS.Systems
                     //colNormal.Y = B.transform.Y - A.transform.Y + cA.Height;
                 }
             }
-
             return colNormal;
         }
 
