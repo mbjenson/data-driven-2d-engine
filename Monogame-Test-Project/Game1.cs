@@ -35,6 +35,22 @@ using System.Text.Json;
 
 
 /*
+Explanations:
+
+    Tilemap not in ECS:
+        I chose not to make the tilemap a part of the ECS becuase it did not
+        seem right to flood the ECS with all the tiles.
+        Instead the tilemap is a different thing. This, however, does bring
+        up several questions. Firstly, I want to be able to use TILED to create
+        the maps and also create functionality for the tilemap through it like
+        solid blocks and other things like water or lava for example. This means
+        that certain parts of the tilemap must be put into the entity component
+        system. To do that I am going to give the tilemap some functions which
+        convert the data inside of itself into entities which the physics
+        and other systems connected to the ECS can see.
+*/
+
+/*
 =======================================
 IDEAS:
 =======================================
@@ -160,7 +176,16 @@ ISSUES:
 
 CURRENT:
     
-    getting collisions working with static static shapes
+    Consider how to make the ECS communicate with the tilemap in order to allow for 
+    storing of the information for map's collisions, water, chests, or other things
+    that could potentially be done inside of TILED. 
+        1. (CURRENT) implement the tilemap system as specified in the system.cs file.
+           One idea is that there could be a TilemapSystem which can communicate with the
+           ECS to solve collisions with map objects. the reason I really want to have the
+           collisions with the tilemap checked seperatly from the collisions with the
+           regular map is becuase I want to take advantage of the fast lookup (O(1)) time
+           that it takes to check for collisions using a list/array of tiles rather
+           than checking every entity against every tile. 
 
     figure out a way to encode that a tile is animated into the tilemap. Implement a system into the renderer or tilemap
     which can animate the tiles in the tilemap
@@ -175,6 +200,7 @@ CURRENT:
 
 
 [] entity manager
+    IDEAS:
     - add a sub system which divides all the entities up by location (quadtree) and
       allows for querying the system to get all entities within a certain area.
     - this will make the process of process of sifting through entities a lot easier.
@@ -208,6 +234,10 @@ CURRENT:
           this is much better than forward rendering which is O(num lights * num vertices)
         * however, it may not yield any major performance benefit becuase of the way that the shader is working
 
+[] physics
+    - when many objects are colliding, and moving together, they jitter. Check out website that you
+      used in the past to figure out impulse in order to add some type of relaxation to the collision
+      calculation, not sure what it is called.
 
 [] Entity Component System
     
@@ -303,7 +333,7 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = false; // lock at 60fps
+            IsFixedTimeStep = true; // lock at 60fps
 
             // init entities
             int numEnts = 12;
@@ -533,8 +563,8 @@ namespace Monogame_Test_Project
 
             //cam.Update(playerPos, dt);
 
-            cam.Update(player, dt);
-            //cam.Update(playerPos, dt);
+            //cam.Update(player, dt);
+            cam.Update(playerPos, dt);
 
             base.Update(gameTime);
         }

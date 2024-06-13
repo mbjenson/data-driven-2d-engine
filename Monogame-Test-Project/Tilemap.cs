@@ -70,12 +70,10 @@ namespace tilemap
             COUNT
         }
 
-        public Tilemap(string textureAtlasId, string normalAtlasId, EntityManager eMan)
+        public Tilemap(string textureAtlasId, string normalAtlasId)
         {
             this.textureAtlasId = textureAtlasId;
             this.normalAtlasId = normalAtlasId;
-
-            this.eMan = eMan;
 
             layers = new List<Dictionary<Vector2, int>>((int)LayerType.COUNT);
             //layers = new Dictionary<string, Dictionary<Vector2, int>>();
@@ -98,7 +96,16 @@ namespace tilemap
         }
 
         
+        /*
+        Initializes entities representing different kinds of objects
+        like water, lava, chests, and whatnot.
 
+
+        */
+        //public void LoadEntitiesFromMap(EntityManager eMan)
+        //{
+            
+        //}
 
         private Dictionary<Vector2, int> LoadMap(string filepath)
         {

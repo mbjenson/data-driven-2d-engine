@@ -433,6 +433,38 @@ namespace ECS.Systems
         }
     }
 
+
+    /*
+    The tilemap system handles bridging the gap between 
+    entities and the tilemap. This will handle collisions with 
+    collidable objects stored in the tilemap, detecting and responding
+    to the different types of tiles that the entity might stand on,
+    and whether or not an entity is in lava or water for example.
+    */
+    public class TilemapSystem : UpdateSystem
+    {
+        private EntityManager eMan;
+        private Bitmask signature;
+
+        public TilemapSystem(EntityManager eMan)
+        {
+            this.eMan = eMan;
+            this.signature = new Bitmask((int)ComponentType.Count);
+            signature[(int)ComponentType.CTransform] = true;
+            signature[(int)ComponentType.CCollider] = true;
+            signature[(int)ComponentType.CRigidBody] = true;
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            // get each entity, solve collisions and other things with tilemap
+        }
+
+        
+
+    }
+
+
     
     // (Still not sure if this class is the best idea, might be over doing it system wise here)
     /**
