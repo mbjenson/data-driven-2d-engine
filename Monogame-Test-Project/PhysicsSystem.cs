@@ -9,13 +9,23 @@ using System;
 namespace ECS.Systems
 {
 
-
+    /*
+     * Collision system
+     * 
+     * Handles simulating physical collisions between objects in the
+     * entity component system.
+     * 
+     * Notes: It currently uses some class based objects to pack data 
+     * which was originally structs but has changed over time. I may
+     * change this in the future to make it more clear or to 
+     * increase efficiency. But for now, the class based packing
+     * worked and makes sense to me. (6/16/2024)
+     * 
+     */
     public class CollisionSystem : UpdateSystem
     {
         private EntityManager eMan;
         private Bitmask signature;
-        
-
 
         private class Rect
         {
@@ -48,7 +58,7 @@ namespace ECS.Systems
             signature[ComponentType.CCollider] = true;
             signature[ComponentType.CTransform] = true;
 
-            
+
         }
 
         public override void Update(GameTime gameTime)
@@ -57,23 +67,10 @@ namespace ECS.Systems
             SolveCollisions(dt);
         }
 
-
-        /*
-        rethinking the physics system a little
-        
-        The idea is to have the basic signature be CTransform and CCollider
-        and then if we find a collision between two objects 
-        we can then check if one or both of them have rigidbodies 
-        which would allow us to have two functions, one that resolves a collision
-        between a static body and a rigidbody and one that resolves a collision between
-        two dynamic bodies.
-        */
-
         // in the future when there are different types of colliders, the system of trying to pack the
-        // information into struct will need to be altered to accomodate the new types.
+        // information into structs/classes will need to be altered to accomodate the new types.
         private void SolveCollisions(float dt)
         {
-
             Dictionary<int, Rect> physicsRects = new Dictionary<int, Rect>();
             Dictionary<int, int> intersections = new Dictionary<int, int>();
             List<Entity> entities = eMan.GetEntities(signature).ToList();
@@ -96,7 +93,6 @@ namespace ECS.Systems
                         physicsRects.Add(entities[i].id, new Rect(tA, cA as CRectCollider));
                     }
                 }
-
 
                 for (int j = 0; j < entities.Count; j++)
                 {
@@ -186,7 +182,6 @@ namespace ECS.Systems
                 }
             }
         }
-
 
 
         private bool AABBvsAABB(
@@ -429,7 +424,6 @@ namespace ECS.Systems
     {
         private EntityManager eMan;
         private Bitmask signature;
-        
 
         public MovementSystem(EntityManager eMan)
         {
@@ -479,6 +473,15 @@ namespace ECS.Systems
         }
     }
 
+    /*
+     * Physics System
+     * 
+     * This system combines other systems together to perform a physics simulation
+     * It currently uses:
+     *  Collision system
+     *  movement system
+     *  
+     */
     public class PhysicsSystem : UpdateSystem
     {
         private EntityManager eMan;
@@ -500,7 +503,7 @@ namespace ECS.Systems
             collisionSubsystem.Update(gameTime);
         }
     }
-
+}
     /**
      * Physics System
      * 
@@ -961,7 +964,7 @@ namespace ECS.Systems
 
     }
     */
-}
+
 
 
 

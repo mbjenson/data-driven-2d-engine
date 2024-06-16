@@ -17,6 +17,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 
 namespace ECS.Systems
@@ -27,6 +28,7 @@ namespace ECS.Systems
         public abstract void Update(GameTime gameTime);
         
     }
+
 
 
     /*
@@ -64,10 +66,13 @@ namespace ECS.Systems
                     }
                 }
             }
+
         }
     }
 
 
+
+    
 
 
     /*
@@ -161,7 +166,7 @@ namespace ECS.Systems
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
             gMan.GraphicsDevice.Clear(Color.Black);
 
-            DrawTileMap(cam, tilemap);
+            DrawTilemap(cam, tilemap);
             // tilemap drawing process
             // 1. draw background tiles
             // 2. draw tiles with greater or equal to height as entities and draw entities
@@ -178,10 +183,36 @@ namespace ECS.Systems
         }
 
 
+        private void DrawTilemapLayer(Camera2D cam, Tilemap tilemap, Dictionary<Vector2, int> layer, Texture2D textureAtlas)
+        {
+            foreach (var item in layer)
+            {
+
+                Rectangle drect = new(
+                    (int)item.Key.X * tilemap.tileDim,
+                    (int)item.Key.Y * tilemap.tileDim,
+                    tilemap.tileDim,
+                    tilemap.tileDim);
+
+
+                int x = item.Value % tilemap.atlasNumTilesPerRow;
+                int y = item.Value / tilemap.atlasNumTilesPerRow;
+
+                Rectangle source = new(
+                    x * tilemap.tileDim,
+                    y * tilemap.tileDim,
+                    tilemap.tileDim,
+                    tilemap.tileDim);
+
+                spriteBatch.Draw(textureAtlas, drect, source, Color.White);
+            }
+        }
+
+
         /*
          * this removes draw functionality from the tilemap (goal)
          */
-        private void DrawTileMap(Camera2D cam, Tilemap tilemap)
+        private void DrawTilemap(Camera2D cam, Tilemap tilemap)
         {
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
 
@@ -193,38 +224,16 @@ namespace ECS.Systems
 
             pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
 
-            Texture2D normalAtlas = textureManager.GetTexture(tilemap.normalAtlasId);
+            //Texture2D normalAtlas = textureManager.GetTexture(tilemap.normalAtlasId);
             Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasId);
 
             // setting the normals for the tilemap as being flat for now so the light still affects them
-            pixelShader.Parameters["NormalTexture"].SetValue(normalAtlas);
+            pixelShader.Parameters["NormalTexture"].SetValue(this.flatNormal);
+            
+            DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.background), textureAtlas);
+            DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.midground), textureAtlas);
+            DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.foreground), textureAtlas);
 
-            for (int i = 0; i < tilemap.layers.Count; i++)
-            {
-
-                
-                foreach (var item in tilemap.layers[i])
-                {
-                    
-                    Rectangle drect = new(
-                        (int)item.Key.X * tilemap.tileDim,
-                        (int)item.Key.Y * tilemap.tileDim,
-                        tilemap.tileDim,
-                        tilemap.tileDim);
-
-
-                    int x = item.Value % tilemap.atlasNumTilesPerRow;
-                    int y = item.Value / tilemap.atlasNumTilesPerRow;
-
-                    Rectangle source = new(
-                        x * tilemap.tileDim,
-                        y * tilemap.tileDim,
-                        tilemap.tileDim,
-                        tilemap.tileDim);
-
-                    spriteBatch.Draw(textureAtlas, drect, source, Color.White);
-                }
-            }
             spriteBatch.End();
         }
 
@@ -441,7 +450,7 @@ namespace ECS.Systems
     to the different types of tiles that the entity might stand on,
     and whether or not an entity is in lava or water for example.
     */
-    public class TilemapSystem : UpdateSystem
+    public class TilemapSystem
     {
         private EntityManager eMan;
         private Bitmask signature;
@@ -454,12 +463,12 @@ namespace ECS.Systems
             signature[(int)ComponentType.CCollider] = true;
             signature[(int)ComponentType.CRigidBody] = true;
         }
-
-        public override void Update(GameTime gameTime)
+        
+        // takes a tilemap and manages transfering the midground into the ECS
+        public void Init(Tilemap tilemap)
         {
-            // get each entity, solve collisions and other things with tilemap
+            
         }
-
         
 
     }
