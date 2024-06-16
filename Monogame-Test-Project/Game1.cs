@@ -464,10 +464,10 @@ namespace Monogame_Test_Project
             tMan.AddTexture("atlas-dev", Content.Load<Texture2D>("textures/atlas-dev"));
             tMan.AddTexture("normal-atlas-dev", Content.Load<Texture2D>("textures/normal-atlas-dev"));
             tMan.AddTexture("entity_tilesheet", Content.Load<Texture2D>("textures/smooth-brick"));
-            tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32));
-            
+            // this type of information could be stored inside of json file
+            tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32)); 
 
-            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev", eMan);
+            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev");
             
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
@@ -475,6 +475,7 @@ namespace Monogame_Test_Project
             renderer.brickTex = Content.Load<Texture2D>("textures/smooth-brick");
             renderer.flatNormal = Content.Load<Texture2D>("textures/FlatNormal");
 
+            // 12 is the number of lights the shader is expecting
             lSys = new LightingSystem(eMan, 12, renderer.pixelShader);
         }
 
