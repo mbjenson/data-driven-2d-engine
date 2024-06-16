@@ -176,27 +176,26 @@ ISSUES:
 
 CURRENT:
     
-    Consider how to make the ECS communicate with the tilemap in order to allow for 
-    storing of the information for map's collisions, water, chests, or other things
-    that could potentially be done inside of TILED. 
-        1. (CURRENT) implement the tilemap system as specified in the system.cs file.
-           One idea is that there could be a TilemapSystem which can communicate with the
-           ECS to solve collisions with map objects. the reason I really want to have the
-           collisions with the tilemap checked seperatly from the collisions with the
-           regular map is becuase I want to take advantage of the fast lookup (O(1)) time
-           that it takes to check for collisions using a list/array of tiles rather
-           than checking every entity against every tile. 
-
-    figure out a way to encode that a tile is animated into the tilemap. Implement a system into the renderer or tilemap
-    which can animate the tiles in the tilemap
-    idea for animation:
-        * very simple system which just looks at the game start time and does some math to determine 
-          which frame should be drawn. i.e. when calculating texture rect, it is RECTANGLE(x * which frame, y, frame width, frame height)
+    1. draw new 32x32 spritesheet for the landscape
+    
+    (very good explanation)
+    2. develop a way for the information in the tilemap to be included in the ECS and used in calculations
+       My current idea is to have a tilemap system which, at load time, gets the information from the tilemap
+       and then loads that into the ECS (things like trees or rocks which can collide the the player, cast shadows,
+       or do other things). Depending on which texture is used for the specific thing in the midground layer (the
+       layer that consists of things which the player can interact with potentially), the tilemap System (i'll 
+       call it that) will create entities with the Entity Manager which consist of certain things that I will
+       decide correspond for each tile placed in that layer. So lets say I place in a lightpost. The tilemap
+       system will see that and then generate an entity with a collider, a texture, a point light, and a transform.
+       The values for these things can be found in the TILED JSON file.
 
 
     FIXED: camera issue where normal texture would not line up with the 
            brick correctly. This would only happen when I would render things
            based on the camera's world view projection matrix.
+
+
+
 
 
 [] entity manager
@@ -333,7 +332,7 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = true; // lock at 60fps
+            IsFixedTimeStep = false; // lock at 60fps
 
             // init entities
             int numEnts = 12;
