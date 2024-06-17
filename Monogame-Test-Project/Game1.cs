@@ -174,6 +174,9 @@ ISSUES:
     potential issue involving the calculation of the movement. When the fps is lower (25-30), the 
     player glides farther than when the fps is higher (165+).
 
+BUGS:
+    figure out how to scale friction calculation by FPS. right now, when the fps is higher, things slow down faster which is not good.
+
 CURRENT:
     
     1. draw new 32x32 spritesheet for the landscape
