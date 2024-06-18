@@ -458,7 +458,7 @@ namespace ECS.Systems
                 //                 direction and size * intensity of friction * related to mass
 
                 //float kN = 0.025f;
-                float kN = 2.0f * dt; // this helps scale the fps and the friction better but it is not perfect
+                float kN = 2.5f * dt; // this helps scale the fps and the friction better but it is not perfect
 
                 //rA.acceleration += -rA.velocity * kN * (1f - (1f / rA.mass));
                 rA.acceleration += -rA.velocity * kN * (1f - (1f / rA.mass));
