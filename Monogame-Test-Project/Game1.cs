@@ -335,7 +335,8 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = false; // lock at 60fps
+            //IsFixedTimeStep = false; // lock at 60fps
+            IsFixedTimeStep = true; // lock at 60fps
 
             // init entities
             int numEnts = 12;

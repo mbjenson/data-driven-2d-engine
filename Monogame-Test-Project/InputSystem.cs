@@ -28,17 +28,34 @@ namespace ECS.Systems
         private EntityManager eMan;
         private Bitmask signature;
 
+        private const int MAX_PLAYER_COUNT = 4;
+        List<CController> controllers;
+
         public InputSystem(EntityManager eMan)
         {
             this.eMan = eMan;
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CController] = true;
+
+            controllers = new List<CController>(MAX_PLAYER_COUNT);
         }
 
-
-        //public void RegisterController(PlayerIndex playerIndex)
+        //public void CheckForNewController()
         //{
+        //    List<Entity> entities = eMan.GetEntities(signature).ToList();
+        //    foreach (Entity e in entities)
+        //    {
+        //        CController cont = (CController)eMan.GetComponent<CController>(e.id);
+        //        if (controllers.Count < MAX_PLAYER_COUNT)
+        //        {
+        //            controllers.Add(cont);
+        //        }
+        //    }
+        //}
 
+        //private void AddPlayer(PlayerIndex playerIndex)
+        //{
+        //    return;
         //}
 
         public override void Update(GameTime gameTime)
@@ -57,7 +74,7 @@ namespace ECS.Systems
                 Vector2 stickVals = new Vector2(
                             gamePadState.ThumbSticks.Left.X,
                             -gamePadState.ThumbSticks.Left.Y);
-                contA.movement = stickVals;
+                contA.momentum = stickVals;
             }
         }
     }

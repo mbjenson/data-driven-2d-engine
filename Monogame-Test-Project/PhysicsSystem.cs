@@ -445,7 +445,6 @@ namespace ECS.Systems
         // basic updating movement from velocity function
         private void UpdateMovement(float dt)
         {
-
             List<Entity> entities = eMan.GetEntities(signature).ToList();
             for (int i = 0; i < entities.Count; i++)
             {
@@ -457,8 +456,11 @@ namespace ECS.Systems
                 // calculate friction
                 // (TEMP) surface coefficient of dynamic friction
                 //                 direction and size * intensity of friction * related to mass
-                float kN = 0.025f;
 
+                //float kN = 0.025f;
+                float kN = 2.0f * dt; // this helps scale the fps and the friction better but it is not perfect
+
+                //rA.acceleration += -rA.velocity * kN * (1f - (1f / rA.mass));
                 rA.acceleration += -rA.velocity * kN * (1f - (1f / rA.mass));
 
                 // calculate velocity

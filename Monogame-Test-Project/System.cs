@@ -512,7 +512,7 @@ namespace ECS.Systems
                 // for now, all players have the same movement speed
                 float moveSpeed = 20f; // 10f
                 //rig.velocity += cont.movement * moveSpeed;
-                rig.acceleration += cont.movement * moveSpeed;
+                rig.acceleration += cont.momentum * moveSpeed;
                 // limit player speed gained by input this way
                 rig.acceleration += rig.velocity * -0.2f; // -0.06f;
             }
