@@ -187,13 +187,11 @@ namespace ECS.Systems
         {
             foreach (var item in layer)
             {
-
                 Rectangle drect = new(
                     (int)item.Key.X * tilemap.tileDim,
                     (int)item.Key.Y * tilemap.tileDim,
                     tilemap.tileDim,
                     tilemap.tileDim);
-
 
                 int x = item.Value % tilemap.atlasNumTilesPerRow;
                 int y = item.Value / tilemap.atlasNumTilesPerRow;
@@ -238,7 +236,6 @@ namespace ECS.Systems
         }
 
 
-
         private void DrawToCanvas(Camera2D cam)
         {
             List<Entity> ents = eMan.GetEntities(signature).ToList();
@@ -254,7 +251,6 @@ namespace ECS.Systems
                 transforms[i] = ((CTransform)eMan.GetComponent<CTransform>(ents[i].id));
             }
 
-
             // DRAW ENTITIES
             spriteBatch.Begin(
                 SpriteSortMode.BackToFront, blendState: BlendState.AlphaBlend,
@@ -263,7 +259,6 @@ namespace ECS.Systems
                 effect: pixelShader);
 
             pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
-
             pixelShader.Parameters["NormalTexture"].SetValue(normalTex);
 
             // TODO: LOAD IN THE ENTITY TEXTURE ATLAS HERE WHICH SHOULD CONTAIN ALL NECESSARY TEXTURES FOR ENTITIES
@@ -283,8 +278,6 @@ namespace ECS.Systems
                     null,
                     Color.White
                     );
-
-                
 
                 //spriteBatch.Draw(
                 //    atlas,
@@ -354,9 +347,9 @@ namespace ECS.Systems
         //    return;
         //    // shader.ambientlight = scene.getlight
         //    // shader.pointlightpositions = scene.visibellights
-
-
         //}
+
+
     }
 
 
@@ -416,7 +409,7 @@ namespace ECS.Systems
             pointLightPositions = new Vector3[maxNumLights];
             pointLightColors = new Vector3[maxNumLights];
             pointLightRadii = new float[maxNumLights];
-            ambientLightColor = new Vector3(0.6f, 0.6f, 0.6f);
+            ambientLightColor = new Vector3(0.3f);
         }
 
         public void SetShaderParameters(Camera2D cam)
@@ -425,7 +418,7 @@ namespace ECS.Systems
             CPointLight thisLight = null;
             CTransform thisTrans = null;
             // gather component values
-            for (int i = 0; i < ents.Count & i < maxNumLights; i++)
+            for (int i = 0; i < ents.Count && i < maxNumLights; i++)
             {
                 thisTrans = (CTransform)eMan.GetComponent<CTransform>(ents[i].id);
                 thisLight = (CPointLight)eMan.GetComponent<CPointLight>(ents[i].id);
@@ -498,6 +491,7 @@ namespace ECS.Systems
 
         public override void Update(GameTime gameTime)
         {
+            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
             List<Entity> entities = eMan.GetEntities(signature).ToList();
             foreach (Entity e in entities)
             {
@@ -510,11 +504,15 @@ namespace ECS.Systems
                 }
 
                 // for now, all players have the same movement speed
-                float moveSpeed = 20f; // 10f
+                float moveSpeed = 20f; // 20f
                 //rig.velocity += cont.movement * moveSpeed;
-                rig.acceleration += cont.momentum * moveSpeed;
+
+                rig.acceleration += cont.movement * moveSpeed;
+
                 // limit player speed gained by input this way
-                rig.acceleration += rig.velocity * -0.2f; // -0.06f;
+                //rig.velocity += cont.movement * moveSpeed * dt;
+                
+                rig.acceleration += rig.velocity * -0.1f; // -0.06f;
             }
         }
         

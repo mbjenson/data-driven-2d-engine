@@ -84,7 +84,8 @@ namespace ECS
     {
         public PlayerIndex controllerIndex;
         //public GamePadState gamePadState;
-        public Vector2 momentum;
+        public Vector2 movement;
+        
 
         public CController() { }
         public CController(PlayerIndex controllerIndex)

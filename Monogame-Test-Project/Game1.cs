@@ -375,6 +375,14 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CTexture>(pEnt, new CTexture("brick"));
             eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 1.0f, 0.0f), new Vector2(16, 16)));
 
+            Entity p2 = eMan.CreateEntity();
+            eMan.AddComponent<CController>(p2, new CController(PlayerIndex.Two));
+            eMan.AddComponent<CTransform>(p2, new CTransform() { position = new Vector2(0f, 0f) });
+            eMan.AddComponent<CRigidBody>(p2, new CRigidBody() { mass = 5f });
+            eMan.AddComponent<CCollider>(p2, new CRectCollider(entitySize));
+            eMan.AddComponent<CTexture>(p2, new CTexture("brick"));
+            eMan.AddComponent<CPointLight>(p2, new CPointLight(100.0f, new Vector3(0.0f, 1.0f, 0.0f), new Vector2(16, 16)));
+
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, 
                 new CTransform() { position = new Vector2(-40f, 10f) });
@@ -490,10 +498,11 @@ namespace Monogame_Test_Project
                 Exit();
 
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            totalGameTime += dt;
 
+            totalGameTime += dt;
             secondsCounter += dt;
             numFrames += 1;
+
             if (secondsCounter > 0)
             {
                 framesPerSecond = numFrames / secondsCounter;
