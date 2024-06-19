@@ -451,16 +451,30 @@ namespace ECS.Systems
         public TilemapSystem(EntityManager eMan)
         {
             this.eMan = eMan;
-            this.signature = new Bitmask((int)ComponentType.Count);
-            signature[(int)ComponentType.CTransform] = true;
-            signature[(int)ComponentType.CCollider] = true;
-            signature[(int)ComponentType.CRigidBody] = true;
+            //this.signature = new Bitmask((int)ComponentType.Count);
+            //signature[(int)ComponentType.CTransform] = true;
+            //signature[(int)ComponentType.CCollider] = true;
+            //signature[(int)ComponentType.CRigidBody] = true;
         }
         
-        // takes a tilemap and manages transfering the midground into the ECS
+        // takes a tilemap and manages transferring the midground into the ECS
         public void Init(Tilemap tilemap)
         {
-            
+            var layer = tilemap.GetLayer(Tilemap.LayerType.midground);
+            if (layer == null)
+            {
+                throw new Exception("TilemapSystem:Init(Tilemap tilemap) -> tilemap.GetLayer(Tilemap.LayerType.midground) is null");
+            }
+            foreach (var item in layer) {
+                if (item.Value > 0)
+                {
+                    Entity e = eMan.CreateEntity();
+                    eMan.AddComponent<CTransform>(e, new CTransform(item.Key));
+                    eMan.AddComponent<CCollider>(e, new CRectCollider(new Vector2(32f, 32f)));
+                    eMan.AddComponent<CTexture>(e, new CTexture("brick"));
+                    eMan.AddComponent<CRigidBody>(e, new CRigidBody(10f));
+                }
+            }
         }
         
 
@@ -512,7 +526,7 @@ namespace ECS.Systems
                 // limit player speed gained by input this way
                 //rig.velocity += cont.movement * moveSpeed * dt;
                 
-                rig.acceleration += rig.velocity * -0.1f; // -0.06f;
+                rig.acceleration += rig.velocity * -0.1f; // -0.2f // -0.06f;
             }
         }
         

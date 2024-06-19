@@ -30,6 +30,13 @@ namespace tilemap
     3. draw interactable layer (the player and trees and rocks etc)
     4. draw foreground (things that are between the camera and the player)
 
+
+
+    TODO:
+        come up with naming convension so that by naming each layer in accordance to a naming convension
+        and then exporting as CSV to the correct folder, the base name for the tilemap can be given and all other
+        things inside of it can be loaded in without hard coding the layer names. Just take base map name
+        and concatenate the convension layer names onto the end.
     */
     
 
@@ -46,18 +53,26 @@ namespace tilemap
         public string textureAtlasId; // string name of texture stored in resourcemanager
         public string normalAtlasId; // probably going to change this
 
-        EntityManager eMan;
 
         // this enum provides a more accesible way to concretely define which indecies within the layer
         // list correspond to which layer in the map, functionally.
         // currently used
         public enum LayerType // to be adjusted, I am not a huge fan of the way this is organized.
         {
+            // background is like the floor (walking paths, stone, grass, etc)
             background,
-            midground,
-            midground_normal,
+            // midground is things that the player is level with (standing stones, trees, chests, etc)
+            midground, 
+            // represents the normal maps that are ascribed to each texture in the midground layer
+            // instead of this, simply use another texture with all the normal map stuff on it (might be expensive)
+            midground_normal, 
+            // defines the collidable tiles in the tilemap. Right now I have this so that I can check if
+            // a tile is collidable in O(1) time instead of checking against every tile. I think in the future I will have
+            // the tilemap system hold onto this data(?) and make it available to the physics system upon load.
             collision,
+            // foreground is something that is between the player and the camera.
             foreground,
+            // number of layers in the tilemap
             Count
         }
 
@@ -115,16 +130,6 @@ namespace tilemap
             return null;
         }
         
-        /*
-        Initializes entities representing different kinds of objects
-        like water, lava, chests, and whatnot.
-
-
-        */
-        //public void LoadEntitiesFromMap(EntityManager eMan)
-        //{
-            
-        //}
 
         private Dictionary<Vector2, int> LoadMap(string filepath)
         {
@@ -154,17 +159,14 @@ namespace tilemap
 
         public bool isSolidAt(Vector2 pos)
         {
+            if (layers[LayerType.collision] == null)
+            {
+                throw new Exception("Tilemap:isSolidAt(...) -> collision layer is null");
+            }
             if (layers[LayerType.collision][pos] > 0)
             {
                 return true;
             }
-            //if (layers.ContainsKey("collisions"))
-            //{
-            //    if (layers["collisions"][pos] > 0)
-            //    {
-            //        return true;
-            //    }
-            //}
             return false;
         }
 

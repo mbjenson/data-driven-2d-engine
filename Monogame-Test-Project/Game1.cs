@@ -199,11 +199,19 @@ CURRENT:
 
 
 
+[] Level
+    IDEAS:
+    - each level can be represented as a JSON file which contains map filenames
+      enemy locations, ambient light information, and other things that
+      can be used to load in a level.
+
 [] context
     IDEAS:
     - context will contain all the systems and handle making sure that they work properly together.
     - add CreatePlayer() function which will create a new entity with a set of predefined components
       and attach the controller to it.
+
+
 
 [] entity manager
     IDEAS:

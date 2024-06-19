@@ -296,6 +296,13 @@ namespace ECS
 
         public CRigidBody() { }
 
+        public CRigidBody(float mass)
+        {
+            this.velocity = Vector2.Zero;
+            this.acceleration = Vector2.Zero;
+            this.mass = mass;
+        }
+
         public CRigidBody(Vector2 velocity, Vector2 acceleration, float mass)
         {
             this.velocity = velocity;
