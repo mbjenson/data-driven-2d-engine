@@ -38,21 +38,32 @@ namespace tilemap
         things inside of it can be loaded in without hard coding the layer names. Just take base map name
         and concatenate the convension layer names onto the end.
     */
-    
+
 
     public class Tilemap
     {
         public int tileDim = 16;
         public int atlasNumTilesPerRow = 4;
 
-        // tilemap layers loaded from file
+        // tilemap base filename (each layer is just an extension of thisname)
+        string baseMapFilename;
+        const string filepathPrefix = "../../../Content/MapData/";
 
+        // tilemap layers loaded from file
         private Dictionary<LayerType, Dictionary<Vector2, int>> layers;
         //public List<Dictionary<Vector2, int>> layers;
-        
+
         public string textureAtlasId; // string name of texture stored in resourcemanager
         public string normalAtlasId; // probably going to change this
 
+        private Dictionary<LayerType, string> layerNames = new()
+        {
+            { LayerType.background, "background" },
+            { LayerType.midground, "midground" },
+            { LayerType.midground_normal, "midground_normal" },
+            { LayerType.collision, "collision" },
+            { LayerType.foreground, "foreground" }
+        };
 
         // this enum provides a more accesible way to concretely define which indecies within the layer
         // list correspond to which layer in the map, functionally.
@@ -76,47 +87,29 @@ namespace tilemap
             Count
         }
 
-        public Tilemap(string textureAtlasId, string normalAtlasId)
+        public Tilemap(string textureAtlasId, string normalAtlasId, string baseMapFilename)
         {
             this.textureAtlasId = textureAtlasId;
             this.normalAtlasId = normalAtlasId;
 
+            //this.baseMapFilename = baseMapFilename;
+            this.baseMapFilename = "map1";
+
             layers = new Dictionary<LayerType, Dictionary<Vector2, int>>((int)LayerType.Count);
+
             LoadLayer(LayerType.background, "../../../Content/MapData/map1/map1_background.csv");
             LoadLayer(LayerType.midground, "../../../Content/MapData/map1/map1_midground.csv");
             LoadLayer(LayerType.midground_normal, "../../../Content/MapData/map1/map1_midground_normal.csv");
             LoadLayer(LayerType.collision, "../../../Content/MapData/map1/map1_collision.csv");
             LoadLayer(LayerType.foreground, "../../../Content/MapData/map1/map1_foreground.csv");
+        }   
 
-
-
-            //layers = new List<Dictionary<Vector2, int>>((int)LayerType.COUNT);
-
-            //layers = new Dictionary<string, Dictionary<Vector2, int>>();
-
-            // now we can simply add a layer (in order) for the tilemap which are rendered in order
-            // and the layer indecies correspond to the enum present above (not yet implemented)
-            //layers.Add("midground", LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv"));
-            //layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-mg.csv"));
-
-            // this must be done in correct order (I will automate this later using the map name + _layername or something like that).
-
-            //layers.Add(LoadMap("../../../Content/MapData/map1/map1_background.csv"));
-            //layers.Add(LoadMap("../../../Content/MapData/map1/map1_midground.csv"));
-            //layers.Add(LoadMap("../../../Content/MapData/map1/map1_midground_normal.csv"));
-            //layers.Add(LoadMap("../../../Content/MapData/map1/map1_collision.csv"));
-            //layers.Add(LoadMap("../../../Content/MapData/map1/map1_foreground.csv"));
-
-
-            //layers.Add(LoadMap("../../../Content/MapData/test-map/test-map_test-fg.csv"));
-
-        }
-
-        private void LoadLayer(LayerType layerType, string filepath)
+        // load in all layers from map folder
+        public void Load()
         {
-            if (!layers.ContainsKey(layerType))
+            for (LayerType layer = 0; layer < LayerType.Count; layer++)
             {
-                layers.Add(layerType, LoadMap(filepath));
+                LoadLayer(layer, filepathPrefix + baseMapFilename + "/" + "_" + GetLayerName(layer) + ".csv");
             }
         }
 
@@ -129,9 +122,40 @@ namespace tilemap
             }
             return null;
         }
-        
 
-        private Dictionary<Vector2, int> LoadMap(string filepath)
+
+        public bool isSolidAt(Vector2 pos)
+        {
+            if (layers[LayerType.collision] == null)
+            {
+                throw new Exception("Tilemap:isSolidAt(...) -> collision layer is null");
+            }
+            if (layers[LayerType.collision][pos] > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+
+        private void LoadLayer(LayerType layerType, string filepath)
+        {
+            if (!layers.ContainsKey(layerType))
+            {
+                layers.Add(layerType, LoadLayerFile(filepath));
+            }
+        }
+
+        
+        private string GetLayerName(LayerType layerType)
+        {
+            if (layerNames.ContainsKey(layerType)) {
+                return layerNames[layerType];
+            }
+            throw new Exception("Tilemap:GetLayerName(LayerType layerType) -> layerNames Dictionary does not contains given LayerType");
+        }
+
+        private Dictionary<Vector2, int> LoadLayerFile(string filepath)
         {
             Dictionary<Vector2, int> result = new();
             StreamReader reader = new(filepath);
@@ -157,18 +181,7 @@ namespace tilemap
         }
 
 
-        public bool isSolidAt(Vector2 pos)
-        {
-            if (layers[LayerType.collision] == null)
-            {
-                throw new Exception("Tilemap:isSolidAt(...) -> collision layer is null");
-            }
-            if (layers[LayerType.collision][pos] > 0)
-            {
-                return true;
-            }
-            return false;
-        }
+        
 
 
         //public bool isSolidAt(int x, int y)

@@ -150,7 +150,7 @@ namespace ECS.Systems
 
             spriteBatch = new SpriteBatch(gMan.GraphicsDevice);
 
-            SamplerState sState = new SamplerState();
+            //SamplerState sState = new SamplerState();
             
             //sState.AddressU = TextureAddressMode.Clamp;
             //sState.AddressV = TextureAddressMode.Clamp;
@@ -448,6 +448,8 @@ namespace ECS.Systems
         private EntityManager eMan;
         private Bitmask signature;
 
+        private Tilemap currentTilemap;
+
         public TilemapSystem(EntityManager eMan)
         {
             this.eMan = eMan;
@@ -460,11 +462,18 @@ namespace ECS.Systems
         // takes a tilemap and manages transferring the midground into the ECS
         public void Init(Tilemap tilemap)
         {
+            if (tilemap == null)
+            {
+                throw new ArgumentNullException("TilemapSystem:Init(Tilemap tilemap) -> tilemap is null");
+            }
+
+            this.currentTilemap = tilemap;
             var layer = tilemap.GetLayer(Tilemap.LayerType.midground);
             if (layer == null)
             {
                 throw new Exception("TilemapSystem:Init(Tilemap tilemap) -> tilemap.GetLayer(Tilemap.LayerType.midground) is null");
             }
+
             foreach (var item in layer) {
                 if (item.Value > 0)
                 {
