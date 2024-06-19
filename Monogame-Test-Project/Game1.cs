@@ -199,7 +199,11 @@ CURRENT:
 
 
 
-
+[] context
+    IDEAS:
+    - context will contain all the systems and handle making sure that they work properly together.
+    - add CreatePlayer() function which will create a new entity with a set of predefined components
+      and attach the controller to it.
 
 [] entity manager
     IDEAS:

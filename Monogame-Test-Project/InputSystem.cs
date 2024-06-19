@@ -29,7 +29,7 @@ namespace ECS.Systems
         private Bitmask signature;
 
         private const int MAX_PLAYER_COUNT = 4;
-        List<CController> controllerList;
+        //List<CController> controllerList;
 
         public InputSystem(EntityManager eMan)
         {
@@ -37,11 +37,34 @@ namespace ECS.Systems
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CController] = true;
 
-            controllerList = new List<CController>(MAX_PLAYER_COUNT);
+            //controllerList = new List<CController>(MAX_PLAYER_COUNT);
         }
 
 
-        
+        public override void Update(GameTime gameTime)
+        {
+            List<Entity> entities = eMan.GetEntities(signature).ToList();
+            foreach (Entity e in entities)
+            {
+                CController cont = (CController)eMan.GetComponent<CController>(e.id);
+                UpdatePlayerController(cont);
+            }
+        }
+
+        private void UpdatePlayerController(CController cont)
+        {
+            // get controller gamepad state
+            GamePadState gamePadState = GamePad.GetState(cont.controllerIndex);
+
+            // set controller component values based on input
+            // left thumb stick
+            gamePadState.ThumbSticks.Left.Normalize();
+            Vector2 stickVals = new Vector2(
+                        gamePadState.ThumbSticks.Left.X,
+                        -gamePadState.ThumbSticks.Left.Y);
+            cont.movement = stickVals;
+        }
+
 
 
         //public void CheckForNewInput()
@@ -52,7 +75,7 @@ namespace ECS.Systems
         //        GamePadState state = GamePad.GetState(i);
         //        if (state.IsConnected)
         //        {
-                    
+
         //        }
         //        j++;
         //    }
@@ -65,25 +88,5 @@ namespace ECS.Systems
         //    return;
         //}
 
-
-        public override void Update(GameTime gameTime)
-        {
-            List<Entity> entities = eMan.GetEntities(signature).ToList();
-            foreach (Entity e in entities)
-            {
-                CController contA = (CController)eMan.GetComponent<CController>(e.id);
-                // get controller gamepad state
-                GamePadState gamePadState = GamePad.GetState(contA.controllerIndex);
-
-                // set controller component values based on input
-
-                // left thumb stick
-                gamePadState.ThumbSticks.Left.Normalize();
-                Vector2 stickVals = new Vector2(
-                            gamePadState.ThumbSticks.Left.X,
-                            -gamePadState.ThumbSticks.Left.Y);
-                contA.movement = stickVals;
-            }
-        }
     }
 }
