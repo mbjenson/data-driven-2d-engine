@@ -276,6 +276,7 @@ namespace ECS.Systems
                 Rectangle texRect = texMan.GetTextureRect(textures[i].textureId);
                 // TODO: DRAW THE TEXTURE ATLAS HERE ALONGSIDE ITS CORRESPONDING RECTANGLE WHICH CAN BE GOTTEN FROM
                 //       THE TEXTURE MANAGER
+
                 spriteBatch.Draw(
                     atlas,
                     new Rectangle(
@@ -283,8 +284,26 @@ namespace ECS.Systems
                         texRect.Width,
                         texRect.Height),
                     null,
-                    Color.White
+                    Color.White,
+                    transforms[i].rotation,
+                    transforms[i].origin,
+                    SpriteEffects.None,
+                    0f
                     );
+
+                //spriteBatch.Draw(
+                //    atlas,
+                //    new Rectangle(
+                //        (int)transforms[i].X, (int)transforms[i].Y,
+                //        texRect.Width,
+                //        texRect.Height),
+                //    null,
+                //    Color.White,
+                //    transforms[i].rotation,
+                //    transforms[i].origin,
+                //    SpriteEffects.None,
+                //    0f
+                //    );
 
                 //spriteBatch.Draw(
                 //    atlas,
@@ -571,6 +590,7 @@ namespace ECS.Systems
             this.eMan = eMan;
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CController] = true;
+            signature[ComponentType.CTransform] = true;
             signature[ComponentType.CRigidBody] = true;
         }
 
@@ -583,12 +603,13 @@ namespace ECS.Systems
             {
                 CController cont = (CController)eMan.GetComponent<CController>(e.id);
                 CRigidBody rig = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
+                CTransform trans = (CTransform)eMan.GetComponent<CTransform>(e.id);
 
-                MovePlayer(cont.movement, rig);
+                UpdatePlayer(cont, rig, trans);
             }
         }
 
-        private void MovePlayer(Vector2 dir, CRigidBody rig)
+        private void UpdatePlayer(CController cont, CRigidBody rig, CTransform trans)
         {
             if (rig == null)
             {
@@ -599,12 +620,19 @@ namespace ECS.Systems
             float moveSpeed = 20f; // 20f
                                    //rig.velocity += cont.movement * moveSpeed;
 
-            rig.acceleration += dir * moveSpeed;
+            rig.acceleration += cont.leftStick * moveSpeed;
 
             // limit player speed gained by input this way
             //rig.velocity += cont.movement * moveSpeed * dt;
-
             rig.acceleration += rig.velocity * -0.1f; // -0.2f // -0.06f;
+
+            if (cont.rightStick.Length() > 0.5f)
+            {
+                float theta = (float)Math.Atan2(cont.rightStick.Y, cont.rightStick.X);
+                trans.rotation = theta;
+            }
+            
+            
         }
 
 

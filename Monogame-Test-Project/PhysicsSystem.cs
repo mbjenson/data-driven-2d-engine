@@ -8,6 +8,8 @@ using System;
 using System.Security.Principal;
 using System.Reflection.Metadata;
 
+
+
 namespace ECS.Systems
 {
 
@@ -41,6 +43,8 @@ namespace ECS.Systems
             collisionSubsystem.Update(gameTime);
         }
     }
+
+
 
 
     /*
@@ -113,11 +117,11 @@ namespace ECS.Systems
             SolveTilemapCollisions();
         }
 
-        
+
         private void SolveTilemapCollisions()
         {
             List<Entity> entities = eMan.GetEntities(dynamicRectSig).ToList();
-            
+
             for (int i = 0; i < entities.Count; i++)
             {
                 CTransform tA = (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
@@ -130,7 +134,6 @@ namespace ECS.Systems
 
                 if (tileMan.IsSolidAt(thisPos))
                 {
-                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
                     tileRect = tileMan.GetTileRect(thisPos);
                     tilePhysicsRect = new Rect(
                             new CTransform(new Vector2(tileRect.X, tileRect.Y)),
@@ -139,7 +142,6 @@ namespace ECS.Systems
                 }
                 else if (tileMan.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y)))
                 {
-                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
                     tileRect = tileMan.GetTileRect(new Vector2(thisPos.X + cA.Width, thisPos.Y));
                     tilePhysicsRect = new Rect(
                             new CTransform(new Vector2(tileRect.X, tileRect.Y)),
@@ -148,7 +150,6 @@ namespace ECS.Systems
                 }
                 else if (tileMan.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y + cA.Height)))
                 {
-                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
                     tileRect = tileMan.GetTileRect(new Vector2(thisPos.X + cA.Width, thisPos.Y + cA.Height));
                     tilePhysicsRect = new Rect(
                             new CTransform(new Vector2(tileRect.X, tileRect.Y)),
@@ -157,17 +158,17 @@ namespace ECS.Systems
                 }
                 else if (tileMan.IsSolidAt(new Vector2(thisPos.X, thisPos.Y + cA.Height)))
                 {
-                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
+                    //Debug.WriteLine("colliding Debug.with tilemap" + DateTime.UtcNow);
                     tileRect = tileMan.GetTileRect(new Vector2(thisPos.X, thisPos.Y + cA.Height));
                     tilePhysicsRect = new Rect(
                             new CTransform(new Vector2(tileRect.X, tileRect.Y)),
                             new CRectCollider(tileRect.Width, tileRect.Height));
                     ResolveCollision(tilePhysicsRect, new DynamicRect(tA, cA, rA));
                 }
-                
+
             }
 
-            
+
         }
 
 
@@ -438,6 +439,9 @@ namespace ECS.Systems
             {
                 penDepth = yMin;
             }
+
+            Debug.WriteLine("xMin: " + xMin + " yMin: " + yMin);
+
 
             float massBPerc = B.rigidbody.mass / massSum;
             float massAPerc = A.rigidbody.mass / massSum;

@@ -84,8 +84,8 @@ namespace ECS
     {
         public PlayerIndex controllerIndex;
         //public GamePadState gamePadState;
-        public Vector2 movement;
-        
+        public Vector2 leftStick;
+        public Vector2 rightStick;
 
         public CController() { }
         public CController(PlayerIndex controllerIndex)
@@ -98,8 +98,9 @@ namespace ECS
     public class CTransform : IComponent
     {
         public Vector2 position;
+        public float rotation = 0;
         // public (int / float?) height;
-         //public Vector2 origin; // not sure if I am going to use it
+         public Vector2 origin = Vector2.Zero; // not sure if I am going to use it
 
         public float X
         {
@@ -126,18 +127,26 @@ namespace ECS
         public CTransform(Vector2 position, Vector2 origin)
         {
             this.position = position;
+            this.origin = origin;
         }
 
+        
 
-        public void Move(Vector2 vec)
-        {
-            this.position += vec;
-        }
-        public void Move(float x, float y)
-        {
-            this.position.X += x;
-            this.position.Y += y;
-        }
+        //public CTransform(Vector2 position, Vector2 origin)
+        //{
+        //    this.position = position;
+        //}
+
+
+        //public void Move(Vector2 vec)
+        //{
+        //    this.position += vec;
+        //}
+        //public void Move(float x, float y)
+        //{
+        //    this.position.X += x;
+        //    this.position.Y += y;
+        //}
     }
 
     public class CAnimation : IComponent 

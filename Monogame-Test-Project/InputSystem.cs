@@ -59,10 +59,16 @@ namespace ECS.Systems
             // set controller component values based on input
             // left thumb stick
             gamePadState.ThumbSticks.Left.Normalize();
-            Vector2 stickVals = new Vector2(
+            gamePadState.ThumbSticks.Right.Normalize();
+            Vector2 leftStickVals = new Vector2(
                         gamePadState.ThumbSticks.Left.X,
                         -gamePadState.ThumbSticks.Left.Y);
-            cont.movement = stickVals;
+            cont.leftStick = leftStickVals;
+
+            Vector2 rightStickVals = new Vector2(
+                gamePadState.ThumbSticks.Right.X,
+                -gamePadState.ThumbSticks.Right.Y);
+            cont.rightStick = rightStickVals;
         }
 
 

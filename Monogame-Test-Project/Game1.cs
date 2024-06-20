@@ -184,7 +184,7 @@ BUGS:
 
 CURRENT:
     
-    1. draw new 32x32 spritesheet for the landscape
+    1. having a collider that is smaller than 32x32 causes bunch of bugs
     
     (very good explanation)
     2. develop a way for the information in the tilemap to be included in the ECS and used in calculations
@@ -203,6 +203,10 @@ CURRENT:
            based on the camera's world view projection matrix.
 
 
+[] Physics System overhaul. make the physics system make more sense in terms of
+   How things are calculated. Right now it uses a class-based system to pack data
+   which is not ideal and it does two passes over entities to check for 
+   entity-entity collisions and entity tilemap collisions.
 
 [] Level
     IDEAS:
@@ -390,19 +394,20 @@ namespace Monogame_Test_Project
 
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
-            eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
+            eMan.AddComponent<CTransform>(pEnt, new CTransform(new Vector2(0, 0)));
             eMan.AddComponent<CRigidBody>(pEnt, new CRigidBody() { mass = 5f });
             eMan.AddComponent<CCollider>(pEnt, new CRectCollider(entitySize));
             eMan.AddComponent<CTexture>(pEnt, new CTexture("brick"));
-            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 1.0f, 0.0f), new Vector2(16, 16)));
+            eMan.AddComponent<CPointLight>(pEnt, new CPointLight(100.0f, new Vector3(0.0f, 1.0f, 0.0f)));
+            
 
             Entity p2 = eMan.CreateEntity();
             eMan.AddComponent<CController>(p2, new CController(PlayerIndex.Two));
-            eMan.AddComponent<CTransform>(p2, new CTransform() { position = new Vector2(0f, 0f) });
+            eMan.AddComponent<CTransform>(p2, new CTransform(new Vector2(0, 0)));
             eMan.AddComponent<CRigidBody>(p2, new CRigidBody() { mass = 5f });
             eMan.AddComponent<CCollider>(p2, new CRectCollider(entitySize));
             eMan.AddComponent<CTexture>(p2, new CTexture("brick"));
-            eMan.AddComponent<CPointLight>(p2, new CPointLight(100.0f, new Vector3(0.0f, 1.0f, 0.0f), new Vector2(16, 16)));
+            eMan.AddComponent<CPointLight>(p2, new CPointLight(100.0f, new Vector3(0.0f, 1.0f, 0.0f)));
 
             Entity lightBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(lightBlock, 
