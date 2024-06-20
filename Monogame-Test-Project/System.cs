@@ -18,6 +18,7 @@ using System.Text.Json.Serialization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using static tilemap.Tilemap;
 
 
 namespace ECS.Systems
@@ -302,10 +303,12 @@ namespace ECS.Systems
             spriteBatch.End();
         }
 
+
         private void PostProcessing()
         {
             return;
         }
+
 
         private void DrawToScreen(Camera2D cam)
         {
@@ -327,6 +330,7 @@ namespace ECS.Systems
             
             spriteBatch.End();
         }
+
 
         private void DrawDebugText()
         {
@@ -374,6 +378,7 @@ namespace ECS.Systems
     * for now the lighting system has hard coded values for the shader and what not, I believe this will
       probably stay this way for the forseeable future.
     */
+
 
     public class LightingSystem
     {
@@ -450,47 +455,79 @@ namespace ECS.Systems
 
         private Tilemap currentTilemap;
 
+        private Dictionary<Vector2, int> collisionLayer;
+
         public TilemapSystem(EntityManager eMan)
         {
             this.eMan = eMan;
-            //this.signature = new Bitmask((int)ComponentType.Count);
-            //signature[(int)ComponentType.CTransform] = true;
-            //signature[(int)ComponentType.CCollider] = true;
-            //signature[(int)ComponentType.CRigidBody] = true;
+        }
+
+        public void SetTilemap(Tilemap tilemap)
+        {
+            if (currentTilemap == null)
+            {
+                throw new Exception("TilemapSystem:ProcessMap() -> TilemapSystem.currentTilemap = null");
+            }
+            this.currentTilemap = tilemap;
+            this.collisionLayer = currentTilemap.GetLayer(LayerType.collision);
         }
         
         // takes a tilemap and manages transferring the midground into the ECS
-        public void Init(Tilemap tilemap)
+        public void ProcessMap()
         {
-            if (tilemap == null)
-            {
-                throw new ArgumentNullException("TilemapSystem:Init(Tilemap tilemap) -> tilemap is null");
-            }
+            throw new NotImplementedException();
 
-            this.currentTilemap = tilemap;
-            var layer = tilemap.GetLayer(Tilemap.LayerType.midground);
-            if (layer == null)
-            {
-                throw new Exception("TilemapSystem:Init(Tilemap tilemap) -> tilemap.GetLayer(Tilemap.LayerType.midground) is null");
-            }
+            //var layer = tilemap.GetLayer(Tilemap.LayerType.midground);
+            //if (layer == null)
+            //{
+            //    throw new Exception("TilemapSystem:Init(Tilemap tilemap) -> tilemap.GetLayer(Tilemap.LayerType.midground) is null");
+            //}
 
-            foreach (var item in layer) {
-                if (item.Value > 0)
-                {
-                    Entity e = eMan.CreateEntity();
-                    eMan.AddComponent<CTransform>(e, new CTransform(item.Key));
-                    eMan.AddComponent<CCollider>(e, new CRectCollider(new Vector2(32f, 32f)));
-                    eMan.AddComponent<CTexture>(e, new CTexture("brick"));
-                    eMan.AddComponent<CRigidBody>(e, new CRigidBody(10f));
-                }
-            }
+            //foreach (var item in layer) {
+            //    if (item.Value > 0)
+            //    {
+            //        Entity e = eMan.CreateEntity();
+            //        eMan.AddComponent<CTransform>(e, new CTransform(item.Key));
+            //        eMan.AddComponent<CCollider>(e, new CRectCollider(new Vector2(32f, 32f)));
+            //        eMan.AddComponent<CTexture>(e, new CTexture("brick"));
+            //        eMan.AddComponent<CRigidBody>(e, new CRigidBody(10f));
+            //    }
+            //}
         }
-        
+
+
+        public bool IsSolidAt(Vector2 pos)
+        {
+            if (currentTilemap == null)
+            {
+                throw new Exception("TilemapSystem:IsSolidAt(Vector2 pos) -> TilemapSystem.currentlyTilemap is null");
+            }
+            
+            if (collisionLayer[pos] > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+
+        //public bool isSolidAt(int x, int y)
+        //{
+        //    if (layers.ContainsKey("collisions"))
+        //    {
+        //        if (layers["collisions"][new Vector2(x, y)] > 0)
+        //        {
+        //            return true;
+        //        }
+        //    }
+        //    return false;
+        //}
+
 
     }
 
 
-    
+
     // (Still not sure if this class is the best idea, might be over doing it system wise here)
     /**
      * Action System
@@ -547,8 +584,6 @@ namespace ECS.Systems
 
 
     }
-
-
 
 }
 

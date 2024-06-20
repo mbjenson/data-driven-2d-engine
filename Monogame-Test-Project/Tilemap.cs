@@ -93,6 +93,8 @@ namespace tilemap
             Count
         }
 
+
+
         public Tilemap(string textureAtlasId, string normalAtlasId, string baseMapFilename)
         {
             this.textureAtlasId = textureAtlasId;
@@ -103,6 +105,7 @@ namespace tilemap
 
             layers = new Dictionary<LayerType, Dictionary<Vector2, int>>((int)LayerType.Count);
         }   
+
 
         // load in all layers from map folder
         public void Load()
@@ -120,21 +123,7 @@ namespace tilemap
             {
                 return layers[layerType];
             }
-            return null;
-        }
-
-
-        public bool isSolidAt(Vector2 pos)
-        {
-            if (layers[LayerType.collision] == null)
-            {
-                throw new Exception("Tilemap:isSolidAt(...) -> collision layer is null");
-            }
-            if (layers[LayerType.collision][pos] > 0)
-            {
-                return true;
-            }
-            return false;
+            throw new Exception("Tilemap:GetLayer(LayerType layerType) -> layer is null");
         }
 
 
@@ -154,6 +143,7 @@ namespace tilemap
             }
             throw new Exception("Tilemap:GetLayerName(LayerType layerType) -> layerNames Dictionary does not contains given LayerType");
         }
+
 
         private Dictionary<Vector2, int> LoadLayerFile(string filepath)
         {
@@ -184,18 +174,7 @@ namespace tilemap
         
 
 
-        //public bool isSolidAt(int x, int y)
-        //{
-        //    if (layers.ContainsKey("collisions"))
-        //    {
-        //        if (layers["collisions"][new Vector2(x, y)] > 0)
-        //        {
-        //            return true;
-        //        }
-        //    }
-        //    return false;
-        //}
-
+        
 
 
 
