@@ -112,10 +112,7 @@ namespace tilemap
                 LoadLayer(layer, filepathPrefix + baseMapFilename + "/" + baseMapFilename + "_" + GetLayerName(layer) + ".csv");
             }
         }
-
-
         
-
 
         public Dictionary<Vector2, int> GetLayer(LayerType layerType)
         {

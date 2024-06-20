@@ -118,7 +118,7 @@ namespace ECS.Systems
         //int screenWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
         //int screenHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
 
-        public TextureManager textureManager;
+        public TextureManager texMan;
         public GraphicsDeviceManager gMan;
         public Bitmask signature;
         public EntityManager eMan;
@@ -128,11 +128,12 @@ namespace ECS.Systems
         //public TilemapManager tilemapManager;
         //public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
 
-        public RenderingSystem(EntityManager eMan, GraphicsDeviceManager gMan, TextureManager tMan)
+        public RenderingSystem(EntityManager eMan, GraphicsDeviceManager gMan, TextureManager texMan)
         {
+            //this.tileMan = tileMan;
             this.eMan = eMan;
             this.gMan = gMan;
-            this.textureManager = tMan;
+            this.texMan = texMan;
             // this.AnimationManager = aMan; // Later...
 
             this.debugText = new List<String>();
@@ -160,11 +161,13 @@ namespace ECS.Systems
         }
 
 
+        //public void Render(Camera2D cam, Tilemap tilemap)
         public void Render(Camera2D cam, Tilemap tilemap)
         {
             gMan.GraphicsDevice.SetRenderTarget(renderCanvas);
             gMan.GraphicsDevice.Clear(Color.Black);
 
+            //DrawTilemap(cam, tilemap);
             DrawTilemap(cam, tilemap);
             // tilemap drawing process
             // 1. draw background tiles
@@ -181,7 +184,7 @@ namespace ECS.Systems
             DrawToScreen(cam);
         }
 
-
+        //private void DrawTilemapLayer(Camera2D cam, Tilemap tilemap, Dictionary<Vector2, int> layer, Texture2D textureAtlas)
         private void DrawTilemapLayer(Camera2D cam, Tilemap tilemap, Dictionary<Vector2, int> layer, Texture2D textureAtlas)
         {
             foreach (var item in layer)
@@ -222,11 +225,16 @@ namespace ECS.Systems
             pixelShader.CurrentTechnique = pixelShader.Techniques["LightEffect"];
 
             //Texture2D normalAtlas = textureManager.GetTexture(tilemap.normalAtlasId);
-            Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasId);
+            //Texture2D textureAtlas = textureManager.GetTexture(tilemap.textureAtlasId);
+            Texture2D textureAtlas = texMan.GetTexture(tilemap.textureAtlasId);
 
             // setting the normals for the tilemap as being flat for now so the light still affects them
             pixelShader.Parameters["NormalTexture"].SetValue(this.flatNormal);
-            
+
+            //DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.background), textureAtlas);
+            //DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.midground), textureAtlas);
+            //DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.foreground), textureAtlas);
+
             DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.background), textureAtlas);
             DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.midground), textureAtlas);
             DrawTilemapLayer(cam, tilemap, tilemap.GetLayer(Tilemap.LayerType.foreground), textureAtlas);
@@ -261,11 +269,11 @@ namespace ECS.Systems
             pixelShader.Parameters["NormalTexture"].SetValue(normalTex);
 
             // TODO: LOAD IN THE ENTITY TEXTURE ATLAS HERE WHICH SHOULD CONTAIN ALL NECESSARY TEXTURES FOR ENTITIES
-            Texture2D atlas = textureManager.GetTexture("entity_tilesheet");
+            Texture2D atlas = texMan.GetTexture("entity_tilesheet");
             
             for (int i = 0; i < ents.Count; i++)
             {
-                Rectangle texRect = textureManager.GetTextureRect(textures[i].textureId);
+                Rectangle texRect = texMan.GetTextureRect(textures[i].textureId);
                 // TODO: DRAW THE TEXTURE ATLAS HERE ALONGSIDE ITS CORRESPONDING RECTANGLE WHICH CAN BE GOTTEN FROM
                 //       THE TEXTURE MANAGER
                 spriteBatch.Draw(
@@ -446,28 +454,39 @@ namespace ECS.Systems
     to the different types of tiles that the entity might stand on,
     and whether or not an entity is in lava or water for example.
     */
-    public class TilemapSystem
+    public class TilemapManager
     {
         private EntityManager eMan;
         private Bitmask signature;
 
-        private Tilemap currentTilemap;
+        public Tilemap tilemap;
 
         private Dictionary<Vector2, int> collisionLayer;
 
-        public TilemapSystem(EntityManager eMan, Tilemap tilemap)
+        public TilemapManager(EntityManager eMan, Tilemap tilemap)
         {
             this.eMan = eMan;
+            this.tilemap = tilemap;
+            this.tilemap.Load();
+            //if (tilemap == null)
+            //{
+            //    throw new Exception("TilemapManager:TilemapManager(EntityManager, Tilemap) -> TilemapManager.tilemap = null");
+            //}
 
-            if (tilemap == null)
-            {
-                throw new Exception("TilemapSystem:TilemapSystem(EntityManager, Tilemap) -> TilemapSystem.currentTilemap = null");
-            }
-            this.currentTilemap = tilemap;
-            this.collisionLayer = currentTilemap.GetLayer(LayerType.collision);
+            //this.tilemap = tilemap;
+            this.collisionLayer = tilemap.GetLayer(LayerType.collision);
         }
 
         
+        // takes a world position and gets the tile it resides in
+        public Rectangle GetTileRect(Vector2 pos)
+        {
+            Vector2 tileCoord = WorldToTile(pos);
+
+            return new Rectangle((int)tileCoord.X * tilemap.tileDim, (int)tileCoord.Y * tilemap.tileDim, tilemap.tileDim, tilemap.tileDim);
+        }
+
+
         // takes a tilemap and manages transferring the midground into the ECS
         public void ProcessMap()
         {
@@ -494,17 +513,17 @@ namespace ECS.Systems
 
         public Vector2 WorldToTile(Vector2 pos)
         {
-            return new Vector2((int)(pos.X / this.currentTilemap.tileDim),
-                (int)(pos.Y / this.currentTilemap.tileDim));
+            return new Vector2((int)(pos.X / tilemap.tileDim),
+                (int)(pos.Y / tilemap.tileDim));
         }
 
 
         // checks if an object in world space is colliding with a tile
         public bool IsSolidAt(Vector2 pos)
         {
-            if (currentTilemap == null)
+            if (tilemap == null)
             {
-                throw new Exception("TilemapSystem:IsSolidAt(Vector2 pos) -> TilemapSystem.currentlyTilemap is null");
+                throw new Exception("TilemapManager:IsSolidAt(Vector2 pos) -> TilemapManager.tilemap is null");
             }
             Vector2 tilePos = WorldToTile(pos);
             if (collisionLayer.ContainsKey(tilePos))

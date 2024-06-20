@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System;
 using System.Security.Principal;
+using System.Reflection.Metadata;
 
 namespace ECS.Systems
 {
@@ -25,13 +26,13 @@ namespace ECS.Systems
         private MovementSystem movementSubsystem;
         private CollisionSystem collisionSubsystem;
 
-        public PhysicsSystem(EntityManager eMan, TilemapSystem tSys)
+        public PhysicsSystem(EntityManager eMan, TilemapManager tileMan)
         {
             Debug.Assert(eMan != null);
             this.eMan = eMan;
 
             movementSubsystem = new MovementSystem(eMan);
-            collisionSubsystem = new CollisionSystem(eMan, tSys);
+            collisionSubsystem = new CollisionSystem(eMan, tileMan);
         }
 
         public override void Update(GameTime gameTime)
@@ -61,8 +62,7 @@ namespace ECS.Systems
         private Bitmask signature;
         private Bitmask dynamicRectSig;
 
-        private TilemapSystem tSys;
-
+        private TilemapManager tileMan;
 
         private class Rect
         {
@@ -87,11 +87,12 @@ namespace ECS.Systems
         }
 
 
-        public CollisionSystem(EntityManager eMan, TilemapSystem tSys)
+        public CollisionSystem(EntityManager eMan, TilemapManager tileMan)
         {
             Debug.Assert(eMan != null);
+            Debug.Assert(tileMan != null);
             this.eMan = eMan;
-            this.tSys = tSys;
+            this.tileMan = tileMan;
 
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CCollider] = true;
@@ -112,7 +113,7 @@ namespace ECS.Systems
             SolveTilemapCollisions();
         }
 
-
+        
         private void SolveTilemapCollisions()
         {
             List<Entity> entities = eMan.GetEntities(dynamicRectSig).ToList();
@@ -123,16 +124,47 @@ namespace ECS.Systems
                 CRectCollider cA = (CRectCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
                 CRigidBody rA = (CRigidBody)eMan.TryGetComponent<CRigidBody>(entities[i].id);
 
-
-                //Vector2 tilePos = tSys.WorldToTile(tA.position);
                 Vector2 thisPos = tA.position;
-                if (tSys.IsSolidAt(thisPos) || 
-                    tSys.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y)) ||
-                    tSys.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y + cA.Height)) ||
-                    tSys.IsSolidAt(new Vector2(thisPos.X, thisPos.Y + cA.Height)))
+                Rectangle tileRect;
+                Rect tilePhysicsRect;
+
+                if (tileMan.IsSolidAt(thisPos))
                 {
                     Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
+                    tileRect = tileMan.GetTileRect(thisPos);
+                    tilePhysicsRect = new Rect(
+                            new CTransform(new Vector2(tileRect.X, tileRect.Y)),
+                            new CRectCollider(tileRect.Width, tileRect.Height));
+                    ResolveCollision(tilePhysicsRect, new DynamicRect(tA, cA, rA));
                 }
+                else if (tileMan.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y)))
+                {
+                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
+                    tileRect = tileMan.GetTileRect(new Vector2(thisPos.X + cA.Width, thisPos.Y));
+                    tilePhysicsRect = new Rect(
+                            new CTransform(new Vector2(tileRect.X, tileRect.Y)),
+                            new CRectCollider(tileRect.Width, tileRect.Height));
+                    ResolveCollision(tilePhysicsRect, new DynamicRect(tA, cA, rA));
+                }
+                else if (tileMan.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y + cA.Height)))
+                {
+                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
+                    tileRect = tileMan.GetTileRect(new Vector2(thisPos.X + cA.Width, thisPos.Y + cA.Height));
+                    tilePhysicsRect = new Rect(
+                            new CTransform(new Vector2(tileRect.X, tileRect.Y)),
+                            new CRectCollider(tileRect.Width, tileRect.Height));
+                    ResolveCollision(tilePhysicsRect, new DynamicRect(tA, cA, rA));
+                }
+                else if (tileMan.IsSolidAt(new Vector2(thisPos.X, thisPos.Y + cA.Height)))
+                {
+                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
+                    tileRect = tileMan.GetTileRect(new Vector2(thisPos.X, thisPos.Y + cA.Height));
+                    tilePhysicsRect = new Rect(
+                            new CTransform(new Vector2(tileRect.X, tileRect.Y)),
+                            new CRectCollider(tileRect.Width, tileRect.Height));
+                    ResolveCollision(tilePhysicsRect, new DynamicRect(tA, cA, rA));
+                }
+                
             }
 
             

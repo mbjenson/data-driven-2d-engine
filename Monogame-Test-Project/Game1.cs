@@ -325,15 +325,12 @@ namespace Monogame_Test_Project
         InputSystem iSys;
         LightingSystem lSys;
         AnimationSystem animSys;
-        TilemapSystem tSys;
+        TilemapManager tileMan;
 
         RenderingSystem renderer;
-        TextureManager tMan;
-
-        Tilemap tilemap;
+        TextureManager texMan;
 
         Entity pEnt;
-        Entity ent2;
         Vector2 playerPos;
 
         //Tilemap tilemap;
@@ -359,9 +356,15 @@ namespace Monogame_Test_Project
             // init entities
             int numEnts = 12;
             eMan = new EntityManager(numEnts);
-            tMan = new TextureManager();
+            texMan = new TextureManager();
 
-            
+            tileMan = new TilemapManager(eMan,
+                new Tilemap("atlas-dev", "normal-atlas-dev", "map-dev"));
+            iSys = new InputSystem(eMan);
+            aSys = new ActionSystem(eMan);
+            animSys = new AnimationSystem(eMan);
+            pSys = new PhysicsSystem(eMan, tileMan);
+
 
             // must happen in this order for the camera to work properly
             // [
@@ -373,18 +376,18 @@ namespace Monogame_Test_Project
             //graphics.ApplyChanges(); // old
 
             // create viewport for camera
-            
+
             //cam = new Camera2D(GraphicsDevice.Viewport); // old
             cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
             cam.Zoom = 0.4f;
-            renderer = new RenderingSystem(eMan, graphics, tMan);
-            
+            renderer = new RenderingSystem(eMan, graphics, texMan);
+
             graphics.PreferredBackBufferWidth = WIN_WIDTH;
             graphics.PreferredBackBufferHeight = WIN_HEIGHT;
             graphics.ApplyChanges();
             // at this point the viweport is set to win width win height
             // ]
-            
+
             pEnt = eMan.CreateEntity();
             eMan.AddComponent<CController>(pEnt, new CController(PlayerIndex.One));
             eMan.AddComponent<CTransform>(pEnt, new CTransform() { position = new Vector2(0f, 0f) });
@@ -412,7 +415,6 @@ namespace Monogame_Test_Project
                 new CTexture("brick"));
             eMan.AddComponent<CPointLight>(lightBlock,
                 new CPointLight(100.0f, new Vector3(3.0f, 0.0f, 0.0f), new Vector2(16, 16)));
-            ent2 = lightBlock;
 
             Entity heavyBlock = eMan.CreateEntity();
             eMan.AddComponent<CTransform>(heavyBlock, 
@@ -466,14 +468,7 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CTexture>(e6, new CTexture("brick"));
             eMan.AddComponent<CCollider>(e6, new CRectCollider(32f, 32f));
 
-            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev", "map-dev");
-            tilemap.Load();
-
-            iSys = new InputSystem(eMan);
-            aSys = new ActionSystem(eMan);
-            animSys = new AnimationSystem(eMan);
-            tSys = new TilemapSystem(eMan, tilemap); // requires tilemap to be loaded (bad)
-            pSys = new PhysicsSystem(eMan, tSys);
+            
 
             base.Initialize();
         }
@@ -494,13 +489,12 @@ namespace Monogame_Test_Project
             // do not do it in the drawing loop it wastes resources
             // instead set changing values in the update loop and constant ones here
 
-            tMan.AddTexture("atlas-dev", Content.Load<Texture2D>("textures/atlas-dev"));
-            tMan.AddTexture("normal-atlas-dev", Content.Load<Texture2D>("textures/normal-atlas-dev"));
-            tMan.AddTexture("entity_tilesheet", Content.Load<Texture2D>("textures/smooth-brick"));
+            texMan.AddTexture("atlas-dev", Content.Load<Texture2D>("textures/atlas-dev"));
+            texMan.AddTexture("normal-atlas-dev", Content.Load<Texture2D>("textures/normal-atlas-dev"));
+            texMan.AddTexture("entity_tilesheet", Content.Load<Texture2D>("textures/smooth-brick"));
             // this type of information could be stored inside of json file
-            tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32)); 
+            texMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32)); 
 
-            
             
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
@@ -609,7 +603,7 @@ namespace Monogame_Test_Project
         protected override void Draw(GameTime gameTime)
         {
             lSys.SetShaderParameters(cam);
-            renderer.Render(cam, tilemap);
+            renderer.Render(cam, tileMan.tilemap);
             base.Draw(gameTime);
         }
     }
