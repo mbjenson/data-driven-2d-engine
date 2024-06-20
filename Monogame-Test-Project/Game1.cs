@@ -347,8 +347,8 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            //IsFixedTimeStep = false; // lock at 60fps
-            IsFixedTimeStep = true; // lock at 60fps
+            IsFixedTimeStep = false; // lock at 60fps
+            //IsFixedTimeStep = true; // lock at 60fps
 
             // init entities
             int numEnts = 12;
@@ -490,7 +490,7 @@ namespace Monogame_Test_Project
             // this type of information could be stored inside of json file
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32)); 
 
-            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev");
+            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev", "map-dev");
             
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");

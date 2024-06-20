@@ -40,10 +40,16 @@ namespace tilemap
     */
 
 
+    /*
+    File requirements
+    1. must have all layers accounted for with layer names being as listed
+    2. must export as csv file
+    */
+
     public class Tilemap
     {
-        public int tileDim = 16;
-        public int atlasNumTilesPerRow = 4;
+        public int tileDim = 32;
+        public int atlasNumTilesPerRow = 2;
 
         // tilemap base filename (each layer is just an extension of thisname)
         string baseMapFilename;
@@ -60,7 +66,7 @@ namespace tilemap
         {
             { LayerType.background, "background" },
             { LayerType.midground, "midground" },
-            { LayerType.midground_normal, "midground_normal" },
+            //{ LayerType.midground_normal, "midground_normal" },
             { LayerType.collision, "collision" },
             { LayerType.foreground, "foreground" }
         };
@@ -73,16 +79,16 @@ namespace tilemap
             // background is like the floor (walking paths, stone, grass, etc)
             background,
             // midground is things that the player is level with (standing stones, trees, chests, etc)
-            midground, 
+            midground,
             // represents the normal maps that are ascribed to each texture in the midground layer
             // instead of this, simply use another texture with all the normal map stuff on it (might be expensive)
-            midground_normal, 
+            //midground_normal, 
+            // foreground is something that is between the player and the camera.
+            foreground,
             // defines the collidable tiles in the tilemap. Right now I have this so that I can check if
             // a tile is collidable in O(1) time instead of checking against every tile. I think in the future I will have
             // the tilemap system hold onto this data(?) and make it available to the physics system upon load.
             collision,
-            // foreground is something that is between the player and the camera.
-            foreground,
             // number of layers in the tilemap
             Count
         }
@@ -93,15 +99,15 @@ namespace tilemap
             this.normalAtlasId = normalAtlasId;
 
             //this.baseMapFilename = baseMapFilename;
-            this.baseMapFilename = "map1";
+            this.baseMapFilename = "map-dev";
 
             layers = new Dictionary<LayerType, Dictionary<Vector2, int>>((int)LayerType.Count);
-
-            LoadLayer(LayerType.background, "../../../Content/MapData/map1/map1_background.csv");
-            LoadLayer(LayerType.midground, "../../../Content/MapData/map1/map1_midground.csv");
-            LoadLayer(LayerType.midground_normal, "../../../Content/MapData/map1/map1_midground_normal.csv");
-            LoadLayer(LayerType.collision, "../../../Content/MapData/map1/map1_collision.csv");
-            LoadLayer(LayerType.foreground, "../../../Content/MapData/map1/map1_foreground.csv");
+            Load();
+            //LoadLayer(LayerType.background, "../../../Content/MapData/map1/map1_background.csv");
+            //LoadLayer(LayerType.midground, "../../../Content/MapData/map1/map1_midground.csv");
+            //LoadLayer(LayerType.midground_normal, "../../../Content/MapData/map1/map1_midground_normal.csv");
+            //LoadLayer(LayerType.collision, "../../../Content/MapData/map1/map1_collision.csv");
+            //LoadLayer(LayerType.foreground, "../../../Content/MapData/map1/map1_foreground.csv");
         }   
 
         // load in all layers from map folder
@@ -109,7 +115,8 @@ namespace tilemap
         {
             for (LayerType layer = 0; layer < LayerType.Count; layer++)
             {
-                LoadLayer(layer, filepathPrefix + baseMapFilename + "/" + "_" + GetLayerName(layer) + ".csv");
+                LoadLayer(layer, filepathPrefix + baseMapFilename + "/" + baseMapFilename + "_" + GetLayerName(layer) + ".csv");
+                //Debug.WriteLine(filepathPrefix + baseMapFilename + "/" + baseMapFilename + "_" + GetLayerName(layer) + ".csv");
             }
         }
 
