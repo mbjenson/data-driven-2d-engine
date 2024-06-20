@@ -187,8 +187,6 @@ namespace ECS
     }
 
 
-
-
     public class CPointLight : IComponent
     {
         public float radius;
@@ -223,6 +221,7 @@ namespace ECS
             this.offset = offset;
         }
     }
+
 
     //public class CAmbientLight : IComponent
     //{

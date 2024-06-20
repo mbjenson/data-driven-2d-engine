@@ -325,6 +325,7 @@ namespace Monogame_Test_Project
         InputSystem iSys;
         LightingSystem lSys;
         AnimationSystem animSys;
+        TilemapSystem tSys;
 
         RenderingSystem renderer;
         TextureManager tMan;
@@ -465,10 +466,14 @@ namespace Monogame_Test_Project
             eMan.AddComponent<CTexture>(e6, new CTexture("brick"));
             eMan.AddComponent<CCollider>(e6, new CRectCollider(32f, 32f));
 
-            pSys = new PhysicsSystem(eMan);
+            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev", "map-dev");
+            tilemap.Load();
+
             iSys = new InputSystem(eMan);
             aSys = new ActionSystem(eMan);
             animSys = new AnimationSystem(eMan);
+            tSys = new TilemapSystem(eMan, tilemap); // requires tilemap to be loaded (bad)
+            pSys = new PhysicsSystem(eMan, tSys);
 
             base.Initialize();
         }
@@ -495,8 +500,7 @@ namespace Monogame_Test_Project
             // this type of information could be stored inside of json file
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32)); 
 
-            tilemap = new Tilemap("atlas-dev", "normal-atlas-dev", "map-dev");
-            tilemap.Load();
+            
             
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
@@ -506,6 +510,7 @@ namespace Monogame_Test_Project
 
             // 12 is the number of lights the shader is expecting
             lSys = new LightingSystem(eMan, 12, renderer.pixelShader);
+            
         }
 
 

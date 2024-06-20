@@ -93,8 +93,6 @@ namespace tilemap
             Count
         }
 
-
-
         public Tilemap(string textureAtlasId, string normalAtlasId, string baseMapFilename)
         {
             this.textureAtlasId = textureAtlasId;
@@ -106,7 +104,6 @@ namespace tilemap
             layers = new Dictionary<LayerType, Dictionary<Vector2, int>>((int)LayerType.Count);
         }   
 
-
         // load in all layers from map folder
         public void Load()
         {
@@ -115,6 +112,9 @@ namespace tilemap
                 LoadLayer(layer, filepathPrefix + baseMapFilename + "/" + baseMapFilename + "_" + GetLayerName(layer) + ".csv");
             }
         }
+
+
+        
 
 
         public Dictionary<Vector2, int> GetLayer(LayerType layerType)

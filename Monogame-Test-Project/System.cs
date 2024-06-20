@@ -126,8 +126,6 @@ namespace ECS.Systems
         public SpriteBatch spriteBatch;
 
         //public TilemapManager tilemapManager;
-
-        
         //public Dictionary<string, Texture2D> textureMap; // temporary until I get a proper resource management class set up
 
         public RenderingSystem(EntityManager eMan, GraphicsDeviceManager gMan, TextureManager tMan)
@@ -457,20 +455,18 @@ namespace ECS.Systems
 
         private Dictionary<Vector2, int> collisionLayer;
 
-        public TilemapSystem(EntityManager eMan)
+        public TilemapSystem(EntityManager eMan, Tilemap tilemap)
         {
             this.eMan = eMan;
-        }
 
-        public void SetTilemap(Tilemap tilemap)
-        {
-            if (currentTilemap == null)
+            if (tilemap == null)
             {
-                throw new Exception("TilemapSystem:ProcessMap() -> TilemapSystem.currentTilemap = null");
+                throw new Exception("TilemapSystem:TilemapSystem(EntityManager, Tilemap) -> TilemapSystem.currentTilemap = null");
             }
             this.currentTilemap = tilemap;
             this.collisionLayer = currentTilemap.GetLayer(LayerType.collision);
         }
+
         
         // takes a tilemap and manages transferring the midground into the ECS
         public void ProcessMap()
@@ -496,32 +492,43 @@ namespace ECS.Systems
         }
 
 
+        public Vector2 WorldToTile(Vector2 pos)
+        {
+            return new Vector2((int)(pos.X / this.currentTilemap.tileDim),
+                (int)(pos.Y / this.currentTilemap.tileDim));
+        }
+
+
+        // checks if an object in world space is colliding with a tile
         public bool IsSolidAt(Vector2 pos)
         {
             if (currentTilemap == null)
             {
                 throw new Exception("TilemapSystem:IsSolidAt(Vector2 pos) -> TilemapSystem.currentlyTilemap is null");
             }
-            
-            if (collisionLayer[pos] > 0)
+            Vector2 tilePos = WorldToTile(pos);
+            if (collisionLayer.ContainsKey(tilePos))
             {
-                return true;
+                if (collisionLayer[tilePos] > 0)
+                {
+                    return true;
+                }
             }
             return false;
         }
 
 
-        //public bool isSolidAt(int x, int y)
-        //{
-        //    if (layers.ContainsKey("collisions"))
-        //    {
-        //        if (layers["collisions"][new Vector2(x, y)] > 0)
-        //        {
-        //            return true;
-        //        }
-        //    }
-        //    return false;
-        //}
+        // public bool isSolidAt(int x, int y)
+        // {
+        //     if (layers.ContainsKey("collisions"))
+        //     {
+        //         if (layers["collisions"][new Vector2(x, y)] > 0)
+        //         {
+        //             return true;
+        //         }
+        //     }
+        //     return false;
+        // }
 
 
     }

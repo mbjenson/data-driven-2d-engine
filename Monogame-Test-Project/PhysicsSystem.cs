@@ -5,9 +5,42 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System;
+using System.Security.Principal;
 
 namespace ECS.Systems
 {
+
+    /*
+     * Physics System
+     * 
+     * This system combines other systems together to perform a physics simulation
+     * It currently uses:
+     *  Collision system
+     *  movement system
+     *  
+     */
+    public class PhysicsSystem : UpdateSystem
+    {
+        private EntityManager eMan;
+        private MovementSystem movementSubsystem;
+        private CollisionSystem collisionSubsystem;
+
+        public PhysicsSystem(EntityManager eMan, TilemapSystem tSys)
+        {
+            Debug.Assert(eMan != null);
+            this.eMan = eMan;
+
+            movementSubsystem = new MovementSystem(eMan);
+            collisionSubsystem = new CollisionSystem(eMan, tSys);
+        }
+
+        public override void Update(GameTime gameTime)
+        {
+            movementSubsystem.Update(gameTime);
+            collisionSubsystem.Update(gameTime);
+        }
+    }
+
 
     /*
      * Collision system
@@ -26,6 +59,10 @@ namespace ECS.Systems
     {
         private EntityManager eMan;
         private Bitmask signature;
+        private Bitmask dynamicRectSig;
+
+        private TilemapSystem tSys;
+
 
         private class Rect
         {
@@ -38,6 +75,7 @@ namespace ECS.Systems
             }
         }
 
+
         private class DynamicRect : Rect
         {
             public CRigidBody rigidbody;
@@ -49,39 +87,71 @@ namespace ECS.Systems
         }
 
 
-        public CollisionSystem(EntityManager eMan)
+        public CollisionSystem(EntityManager eMan, TilemapSystem tSys)
         {
             Debug.Assert(eMan != null);
             this.eMan = eMan;
+            this.tSys = tSys;
 
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CCollider] = true;
             signature[ComponentType.CTransform] = true;
 
-
+            dynamicRectSig = new Bitmask((int)ComponentType.Count);
+            dynamicRectSig[ComponentType.CCollider] = true;
+            dynamicRectSig[ComponentType.CTransform] = true;
+            dynamicRectSig[ComponentType.CRigidBody] = true;
         }
+
+
 
         public override void Update(GameTime gameTime)
         {
-            float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            SolveCollisions(dt);
+            //float dt = (float)gameTime.ElapsedGameTime.TotalSeconds
+            SolveCollisions();
+            SolveTilemapCollisions();
         }
+
+
+        private void SolveTilemapCollisions()
+        {
+            List<Entity> entities = eMan.GetEntities(dynamicRectSig).ToList();
+            
+            for (int i = 0; i < entities.Count; i++)
+            {
+                CTransform tA = (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
+                CRectCollider cA = (CRectCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
+                CRigidBody rA = (CRigidBody)eMan.TryGetComponent<CRigidBody>(entities[i].id);
+
+
+                //Vector2 tilePos = tSys.WorldToTile(tA.position);
+                Vector2 thisPos = tA.position;
+                if (tSys.IsSolidAt(thisPos) || 
+                    tSys.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y)) ||
+                    tSys.IsSolidAt(new Vector2(thisPos.X + cA.Width, thisPos.Y + cA.Height)) ||
+                    tSys.IsSolidAt(new Vector2(thisPos.X, thisPos.Y + cA.Height)))
+                {
+                    Debug.WriteLine("colliding with tilemap" + DateTime.UtcNow);
+                }
+            }
+
+            
+        }
+
 
         // in the future when there are different types of colliders, the system of trying to pack the
         // information into structs/classes will need to be altered to accomodate the new types.
-        private void SolveCollisions(float dt)
+        private void SolveCollisions()
         {
             Dictionary<int, Rect> physicsRects = new Dictionary<int, Rect>();
             Dictionary<int, int> intersections = new Dictionary<int, int>();
             List<Entity> entities = eMan.GetEntities(signature).ToList();
             for (int i = 0; i < entities.Count; i++)
             {
-                CTransform tA =
-                    (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
-                CCollider cA =
-                    (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
-
+                CTransform tA = (CTransform)eMan.GetComponent<CTransform>(entities[i].id);
+                CCollider cA = (CCollider)eMan.GetComponent<CRectCollider>(entities[i].id);
                 CRigidBody rA = (CRigidBody)eMan.TryGetComponent<CRigidBody>(entities[i].id);
+
                 if (!physicsRects.ContainsKey(entities[i].id))
                 {
                     if (rA != null)
@@ -277,7 +347,7 @@ namespace ECS.Systems
             // calculate resitution ( I will be using this hard coded for simplicity)
             //                              later add physics info class or
             //                              simply add it to rigidbody class
-            //float eps = 0.5f; // TEMP
+            // float eps = 0.5f; // TEMP
             float eps = 4f;
 
             // Calculate impulse scalar
@@ -475,36 +545,7 @@ namespace ECS.Systems
         }
     }
 
-    /*
-     * Physics System
-     * 
-     * This system combines other systems together to perform a physics simulation
-     * It currently uses:
-     *  Collision system
-     *  movement system
-     *  
-     */
-    public class PhysicsSystem : UpdateSystem
-    {
-        private EntityManager eMan;
-        private MovementSystem movementSubsystem;
-        private CollisionSystem collisionSubsystem;
-
-        public PhysicsSystem(EntityManager eMan)
-        {
-            Debug.Assert(eMan != null);
-            this.eMan = eMan;
-
-            movementSubsystem = new MovementSystem(eMan);
-            collisionSubsystem = new CollisionSystem(eMan);
-        }
-
-        public override void Update(GameTime gameTime)
-        {
-            movementSubsystem.Update(gameTime);
-            collisionSubsystem.Update(gameTime);
-        }
-    }
+    
 }
     /**
      * Physics System
