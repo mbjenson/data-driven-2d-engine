@@ -102,12 +102,6 @@ namespace tilemap
             this.baseMapFilename = "map-dev";
 
             layers = new Dictionary<LayerType, Dictionary<Vector2, int>>((int)LayerType.Count);
-            Load();
-            //LoadLayer(LayerType.background, "../../../Content/MapData/map1/map1_background.csv");
-            //LoadLayer(LayerType.midground, "../../../Content/MapData/map1/map1_midground.csv");
-            //LoadLayer(LayerType.midground_normal, "../../../Content/MapData/map1/map1_midground_normal.csv");
-            //LoadLayer(LayerType.collision, "../../../Content/MapData/map1/map1_collision.csv");
-            //LoadLayer(LayerType.foreground, "../../../Content/MapData/map1/map1_foreground.csv");
         }   
 
         // load in all layers from map folder
@@ -116,7 +110,6 @@ namespace tilemap
             for (LayerType layer = 0; layer < LayerType.Count; layer++)
             {
                 LoadLayer(layer, filepathPrefix + baseMapFilename + "/" + baseMapFilename + "_" + GetLayerName(layer) + ".csv");
-                //Debug.WriteLine(filepathPrefix + baseMapFilename + "/" + baseMapFilename + "_" + GetLayerName(layer) + ".csv");
             }
         }
 

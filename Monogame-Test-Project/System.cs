@@ -521,25 +521,31 @@ namespace ECS.Systems
                 CController cont = (CController)eMan.GetComponent<CController>(e.id);
                 CRigidBody rig = (CRigidBody)eMan.GetComponent<CRigidBody>(e.id);
 
-                if (cont == null || rig == null)
-                {
-                    throw new Exception("MovementSystem.Update: controller or rigidbody null");
-                }
-
-                // for now, all players have the same movement speed
-                float moveSpeed = 20f; // 20f
-                //rig.velocity += cont.movement * moveSpeed;
-
-                rig.acceleration += cont.movement * moveSpeed;
-
-                // limit player speed gained by input this way
-                //rig.velocity += cont.movement * moveSpeed * dt;
-                
-                rig.acceleration += rig.velocity * -0.1f; // -0.2f // -0.06f;
+                MovePlayer(cont.movement, rig);
             }
         }
-        
-        // private void UpdateControlledEntities(GameTime gameTime) {}
+
+        private void MovePlayer(Vector2 dir, CRigidBody rig)
+        {
+            if (rig == null)
+            {
+                throw new Exception("MovementSystem.Update: rigidbody null");
+            }
+
+            // for now, all players have the same movement speed
+            float moveSpeed = 20f; // 20f
+                                   //rig.velocity += cont.movement * moveSpeed;
+
+            rig.acceleration += dir * moveSpeed;
+
+            // limit player speed gained by input this way
+            //rig.velocity += cont.movement * moveSpeed * dt;
+
+            rig.acceleration += rig.velocity * -0.1f; // -0.2f // -0.06f;
+        }
+
+
+
     }
 
 

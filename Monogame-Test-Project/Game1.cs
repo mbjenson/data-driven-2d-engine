@@ -175,7 +175,12 @@ ISSUES:
     player glides farther than when the fps is higher (165+).
 
 BUGS:
-    figure out how to scale friction calculation by FPS. right now, when the fps is higher, things slow down faster which is not good.
+    (POTENTIAL FIX)
+    Scale friction for objects with FPS by adding Vector2 lastPos to
+    the CTransform. Then, in physicsSystem->UpdateMovement() set
+    the lastPos value and then use that to apply a more accurate
+    amount of friction. Currently, the friction is not scaled 100%
+    accuratly in the physics system (updatemovement).
 
 CURRENT:
     
@@ -347,8 +352,8 @@ namespace Monogame_Test_Project
 
         protected override void Initialize()
         {
-            IsFixedTimeStep = false; // lock at 60fps
-            //IsFixedTimeStep = true; // lock at 60fps
+            //IsFixedTimeStep = false; // unlocks fps
+            IsFixedTimeStep = true; // lock at 60fps
 
             // init entities
             int numEnts = 12;
@@ -491,6 +496,7 @@ namespace Monogame_Test_Project
             tMan.AddTextureRect("brick", new Rectangle(0, 0, 32, 32)); 
 
             tilemap = new Tilemap("atlas-dev", "normal-atlas-dev", "map-dev");
+            tilemap.Load();
             
             renderer.normalTex = Content.Load<Texture2D>("textures/smooth-brick-normal");
             renderer.font = Content.Load<SpriteFont>("type-face");
