@@ -304,6 +304,7 @@ namespace Monogame_Test_Project
         const int TARGET_HEIGHT = 270; //180; 
 
         Camera2D cam;
+        Camera2D debugCam;
 
         Vector2 worldMousePos;
         Vector2 viewportMousePos;
@@ -383,6 +384,9 @@ namespace Monogame_Test_Project
 
             //cam = new Camera2D(GraphicsDevice.Viewport); // old
             cam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
+            debugCam = new Camera2D(new Viewport(0, 0, TARGET_WIDTH, TARGET_HEIGHT));
+
+            debugCam.Zoom = 0.1f;
             cam.Zoom = 0.4f;
             renderer = new RenderingSystem(eMan, graphics, texMan);
 
@@ -559,6 +563,11 @@ namespace Monogame_Test_Project
             if (keyState.IsKeyDown(Keys.D))
             {
                 player = player + new Vector2(moveSpeed * dt, 0);
+            }
+
+            if (keyState.IsKeyDown(Keys.G))
+            {
+
             }
 
             if (GamePad.GetState(PlayerIndex.One).IsButtonDown(Buttons.A))
