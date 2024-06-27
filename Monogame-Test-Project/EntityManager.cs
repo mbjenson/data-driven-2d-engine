@@ -12,86 +12,17 @@ namespace ECS
 {
     public class EntityManager
     {
-        /*
-        Entity Manager
-
-        What it will do:
-
-            The entity manager will manage the creation, storage, and retreval
-            of entities in the scene
-
-        How will the entities be represented:
-
-            The entities will be represented as integer IDs
-
-        how will the components be represented
-
-            the components will be stored as PODs (plain ol' data) or structs
-
-        how will the components be retreived
-
-            systems will query the entity manager for all the components it needs
-            by given a signiature (bitstring) which is compared to all of the items
-            to see which of them have the correct items
-            and the manager will return a list of references to the actual data perhaps
-
-        how will the components be stored
-
-            the components will be stored in arrays which contain the data
-
-
-
-
-        ****** BELOW HERE IS GOLD ******* GOLD!!! ******
-
-        **************************** LORD THANK YOU ********************************
-
-        contains list of entities which contain all the correct types of components
-        loop through this list of entity id's which you can then use to query the
-        manager and get the corresponding components from the manager
-
-        ****************************************************************************
-
-        requires a dictionary mapping from ComponentType to bitmask index
-
-
-        enum ComponentEnum:
-            CTransform,
-            CRigidBody,
-            CController,
-            CTexture,
-
-        Cool trick: place the ComponentEnum.Count to be the place item therefore containing
-        the number of enums in the enum
-
-
-        entity:
-            int id
-            bitmask componentTypes = {} (length = num component types, init to all 0s)
-
-
-        the components will be stored such that an entityId will index into
-        the array where an index represented an entity and each index is a list
-        of IComponents.
-
-
-
-        will store array of entities which will either store the components themselves or
-        store a bitset which tells which types of entites it has or not. benefit of using
-        a bitarray (bitset in c++) is that you can use the & bitwise operator on the
-        set to check if the entity contains the desired components
-
-        idea: entity is an int id (index into table of components)
-        when querying to get the components which contain the correct components
-
-
-
-        */
-
-        // TODO: complete implementation described above and online
-
+       
+        /*Entity Manager
+         * The entity manager is the backbone of this entity component system.
+         * It manages the creation, storage, and retrieval of entities aswell as their components.
+         * This ECS uses a bitmask in order to retrieve the entities which have the correct components for each system.
+         * Each system contains a reference to an entity manager. Each system queries the entity manager for
+         *  a list of entities which have the correct components which it can then use to retrieve the actual 
+         *  components
+         */
+        
         private List<Entity> mEntities;
-
         private Dictionary<int, List<IComponent>> mComponents;
 
         private static Dictionary<ComponentType, Type> mEnumToComponent =
@@ -224,20 +155,6 @@ namespace ECS
         }
 
 
-        // don't have this for now too complicated and unecessary
-
-        //public void RemoveComponent<T>(Entity entity) where T : IComponent
-        //{
-        //    Debug.Assert(mComponents.ContainsKey(entity.id
-        //    for (int i = 0; i < mComponents[entity.id].Count; i++)
-        //    {
-        //        if (mComponents[entity.id][i].GetType() == typeof(T))
-        //        {
-        //            mComponents[entity.id].RemoveAt(i);
-        //        }
-        //    }
-        //}
-
         public bool HasComponent<T>(int entityId) where T : IComponent 
         {
             Debug.Assert(mComponents.ContainsKey(entityId));
@@ -286,16 +203,7 @@ namespace ECS
 
 
 
-        /*
-        IEnumerable<int> GetEntities(int signature)
-            List<int> entities = new List<int>();
-            foreach (var entity in mEntities) {
-                if (entity.componentMask & signature) {
-                    entities.Add(entity);
-                }
-            }
-            return entities;
-        */
+        
 
         public IEnumerable<Entity> GetEntities(Bitmask signature)
         {
@@ -306,17 +214,7 @@ namespace ECS
                 {
                     entities.Add(entity);
                 }
-                //if (entity.cMask.AND(signature))
-                //{
-                //    Debug.WriteLine("after AND: ");
-                //    entity.cMask.AND(signature).Print();
-                //    Debug.WriteLine("entity mask: ");
-                //    entity.cMask.Print();
-                //    Debug.WriteLine("signature mask: ");
-                //    signature.Print();
-
-                //    entities.Add(entity);
-                //}
+                
             }
             return entities;
         }

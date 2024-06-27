@@ -17,27 +17,13 @@ Note:
 
 namespace ECS
 {
-    // TODO: add physics info?
-    // TODO: add controller input info?
-    //      movement info containing a list of pairs which map
-    //      controller input to player actions in game.
-    //      the player actions is an enum containing things like:
-    //              MOVEUP, MOVELEFT, MOVERIGHT, MOVEDOWN, 
-    //      a player with a CController will have the necessary information to know how to handle it
-    //      the CController binds that entity to the controller's input
-    //      so that the input system can take the input given 
-    //      and apply it to the player according to the wishes specific in the controller(?)
-
-    // TODO: add camera component
-
+   
     public enum ComponentType
     {
         CTransform,
         CCollider,
         CRigidBody,
         CController,
-        // CMovement, // contains information like movement speed (pondering if I will use this...)
-        // CCamera, // lives in the scene and can follow a point I think
         CPointLight,
         CTexture,
         CAnimation,
@@ -62,18 +48,6 @@ namespace ECS
             this.id = id;
             this.cMask = cMask;
         }
-
-
-        //public void AddComponentType(ComponentType type)
-        //{
-        //    this.cMask[(int)type] = true;
-        //}
-
-        //public void RemoveComponentType(ComponentType type)
-        //{
-        //    this.cMask[(int)type] = false;
-        //}
-
     }
 
     // base component class
@@ -83,7 +57,6 @@ namespace ECS
     public class CController : IComponent
     {
         public PlayerIndex controllerIndex;
-        //public GamePadState gamePadState;
         public Vector2 leftStick;
         public Vector2 rightStick;
 
@@ -99,8 +72,7 @@ namespace ECS
     {
         public Vector2 position;
         public float rotation = 0;
-        // public (int / float?) height;
-         public Vector2 origin = Vector2.Zero; // not sure if I am going to use it
+        public Vector2 origin = Vector2.Zero;
 
         public float X
         {
@@ -130,23 +102,6 @@ namespace ECS
             this.origin = origin;
         }
 
-        
-
-        //public CTransform(Vector2 position, Vector2 origin)
-        //{
-        //    this.position = position;
-        //}
-
-
-        //public void Move(Vector2 vec)
-        //{
-        //    this.position += vec;
-        //}
-        //public void Move(float x, float y)
-        //{
-        //    this.position.X += x;
-        //    this.position.Y += y;
-        //}
     }
 
     public class CAnimation : IComponent 
@@ -232,11 +187,6 @@ namespace ECS
     }
 
 
-    //public class CAmbientLight : IComponent
-    //{
-    //    Vector3 color;
-    //}
-
 
     public class CCollider : IComponent
     {
@@ -246,18 +196,7 @@ namespace ECS
     public class CRectCollider : CCollider
     {
         public Vector2 size;
-        //public float X
-        //{
-        //    get { return size.X; }
-        //    set { size.X = value; }
-        //}
-
-        //public float Y
-        //{
-        //    get { return size.Y; }
-        //    set { size.Y = value; }
-        //}
-
+        
         public float Width
         {
             get { return size.X; }
@@ -294,8 +233,6 @@ namespace ECS
         }
     }
 
-    // idea: maybe create a rigid body component which incorporates the 
-    // collider? nvm bad idea, that I am working upon
     public class CRigidBody : IComponent
     {
         public Vector2 velocity;
@@ -318,10 +255,6 @@ namespace ECS
             this.mass = mass;
         }
 
-        //public void Update()
-        //{
-        //    velocity += acceleration;
-        //}
     }
 
 

@@ -37,7 +37,6 @@ namespace ECS.Systems
             signature = new Bitmask((int)ComponentType.Count);
             signature[ComponentType.CController] = true;
 
-            //controllerList = new List<CController>(MAX_PLAYER_COUNT);
         }
 
 
@@ -70,29 +69,5 @@ namespace ECS.Systems
                 -gamePadState.ThumbSticks.Right.Y);
             cont.rightStick = rightStickVals;
         }
-
-
-
-        //public void CheckForNewInput()
-        //{
-        //    int j = 0;
-        //    for (PlayerIndex i = PlayerIndex.One; i <= PlayerIndex.Four; i++)
-        //    {
-        //        GamePadState state = GamePad.GetState(i);
-        //        if (state.IsConnected)
-        //        {
-
-        //        }
-        //        j++;
-        //    }
-        //}
-
-
-        //private void AddPlayer(PlayerIndex playerIndex)
-        //{
-        //    eMan.CreateEntity();
-        //    return;
-        //}
-
     }
 }
